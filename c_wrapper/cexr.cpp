@@ -325,36 +325,76 @@ void CEXR_OutputFile_write_pixels(CEXR_OutputFile* output_file, int num_scan_lin
 }
 
 
-// //------------------------------------------------------------------------------
-// // InputFile
-// extern "C" {
-//     struct CEXR_InputFile {
-//         CEXR_Header header;
-//         void *input_file;
-//     };
-//
-//     CEXR_InputFile CEXR_InputFile_new(
-//         const char file_name[],
-//         int num_threads);
-//
-//     void CEXR_InputFile_delete(
-//         CEXR_InputFile *input_file);
-//
-//     const CEXR_Header *CEXR_InputFile_header(
-//         const CEXR_InputFile *input_file);
-//
-//     int CEXR_InputFile_version(
-//         const CEXR_InputFile *input_file);
-//
-//     void CEXR_InputFile_set_frame_buffer(
-//         CEXR_InputFile* input_file,
-//         CEXR_FrameBuffer* frame_buffer);
-//
-//     int CEXR_InputFile_is_complete(
-//         const CEXR_InputFile *input_file);
-//
-//     void CEXR_InputFile_read_pixels(
-//         CEXR_InputFile *input_file,
-//         int scanline_1,
-//         int scanline_2);
-// };
+//------------------------------------------------------------------------------
+// InputFile
+extern "C" {
+    struct CEXR_InputFile {
+        CEXR_Header header;
+        void *input_file;
+    };
+
+    CEXR_InputFile CEXR_InputFile_new(
+        const char file_name[],
+        int num_threads);
+
+    void CEXR_InputFile_delete(
+        CEXR_InputFile *input_file);
+
+    const CEXR_Header *CEXR_InputFile_header(
+        const CEXR_InputFile *input_file);
+
+    int CEXR_InputFile_version(
+        const CEXR_InputFile *input_file);
+
+    void CEXR_InputFile_set_frame_buffer(
+        CEXR_InputFile* input_file,
+        CEXR_FrameBuffer* frame_buffer);
+
+    int CEXR_InputFile_is_complete(
+        const CEXR_InputFile *input_file);
+
+    void CEXR_InputFile_read_pixels(
+        CEXR_InputFile *input_file,
+        int scanline_1,
+        int scanline_2);
+};
+
+CEXR_InputFile CEXR_InputFile_new(const char file_name[], int num_threads) {
+    CEXR_InputFile input_file;
+    auto in_file = new InputFile(file_name, num_threads);
+    input_file.header.header = const_cast<void*>(reinterpret_cast<const void*>(&in_file->header()));
+    input_file.input_file = reinterpret_cast<void*>(in_file);
+
+    return input_file;
+}
+
+void CEXR_InputFile_delete(CEXR_InputFile *input_file) {
+    auto in_file = reinterpret_cast<InputFile*>(input_file->input_file);
+    delete in_file;
+}
+
+const CEXR_Header *CEXR_InputFile_header(const CEXR_InputFile *input_file) {
+    return &(input_file->header);
+}
+
+int CEXR_InputFile_version(const CEXR_InputFile *input_file) {
+    auto in_file = reinterpret_cast<InputFile*>(input_file->input_file);
+    return in_file->version();
+}
+
+void CEXR_InputFile_set_frame_buffer(CEXR_InputFile* input_file, CEXR_FrameBuffer* frame_buffer) {
+    auto in_file = reinterpret_cast<InputFile*>(input_file->input_file);
+    auto framebuf = reinterpret_cast<FrameBuffer*>(frame_buffer->frame_buffer);
+
+    in_file->setFrameBuffer(*framebuf);
+}
+
+int CEXR_InputFile_is_complete(const CEXR_InputFile *input_file) {
+    auto in_file = reinterpret_cast<InputFile*>(input_file->input_file);
+    in_file->isComplete();
+}
+
+void CEXR_InputFile_read_pixels(CEXR_InputFile *input_file, int scanline_1, int scanline_2) {
+    auto in_file = reinterpret_cast<InputFile*>(input_file->input_file);
+    in_file->readPixels(scanline_1, scanline_2);
+}
