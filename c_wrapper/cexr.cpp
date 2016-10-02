@@ -54,7 +54,7 @@ extern "C" {
     // This isn't a wrapper per se, but an separate representation for
     // passing to/from Rust.
     struct CEXR_Channel {
-        CEXR_PixelType type; // enum
+        CEXR_PixelType pixel_type;
         int x_sampling;
         int y_sampling;
         int p_linear; // bool
@@ -181,7 +181,7 @@ void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CE
     h->channels().insert(
         name,
         Channel(
-            static_cast<PixelType>(channel.type),
+            static_cast<PixelType>(channel.pixel_type),
             channel.x_sampling,
             channel.y_sampling,
             channel.p_linear));
@@ -197,7 +197,7 @@ CEXR_Channel CEXR_Header_get_channel(CEXR_Header *header, const char name[]) {
     auto chan = h->channels().findChannel(name);
 
     CEXR_Channel channel;
-    channel.type = static_cast<CEXR_PixelType>(chan->type);
+    channel.pixel_type = static_cast<CEXR_PixelType>(chan->type);
     channel.x_sampling = chan->xSampling;
     channel.y_sampling = chan->ySampling;
     channel.p_linear = chan->pLinear;
@@ -258,7 +258,7 @@ void CEXR_FrameBuffer_delete(CEXR_FrameBuffer *frame_buffer) {
 void CEXR_FrameBuffer_insert_slice(
     CEXR_FrameBuffer *frame_buffer,
     const char name[],
-    CEXR_PixelType type,
+    CEXR_PixelType pixel_type,
     char *base,
     size_t x_stride,
     size_t y_stride,
@@ -271,7 +271,7 @@ void CEXR_FrameBuffer_insert_slice(
     auto buffer = reinterpret_cast<FrameBuffer*>(frame_buffer->frame_buffer);
 
     Slice slice;
-    slice.type = static_cast<PixelType>(type);
+    slice.type = static_cast<PixelType>(pixel_type);
     slice.base = base;
     slice.xStride = x_stride;
     slice.yStride = y_stride;
