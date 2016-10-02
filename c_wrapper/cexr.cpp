@@ -18,7 +18,11 @@ extern "C" {
     // 0: u32
     // 1: f16
     // 2: f32
-    typedef int CEXR_PixelType;
+    enum CEXR_PixelType {
+        UINT   = 0,		// unsigned int (32 bit)
+        HALF   = 1,		// half (16 bit floating point)
+        FLOAT  = 2,		// float (32 bit floating point)
+    };
 
     // CompressionMethod
     // This is a stand-in for an enum from the C++ library.
@@ -32,7 +36,32 @@ extern "C" {
     // 7 = B44A_COMPRESSION
     // 8 = DWAA_COMPRESSION
     // 9 = DWAB_COMPRESSION
-    typedef int CEXR_CompressionMethod;
+    enum CEXR_CompressionMethod {
+        NO_COMPRESSION  = 0,	// no compression
+        RLE_COMPRESSION = 1,	// run length encoding
+        ZIPS_COMPRESSION = 2,	// zlib compression, one scan line at a time
+        ZIP_COMPRESSION = 3,	// zlib compression, in blocks of 16 scan lines
+        PIZ_COMPRESSION = 4,	// piz-based wavelet compression
+        PXR24_COMPRESSION = 5,	// lossy 24-bit float compression
+        B44_COMPRESSION = 6,	// lossy 4-by-4 pixel block compression,
+        				        // fixed compression rate
+        B44A_COMPRESSION = 7,	// lossy 4-by-4 pixel block compression,
+        				        // flat fields are compressed more
+        DWAA_COMPRESSION = 8,       // lossy DCT based compression, in blocks
+                                    // of 32 scanlines. More efficient for partial
+                                    // buffer access.
+        DWAB_COMPRESSION = 9,       // lossy DCT based compression, in blocks
+                                    // of 256 scanlines. More efficient space
+                                    // wise and faster to decode full frames
+                                    // than DWAA_COMPRESSION.
+    };
+
+    enum CEXR_LineOrder {
+        INCREASING_Y = 0,	// first scan line has lowest y coordinate
+        DECREASING_Y = 1,	// first scan line has highest y coordinate
+        RANDOM_Y = 2,       // only for tiled files; tiles are written
+        			        // in random order
+    };
 
     // Channel
     // This isn't a wrapper per se, but an separate representation for
@@ -103,7 +132,7 @@ extern "C" {
         float screen_window_center_x,
         float screen_window_center_y,
         float screen_window_width,
-        int line_order, // 0: INCREASING_Y, 1: DECREASING_Y, 2: RANDOM_Y
+        CEXR_LineOrder line_order,
         CEXR_CompressionMethod compression);
 
     void CEXR_Header_delete(
@@ -139,8 +168,8 @@ CEXR_Header CEXR_Header_new(
     float screen_window_center_x,
     float screen_window_center_y,
     float screen_window_width,
-    int line_order,
-    int compression
+    CEXR_LineOrder line_order,
+    CEXR_CompressionMethod compression
 ) {
     CEXR_Header header;
 
@@ -181,7 +210,7 @@ CEXR_Channel CEXR_Header_get_channel(CEXR_Header *header, const char name[]) {
     auto chan = h->channels().findChannel(name);
 
     CEXR_Channel channel;
-    channel.type = chan->type;
+    channel.type = static_cast<CEXR_PixelType>(chan->type);
     channel.x_sampling = chan->xSampling;
     channel.y_sampling = chan->ySampling;
     channel.p_linear = chan->pLinear;
