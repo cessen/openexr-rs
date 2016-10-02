@@ -17,6 +17,7 @@ fn main() {
     // Build C wrapper for OpenEXR
     gcc::Config::new()
                 .cpp(true)
+                .flag("-std=c++11")
                 .include("c_wrapper")
                 .include(&exr_include_path)
                 .file("c_wrapper/cexr.cpp")
