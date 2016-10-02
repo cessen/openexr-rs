@@ -200,33 +200,75 @@ CEXR_ChannelIterator CEXR_Header_new_channel_iterator(CEXR_Header *header) {
 }
 
 
-// //------------------------------------------------------------------------------
-// // FrameBuffer
-// extern "C" {
-//     struct CEXR_FrameBuffer {
-//         void *frame_buffer;
-//     };
-//
-//     CEXR_FrameBuffer CEXR_FrameBuffer_new();
-//
-//     void CEXR_FrameBuffer_delete(
-//         CEXR_FrameBuffer *frame_buffer);
-//
-//     void CEXR_FrameBuffer_insert_slice(
-//         CEXR_FrameBuffer *frame_buffer,
-//         const char name[],
-//         char *base,
-//         size_t x_stride,
-//         size_t y_stride,
-//         int x_sampling,
-//         int y_sampling,
-//         double fill_value,
-//         int x_tile_coords, // bool
-//         int y_tile_coords // bool
-//         );
-// };
-//
-//
+//------------------------------------------------------------------------------
+// FrameBuffer
+extern "C" {
+    struct CEXR_FrameBuffer {
+        void *frame_buffer;
+    };
+
+    CEXR_FrameBuffer CEXR_FrameBuffer_new();
+
+    void CEXR_FrameBuffer_delete(
+        CEXR_FrameBuffer *frame_buffer);
+
+    void CEXR_FrameBuffer_insert_slice(
+        CEXR_FrameBuffer *frame_buffer,
+        const char name[],
+        char *base,
+        size_t x_stride,
+        size_t y_stride,
+        int x_sampling,
+        int y_sampling,
+        double fill_value,
+        int x_tile_coords, // bool
+        int y_tile_coords // bool
+        );
+};
+
+CEXR_FrameBuffer CEXR_FrameBuffer_new() {
+    CEXR_FrameBuffer buffer;
+
+    buffer.frame_buffer = reinterpret_cast<void*>(new FrameBuffer());
+
+    return buffer;
+}
+
+void CEXR_FrameBuffer_delete(CEXR_FrameBuffer *frame_buffer) {
+    auto buffer = reinterpret_cast<FrameBuffer*>(frame_buffer->frame_buffer);
+    delete buffer;
+}
+
+void CEXR_FrameBuffer_insert_slice(
+    CEXR_FrameBuffer *frame_buffer,
+    const char name[],
+    CEXR_PixelType type,
+    char *base,
+    size_t x_stride,
+    size_t y_stride,
+    int x_sampling,
+    int y_sampling,
+    double fill_value,
+    int x_tile_coords, // bool
+    int y_tile_coords // bool
+) {
+    auto buffer = reinterpret_cast<FrameBuffer*>(frame_buffer->frame_buffer);
+
+    Slice slice;
+    slice.type = static_cast<PixelType>(type);
+    slice.base = base;
+    slice.xStride = x_stride;
+    slice.yStride = y_stride;
+    slice.xSampling = x_sampling;
+    slice.ySampling = y_sampling;
+    slice.fillValue = fill_value;
+    slice.xTileCoords = x_tile_coords;
+    slice.yTileCoords = y_tile_coords;
+
+    buffer->insert(name, slice);
+}
+
+
 // //------------------------------------------------------------------------------
 // // OutputFile
 // extern "C" {
