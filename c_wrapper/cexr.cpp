@@ -1,5 +1,7 @@
 #include <cstdint>
 #include <cstddef>
+#include "OpenEXR/ImathVec.h"
+#include "OpenEXR/ImathBox.h"
 #include "OpenEXR/ImfPixelType.h"
 #include "OpenEXR/ImfChannelList.h"
 #include "OpenEXR/ImfHeader.h"
@@ -7,6 +9,7 @@
 #include "OpenEXR/ImfOutputFile.h"
 #include "OpenEXR/ImfInputFile.h"
 
+using namespace IMATH_NAMESPACE;
 using namespace Imf;
 
 extern "C" {
@@ -16,6 +19,20 @@ extern "C" {
     // 1: f16
     // 2: f32
     typedef int CEXR_PixelType;
+
+    // CompressionMethod
+    // This is a stand-in for an enum from the C++ library.
+    // 0 = NO_COMPRESSION
+    // 1 = RLE_COMPRESSION
+    // 2 = ZIPS_COMPRESSION
+    // 3 = ZIP_COMPRESSION
+    // 4 = PIZ_COMPRESSION
+    // 5 = PXR24_COMPRESSION
+    // 6 = B44_COMPRESSION
+    // 7 = B44A_COMPRESSION
+    // 8 = DWAA_COMPRESSION
+    // 9 = DWAB_COMPRESSION
+    typedef int CEXR_CompressionMethod;
 
     // Channel
     // This isn't a wrapper per se, but an separate representation for
@@ -40,9 +57,6 @@ extern "C" {
     void CEXR_ChannelIterator_delete(
         CEXR_ChannelIterator *iterator);
 
-    int CEXR_ChannelIterator_are_more(
-        CEXR_ChannelIterator* iterator);
-
     const char * CEXR_ChannelIterator_next(
         CEXR_ChannelIterator* iterator);
 };
@@ -54,15 +68,14 @@ void CEXR_ChannelIterator_delete(CEXR_ChannelIterator *iterator) {
     delete end_ptr;
 }
 
-int CEXR_ChannelIterator_are_more(CEXR_ChannelIterator* iterator) {
+// Returns nullptr if no more channels
+const char * CEXR_ChannelIterator_next(CEXR_ChannelIterator* iterator) {
     auto &begin = *reinterpret_cast<ChannelList::Iterator*>(iterator->begin);
     auto &end = *reinterpret_cast<ChannelList::Iterator*>(iterator->end);
 
-    return begin != end;
-}
-
-const char * CEXR_ChannelIterator_next(CEXR_ChannelIterator* iterator) {
-    auto &begin = *reinterpret_cast<ChannelList::Iterator*>(iterator->begin);
+    if (begin == end) {
+        return nullptr;
+    }
 
     auto name = begin.name();
     begin++;
@@ -70,50 +83,123 @@ const char * CEXR_ChannelIterator_next(CEXR_ChannelIterator* iterator) {
 }
 
 
-// //------------------------------------------------------------------------------
-// // EXR header type.
-// extern "C" {
-//     struct CEXR_Header {
-//         void *header;
-//     };
-//
-//     CEXR_Header CEXR_Header_new(
-//         int display_window_min_x,
-//         int display_window_min_y,
-//         int display_window_max_x,
-//         int display_window_max_y,
-//         int data_window_min_x,
-//         int data_window_min_y,
-//         int data_window_max_x,
-//         int data_window_max_y,
-//         float pixel_aspect_ratio,
-//         float screen_window_center_x,
-//         float screen_window_center_y,
-//         float screen_window_width,
-//         int line_order,
-//         int compression);
-//
-//     void CEXR_Header_delete(
-//         CEXR_Header *header);
-//
-//     void CEXR_Header_insert_channel(
-//         CEXR_Header *header,
-//         const char name[],
-//         const CEXR_Channel channel);
-//
-//     int CEXR_Header_channel_exists(
-//         CEXR_Header *header,
-//         const char name[]);
-//
-//     CEXR_Channel CEXR_Header_get_channel(
-//         CEXR_Header *header,
-//         const char name[]);
-//
-//     CEXR_ChannelIterator CEXR_Header_new_channel_iterator(
-//         CEXR_Header *header);
-// };
-//
-//
+//------------------------------------------------------------------------------
+// EXR header type.
+extern "C" {
+    struct CEXR_Header {
+        void *header;
+    };
+
+    CEXR_Header CEXR_Header_new(
+        int display_window_min_x,
+        int display_window_min_y,
+        int display_window_max_x,
+        int display_window_max_y,
+        int data_window_min_x,
+        int data_window_min_y,
+        int data_window_max_x,
+        int data_window_max_y,
+        float pixel_aspect_ratio,
+        float screen_window_center_x,
+        float screen_window_center_y,
+        float screen_window_width,
+        int line_order, // 0: INCREASING_Y, 1: DECREASING_Y, 2: RANDOM_Y
+        CEXR_CompressionMethod compression);
+
+    void CEXR_Header_delete(
+        CEXR_Header *header);
+
+    void CEXR_Header_insert_channel(
+        CEXR_Header *header,
+        const char name[],
+        const CEXR_Channel channel);
+
+    int CEXR_Header_channel_exists(
+        CEXR_Header *header,
+        const char name[]);
+
+    CEXR_Channel CEXR_Header_get_channel(
+        CEXR_Header *header,
+        const char name[]);
+
+    CEXR_ChannelIterator CEXR_Header_new_channel_iterator(
+        CEXR_Header *header);
+};
+
+CEXR_Header CEXR_Header_new(
+    int display_window_min_x,
+    int display_window_min_y,
+    int display_window_max_x,
+    int display_window_max_y,
+    int data_window_min_x,
+    int data_window_min_y,
+    int data_window_max_x,
+    int data_window_max_y,
+    float pixel_aspect_ratio,
+    float screen_window_center_x,
+    float screen_window_center_y,
+    float screen_window_width,
+    int line_order,
+    int compression
+) {
+    CEXR_Header header;
+
+    header.header = new Header(
+        Box2i(V2i(display_window_min_x, display_window_min_y), V2i(display_window_max_x, display_window_max_y)),
+        Box2i(V2i(data_window_min_x, data_window_min_y), V2i(data_window_max_x, data_window_max_y)),
+        pixel_aspect_ratio,
+        V2f(screen_window_center_x, screen_window_center_y),
+        screen_window_width,
+        static_cast<LineOrder>(line_order),
+        static_cast<Compression>(compression));
+    return header;
+}
+
+void CEXR_Header_delete(CEXR_Header *header) {
+    auto h = reinterpret_cast<Header*>(header->header);
+    delete h;
+}
+
+void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel) {
+    auto h = reinterpret_cast<Header*>(header->header);
+    h->channels().insert(
+        name,
+        Channel(
+            static_cast<PixelType>(channel.type),
+            channel.x_sampling,
+            channel.y_sampling,
+            channel.p_linear));
+}
+
+int CEXR_Header_channel_exists(CEXR_Header *header, const char name[]) {
+    auto h = reinterpret_cast<Header*>(header->header);
+    h->channels().findChannel(name) != 0;
+}
+
+CEXR_Channel CEXR_Header_get_channel(CEXR_Header *header, const char name[]) {
+    auto h = reinterpret_cast<Header*>(header->header);
+    auto chan = h->channels().findChannel(name);
+
+    CEXR_Channel channel;
+    channel.type = chan->type;
+    channel.x_sampling = chan->xSampling;
+    channel.y_sampling = chan->ySampling;
+    channel.p_linear = chan->pLinear;
+
+    return channel;
+}
+
+CEXR_ChannelIterator CEXR_Header_new_channel_iterator(CEXR_Header *header) {
+    auto h = reinterpret_cast<Header*>(header->header);
+
+    CEXR_ChannelIterator channel_iter;
+    channel_iter.begin = reinterpret_cast<void*>(new auto(h->channels().begin()));
+    channel_iter.end = reinterpret_cast<void*>(new auto(h->channels().end()));
+
+    return channel_iter;
+}
+
+
 // //------------------------------------------------------------------------------
 // // FrameBuffer
 // extern "C" {
