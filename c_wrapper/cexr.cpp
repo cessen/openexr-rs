@@ -15,9 +15,6 @@ using namespace Imf;
 extern "C" {
     // PixelType
     // This is a stand-in for an enum from the C++ library.
-    // 0: u32
-    // 1: f16
-    // 2: f32
     enum CEXR_PixelType {
         UINT   = 0,		// unsigned int (32 bit)
         HALF   = 1,		// half (16 bit floating point)
@@ -26,16 +23,6 @@ extern "C" {
 
     // CompressionMethod
     // This is a stand-in for an enum from the C++ library.
-    // 0 = NO_COMPRESSION
-    // 1 = RLE_COMPRESSION
-    // 2 = ZIPS_COMPRESSION
-    // 3 = ZIP_COMPRESSION
-    // 4 = PIZ_COMPRESSION
-    // 5 = PXR24_COMPRESSION
-    // 6 = B44_COMPRESSION
-    // 7 = B44A_COMPRESSION
-    // 8 = DWAA_COMPRESSION
-    // 9 = DWAB_COMPRESSION
     enum CEXR_CompressionMethod {
         NO_COMPRESSION  = 0,	// no compression
         RLE_COMPRESSION = 1,	// run length encoding
