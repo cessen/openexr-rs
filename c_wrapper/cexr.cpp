@@ -269,31 +269,62 @@ void CEXR_FrameBuffer_insert_slice(
 }
 
 
-// //------------------------------------------------------------------------------
-// // OutputFile
-// extern "C" {
-//     struct CEXR_OutputFile {
-//         void *output_file;
-//     };
-//
-//     CEXR_OutputFile CEXR_OutputFile_new(
-//         const char[] file_name,
-//         const CEXR_Header *header,
-//         int num_threads);
-//
-//     void CEXR_OutputFile_delete(
-//         CEXR_OutputFile *output_file);
-//
-//     void CEXR_OutputFile_set_frame_buffer(
-//         CEXR_OutputFile* output_file,
-//         CEXR_FrameBuffer* frame_buffer);
-//
-//     void CEXR_OutputFile_write_pixels(
-//         CEXR_OutputFile* output_file,
-//         int num_scan_lines);
-// };
-//
-//
+//------------------------------------------------------------------------------
+// OutputFile
+extern "C" {
+    struct CEXR_OutputFile {
+        void *output_file;
+    };
+
+    CEXR_OutputFile CEXR_OutputFile_new(
+        const char * file_name,
+        const CEXR_Header *header,
+        int num_threads);
+
+    void CEXR_OutputFile_delete(
+        CEXR_OutputFile *output_file);
+
+    void CEXR_OutputFile_set_frame_buffer(
+        CEXR_OutputFile* output_file,
+        CEXR_FrameBuffer* frame_buffer);
+
+    void CEXR_OutputFile_write_pixels(
+        CEXR_OutputFile* output_file,
+        int num_scan_lines);
+};
+
+CEXR_OutputFile CEXR_OutputFile_new(const char * file_name, const CEXR_Header *header, int num_threads) {
+    CEXR_OutputFile output_file;
+
+    output_file.output_file = reinterpret_cast<void*>(new OutputFile(
+        file_name,
+        *reinterpret_cast<Header*>(header->header),
+        num_threads
+    ));
+
+    return output_file;
+}
+
+void CEXR_OutputFile_delete(CEXR_OutputFile *output_file) {
+    auto outfile = reinterpret_cast<OutputFile*>(output_file->output_file);
+
+    delete outfile;
+}
+
+void CEXR_OutputFile_set_frame_buffer(CEXR_OutputFile* output_file, CEXR_FrameBuffer* frame_buffer) {
+    auto outfile = reinterpret_cast<OutputFile*>(output_file->output_file);
+    auto framebuf = reinterpret_cast<FrameBuffer*>(frame_buffer->frame_buffer);
+
+    outfile->setFrameBuffer(*framebuf);
+}
+
+void CEXR_OutputFile_write_pixels(CEXR_OutputFile* output_file, int num_scan_lines) {
+    auto outfile = reinterpret_cast<OutputFile*>(output_file->output_file);
+
+    outfile->writePixels(num_scan_lines);
+}
+
+
 // //------------------------------------------------------------------------------
 // // InputFile
 // extern "C" {
