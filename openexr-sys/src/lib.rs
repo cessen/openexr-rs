@@ -1,44 +1,48 @@
 extern crate libc;
 
-use libc::{c_char, c_int, c_double, size_t, c_void};
+use libc::{c_char, c_int, c_float, c_double, size_t, c_void};
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum CEXR_PixelType {
-    UINT = 0, // unsigned int (32 bit)
-    HALF = 1, // half (16 bit floating point)
-    FLOAT = 2, // float (32 bit floating point)
+    U32 = 0, // unsigned int (32 bit)
+    F16 = 1, // half (16 bit floating point)
+    F32 = 2, // float (32 bit floating point)
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum CEXR_CompressionMethod {
-    NO_COMPRESSION = 0, // no compression
-    RLE_COMPRESSION = 1, // run length encoding
-    ZIPS_COMPRESSION = 2, // zlib compression, one scan line at a time
-    ZIP_COMPRESSION = 3, // zlib compression, in blocks of 16 scan lines
-    PIZ_COMPRESSION = 4, // piz-based wavelet compression
-    PXR24_COMPRESSION = 5, // lossy 24-bit float compression
-    B44_COMPRESSION = 6, // lossy 4-by-4 pixel block compression,
+    None = 0, // no compression
+    RLE = 1, // run length encoding
+    ZIPS = 2, // zlib compression, one scan line at a time
+    ZIP = 3, // zlib compression, in blocks of 16 scan lines
+    PIZ = 4, // piz-based wavelet compression
+    PXR24 = 5, // lossy 24-bit float compression
+    B44 = 6, // lossy 4-by-4 pixel block compression,
     // fixed compression rate
-    B44A_COMPRESSION = 7, // lossy 4-by-4 pixel block compression,
+    B44A = 7, // lossy 4-by-4 pixel block compression,
     // flat fields are compressed more
-    DWAA_COMPRESSION = 8, // lossy DCT based compression, in blocks
+    DWAA = 8, // lossy DCT based compression, in blocks
     // of 32 scanlines. More efficient for partial
     // buffer access.
-    DWAB_COMPRESSION = 9, /* lossy DCT based compression, in blocks
+    DWAB = 9, /* lossy DCT based compression, in blocks
                            * of 256 scanlines. More efficient space
                            * wise and faster to decode full frames
                            * than DWAA_COMPRESSION. */
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum CEXR_LineOrder {
-    INCREASING_Y = 0, // first scan line has lowest y coordinate
-    DECREASING_Y = 1, // first scan line has highest y coordinate
-    RANDOM_Y = 2, /* only for tiled files; tiles are written
+    IncreasingY = 0, // first scan line has lowest y coordinate
+    DecreasingY = 1, // first scan line has highest y coordinate
+    RandomY = 2, /* only for tiled files; tiles are written
                    * in random order */
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct CEXR_Channel {
     pub pixel_type: CEXR_PixelType,
     pub x_sampling: c_int,
@@ -69,6 +73,21 @@ pub struct CEXR_Header {
 }
 
 extern "C" {
+     pub fn CEXR_Header_new(
+        display_window_min_x: c_int,
+        display_window_min_y: c_int,
+        display_window_max_x: c_int,
+        display_window_max_y: c_int,
+        data_window_min_x: c_int,
+        data_window_min_y: c_int,
+        data_window_max_x: c_int,
+        data_window_max_y: c_int,
+        pixel_aspect_ratio: c_float,
+        screen_window_center_x: c_float,
+        screen_window_center_y: c_float,
+        screen_window_width: c_float,
+        line_order: CEXR_LineOrder,
+        compression: CEXR_CompressionMethod) -> CEXR_Header;
     pub fn CEXR_Header_delete(header: *mut CEXR_Header);
     pub fn CEXR_Header_insert_channel(header: *mut CEXR_Header,
                                       name: *const c_char,

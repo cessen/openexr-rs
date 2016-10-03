@@ -10,5 +10,8 @@ authors = ["Nathan Vegdahl <cessen@cessen.com>"]
 name = "openexr"
 path = "src/lib.rs"
 
+[dependencies]
+libc = "0.2"
+
 [dependencies.openexr-sys]
 path = "openexr-sys"
