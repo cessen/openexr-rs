@@ -131,15 +131,15 @@ extern "C" {
         const CEXR_Channel channel);
 
     int CEXR_Header_channel_exists(
-        CEXR_Header *header,
+        const CEXR_Header *header,
         const char name[]);
 
     CEXR_Channel CEXR_Header_get_channel(
-        CEXR_Header *header,
+        const CEXR_Header *header,
         const char name[]);
 
     CEXR_ChannelIterator CEXR_Header_new_channel_iterator(
-        CEXR_Header *header);
+        const CEXR_Header *header);
 };
 
 CEXR_Header CEXR_Header_new(
@@ -231,6 +231,7 @@ extern "C" {
     void CEXR_FrameBuffer_insert_slice(
         CEXR_FrameBuffer *frame_buffer,
         const char name[],
+        CEXR_PixelType pixel_type,
         char *base,
         size_t x_stride,
         size_t y_stride,

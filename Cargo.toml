@@ -1,12 +1,14 @@
+[workspace]
+members = ["openexr-sys"]
+
 [package]
-name = "openexr-sys"
+name = "openexr"
 version = "0.1.0"
 authors = ["Nathan Vegdahl <cessen@cessen.com>"]
-build = "build.rs"
 
-[dependencies]
-libc = "0.2"
+[lib]
+name = "openexr"
+path = "src/lib.rs"
 
-[build-dependencies]
-gcc = "0.3"
-cmake = "0.1"
+[dependencies.openexr-sys]
+path = "openexr-sys"

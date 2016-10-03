@@ -1,0 +1,16 @@
+[package]
+name = "openexr-sys"
+version = "0.1.0"
+authors = ["Nathan Vegdahl <cessen@cessen.com>"]
+build = "build.rs"
+
+[lib]
+name = "openexr_sys"
+path = "src/lib.rs"
+
+[dependencies]
+libc = "0.2"
+
+[build-dependencies]
+gcc = "0.3"
+cmake = "0.1"

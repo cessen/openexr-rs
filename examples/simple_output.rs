@@ -1,4 +1,4 @@
-extern crate openexr_sys;
+extern crate openexr;
 
 fn main() {
     println!("Hello world!");
