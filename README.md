@@ -45,6 +45,6 @@ but I'm working on it!
 
 OpenEXR-rs is distributed under the terms of the MIT license (see LICENSE for
 details).  The code for OpenEXR itself is distributed under the terms of a
-modified BSD license (see [http://www.openexr.com/license.html] for details).
+modified BSD license (see http://www.openexr.com/license.html for details).
 zlib is distributed under the terms of the zlib license (see
-[http://zlib.net/zlib_license.html] for details).
+http://zlib.net/zlib_license.html for details).
