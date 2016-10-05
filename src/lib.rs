@@ -4,6 +4,7 @@ extern crate openexr_sys;
 use std::path::Path;
 use std::collections::HashMap;
 use std::ffi::CString;
+use std::marker::PhantomData;
 
 use libc::{c_int, c_float};
 
@@ -27,12 +28,57 @@ pub struct Box2i {
 #[derive(Copy, Clone)]
 pub struct Channel {
     pub pixel_type: PixelType,
-    pub x_subsampling: u32, /* If set to 1, every pixel, of set to 2, every
-                             * other pixel, 3, every third, etc. */
+    pub x_subsampling: u32, /* If set to 1, every pixel, if set to 2, every
+                             * other pixel, if 3, every third, etc. */
     pub y_subsampling: u32,
     pub p_linear: bool, /* Hint to lossy compression methods that indicates whether
                          * human perception of the quantity represented by this channel
                          * is closer to linear or closer to logarithmic. */
+}
+
+impl Channel {
+    pub fn with_type(pixel_type: PixelType) -> Channel {
+        Channel {
+            pixel_type: pixel_type,
+            x_subsampling: 1,
+            y_subsampling: 1,
+            p_linear: true,
+        }
+    }
+}
+
+
+// ------------------------------------------------------------------------------
+
+pub struct FrameBuffer<'a> {
+    handle: cexr::CEXR_FrameBuffer,
+    _data: PhantomData<&'a mut [u8]>,
+}
+
+impl<'a> Drop for FrameBuffer<'a> {
+    fn drop(&mut self) {
+        unsafe { cexr::CEXR_FrameBuffer_delete(&mut self.handle) };
+    }
+}
+
+impl<'a> FrameBuffer<'a> {
+    fn new() -> FrameBuffer<'a> {
+        FrameBuffer {
+            handle: unsafe { cexr::CEXR_FrameBuffer_new() },
+            _data: PhantomData,
+        }
+    }
+
+    fn add_slice(&mut self,
+                 name: &str,
+                 pixel_type: PixelType,
+                 data: &'a mut [u8],
+                 stride: (usize, usize),
+                 subsampling: (u32, u32),
+                 fill_value: f64,
+                 tile_coords: (bool, bool)) {
+        unimplemented!()
+    }
 }
 
 
@@ -71,13 +117,19 @@ impl<'a> ExrWriterBuilder<'a> {
         }
     }
 
-    pub fn display_window(mut self, dw: Box2i) -> ExrWriterBuilder<'a> {
-        self.display_window = dw;
+    pub fn display_window(mut self, min: (i32, i32), max: (i32, i32)) -> ExrWriterBuilder<'a> {
+        self.display_window = Box2i {
+            min: min,
+            max: max,
+        };
         self
     }
 
-    pub fn data_window(mut self, dw: Box2i) -> ExrWriterBuilder<'a> {
-        self.data_window = dw;
+    pub fn data_window(mut self, min: (i32, i32), max: (i32, i32)) -> ExrWriterBuilder<'a> {
+        self.data_window = Box2i {
+            min: min,
+            max: max,
+        };
         self
     }
 
@@ -111,7 +163,7 @@ impl<'a> ExrWriterBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> ExrWriter {
+    pub fn open(self) -> ExrWriter {
         // Build the header
         let header = {
             let mut header = unsafe {
