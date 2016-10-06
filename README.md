@@ -33,6 +33,7 @@ but I'm working on it!
 - [ ] Handle different tiled modes (e.g. MIP maps and RIP maps).
 - [ ] Wrap deep data input/output.
 - [ ] Wrap multi-part file input/output.
+- [ ] Wrap custom attributes.
 - [ ] Handle exceptions at the API boundary (safety!).
 - [ ] Take stock after this is all done and figure a out better API for
       everything.
