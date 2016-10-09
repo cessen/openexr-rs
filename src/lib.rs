@@ -4,9 +4,8 @@ extern crate openexr_sys;
 use std::path::Path;
 use std::collections::HashMap;
 use std::ffi::CString;
-use std::marker::PhantomData;
 
-use libc::{c_int, c_float};
+use libc::{c_char, c_int, c_float};
 
 use openexr_sys as cexr;
 
@@ -28,9 +27,8 @@ pub struct Box2i {
 #[derive(Copy, Clone)]
 pub struct Channel {
     pub pixel_type: PixelType,
-    pub x_subsampling: u32, /* If set to 1, every pixel, if set to 2, every
-                             * other pixel, if 3, every third, etc. */
-    pub y_subsampling: u32,
+    pub subsampling: (u32, u32), /* If set to 1, every pixel, if set to 2, every
+                                  * other pixel, if 3, every third, etc. */
     pub p_linear: bool, /* Hint to lossy compression methods that indicates whether
                          * human perception of the quantity represented by this channel
                          * is closer to linear or closer to logarithmic. */
@@ -40,8 +38,7 @@ impl Channel {
     pub fn with_type(pixel_type: PixelType) -> Channel {
         Channel {
             pixel_type: pixel_type,
-            x_subsampling: 1,
-            y_subsampling: 1,
+            subsampling: (1, 1),
             p_linear: true,
         }
     }
@@ -50,34 +47,48 @@ impl Channel {
 
 // ------------------------------------------------------------------------------
 
-pub struct FrameBuffer<'a> {
-    handle: cexr::CEXR_FrameBuffer,
-    _data: PhantomData<&'a mut [u8]>,
+#[derive(Copy, Clone)]
+pub struct SliceDescription {
+    pub pixel_type: PixelType,
+    pub start: usize,
+    pub stride: (usize, usize),
+    pub subsampling: (usize, usize),
+    pub tile_coords: (bool, bool),
 }
 
-impl<'a> Drop for FrameBuffer<'a> {
-    fn drop(&mut self) {
-        unsafe { cexr::CEXR_FrameBuffer_delete(&mut self.handle) };
-    }
+pub struct FrameBuffer<'a> {
+    channels: HashMap<&'a str, (usize, SliceDescription, f64)>,
+    buffers: Vec<&'a mut [u8]>,
 }
 
 impl<'a> FrameBuffer<'a> {
-    fn new() -> FrameBuffer<'a> {
+    pub fn new() -> FrameBuffer<'a> {
         FrameBuffer {
-            handle: unsafe { cexr::CEXR_FrameBuffer_new() },
-            _data: PhantomData,
+            channels: HashMap::new(),
+            buffers: Vec::new(),
         }
     }
 
-    fn add_slice(&mut self,
-                 name: &str,
-                 pixel_type: PixelType,
-                 data: &'a mut [u8],
-                 stride: (usize, usize),
-                 subsampling: (u32, u32),
-                 fill_value: f64,
-                 tile_coords: (bool, bool)) {
-        unimplemented!()
+    pub fn add_slice(&mut self,
+                     data: &'a mut [u8],
+                     descriptions: &[(&'a str, SliceDescription, f64)]) {
+        // Make sure we're not creating any duplicate channels.
+        // We check this ahead of time instead of in the same loop as inserting the channels
+        // so that the FrameBuffer state remains valid.
+        for &(name, _, _) in descriptions {
+            if self.channels.contains_key(name) {
+                // TODO: return an Err instead of a panicing
+                panic!("Cannot have two of the same channel name in a FrameBuffer.");
+            }
+        }
+
+        // Insert channels
+        for &(name, desc, default) in descriptions {
+            self.channels.insert(name, (self.buffers.len(), desc, default));
+        }
+
+        // Add buffer
+        self.buffers.push(data);
     }
 }
 
@@ -112,7 +123,7 @@ impl<'a> ExrWriterBuilder<'a> {
             screen_window_center: (0.0, 0.0),
             screen_window_width: 1.0,
             line_order: LineOrder::IncreasingY,
-            compression_method: CompressionMethod::PIZ,
+            compression_method: CompressionMethod::ZIP,
             channels: HashMap::new(),
         }
     }
@@ -186,8 +197,8 @@ impl<'a> ExrWriterBuilder<'a> {
                 let n = CString::new(name.as_bytes()).unwrap();
                 let c = cexr::CEXR_Channel {
                     pixel_type: channel.pixel_type,
-                    x_sampling: channel.x_subsampling as c_int,
-                    y_sampling: channel.y_subsampling as c_int,
+                    x_sampling: channel.subsampling.0 as c_int,
+                    y_sampling: channel.subsampling.1 as c_int,
                     p_linear: if channel.p_linear {
                         1 as c_int
                     } else {
@@ -222,6 +233,44 @@ pub struct ExrWriter {
 impl Drop for ExrWriter {
     fn drop(&mut self) {
         unsafe { cexr::CEXR_OutputFile_delete(&mut self.handle) };
+    }
+}
+
+impl ExrWriter {
+    pub fn write_pixels(&mut self, frame_buffer: &mut FrameBuffer, num_scan_lines: usize) {
+        // Build the frame buffer.
+        let mut cexr_fb = {
+            let mut cexr_fb = unsafe { cexr::CEXR_FrameBuffer_new() };
+            for (&name, &(buf_index, desc, default)) in frame_buffer.channels.iter() {
+                let n = CString::new(name.as_bytes()).unwrap();
+                let buf_ptr = unsafe {
+                    frame_buffer.buffers[buf_index].as_mut_ptr().offset(desc.start as isize)
+                } as *mut c_char;
+                unsafe {
+                    cexr::CEXR_FrameBuffer_insert_slice(&mut cexr_fb,
+                                                        n.as_ptr(),
+                                                        desc.pixel_type,
+                                                        buf_ptr,
+                                                        desc.stride.0,
+                                                        desc.stride.1,
+                                                        desc.subsampling.0 as i32,
+                                                        desc.subsampling.1 as i32,
+                                                        default,
+                                                        desc.tile_coords.0 as i32,
+                                                        desc.tile_coords.1 as i32)
+                };
+            }
+            cexr_fb
+        };
+
+        // Set the frame buffer.
+        unsafe { cexr::CEXR_OutputFile_set_frame_buffer(&mut self.handle, &mut cexr_fb) };
+
+        // Write the pixel data.
+        unsafe { cexr::CEXR_OutputFile_write_pixels(&mut self.handle, num_scan_lines as i32) };
+
+        // Destroy the framebuffer
+        unsafe { cexr::CEXR_FrameBuffer_delete(&mut cexr_fb) };
     }
 }
 

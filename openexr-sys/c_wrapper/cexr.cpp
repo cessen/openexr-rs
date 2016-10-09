@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdint>
 #include <cstddef>
 #include "OpenEXR/ImathVec.h"
@@ -8,6 +9,7 @@
 #include "OpenEXR/ImfFrameBuffer.h"
 #include "OpenEXR/ImfOutputFile.h"
 #include "OpenEXR/ImfInputFile.h"
+#include "OpenEXR/Iex.h"
 
 using namespace IMATH_NAMESPACE;
 using namespace Imf;
@@ -338,7 +340,12 @@ void CEXR_OutputFile_set_frame_buffer(CEXR_OutputFile* output_file, CEXR_FrameBu
 void CEXR_OutputFile_write_pixels(CEXR_OutputFile* output_file, int num_scan_lines) {
     auto outfile = reinterpret_cast<OutputFile*>(output_file->output_file);
 
-    outfile->writePixels(num_scan_lines);
+    try {
+        outfile->writePixels(num_scan_lines);
+    }
+    catch (Iex::BaseExc & e) {
+        std::cerr << e.what() << std::endl;
+    }
 }
 
 
