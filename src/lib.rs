@@ -1,6 +1,9 @@
 extern crate libc;
 extern crate openexr_sys;
 
+use std::mem;
+use std::slice;
+use std::iter;
 use std::path::Path;
 use std::collections::HashMap;
 use std::ffi::CString;
@@ -21,6 +24,70 @@ pub struct Box2i {
     pub max: (i32, i32),
 }
 
+
+// ------------------------------------------------------------------------------
+
+pub unsafe trait EXRPixelData: Copy + Into<f64> {
+    fn exr_pixel_data_type() -> PixelType;
+}
+
+unsafe impl EXRPixelData for u32 {
+    fn exr_pixel_data_type() -> PixelType {
+        PixelType::U32
+    }
+}
+
+unsafe impl EXRPixelData for f32 {
+    fn exr_pixel_data_type() -> PixelType {
+        PixelType::F32
+    }
+}
+
+
+// ------------------------------------------------------------------------------
+
+pub unsafe trait EXRPixelStruct: Copy {
+    /// Returns the number if channels in the data
+    fn channel_count() -> usize;
+
+    /// Returns an array of the types and byte offsets of the channels in the data
+    fn channel_descriptions() -> &'static [(PixelType, usize)];
+}
+
+unsafe impl EXRPixelStruct for (f32, f32) {
+    fn channel_count() -> usize {
+        2
+    }
+
+    fn channel_descriptions() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 2] = [(PixelType::F32, 0), (PixelType::F32, 4)];
+        &TYPES
+    }
+}
+
+unsafe impl EXRPixelStruct for (f32, f32, f32) {
+    fn channel_count() -> usize {
+        3
+    }
+
+    fn channel_descriptions() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 3] =
+            [(PixelType::F32, 0), (PixelType::F32, 4), (PixelType::F32, 8)];
+        &TYPES
+    }
+}
+
+unsafe impl EXRPixelStruct for (f32, f32, f32, f32) {
+    fn channel_count() -> usize {
+        4
+    }
+
+    fn channel_descriptions() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 4] =
+            [(PixelType::F32, 0), (PixelType::F32, 4), (PixelType::F32, 8), (PixelType::F32, 12)];
+        &TYPES
+    }
+}
 
 // ------------------------------------------------------------------------------
 
@@ -57,24 +124,120 @@ pub struct SliceDescription {
 }
 
 pub struct FrameBuffer<'a> {
+    dimensions: (usize, usize),
     channels: HashMap<&'a str, (usize, SliceDescription, f64)>,
     buffers: Vec<&'a mut [u8]>,
 }
 
 impl<'a> FrameBuffer<'a> {
-    pub fn new() -> FrameBuffer<'a> {
+    pub fn new(width: usize, height: usize) -> FrameBuffer<'a> {
         FrameBuffer {
+            dimensions: (width, height),
             channels: HashMap::new(),
             buffers: Vec::new(),
         }
     }
 
-    pub fn add_slice(&mut self,
-                     data: &'a mut [u8],
-                     descriptions: &[(&'a str, SliceDescription, f64)]) {
+    pub fn add_slice<T: EXRPixelData>(&mut self, data: &'a mut [T], name: &'a str, default: T) {
+        if data.len() < (self.dimensions.0 * self.dimensions.1) {
+            panic!("Attempted to add too small slice to FrameBuffer.");
+        }
+
+        self.add_interleaved_slice(data, &[(name, default)]);
+    }
+
+    pub fn add_interleaved_slice<T: EXRPixelData>(&mut self,
+                                                  data: &'a mut [T],
+                                                  channels: &[(&'a str, T)]) {
+        if channels.len() == 0 {
+            panic!("Attempted to add slice without channels to FrameBuffer.");
+        }
+        if (data.len() / channels.len()) < (self.dimensions.0 * self.dimensions.1) {
+            panic!("Attempted to add too small slice to FrameBuffer.");
+        }
+
+        // Insert channels
+        let width = self.dimensions.0;
+        for (i, &(name, default)) in channels.iter().enumerate() {
+            self.channels.insert(name,
+                                 (self.buffers.len(),
+                                  SliceDescription {
+                                     pixel_type: T::exr_pixel_data_type(),
+                                     start: mem::size_of::<T>() * i,
+                                     stride: (mem::size_of::<T>(),
+                                              mem::size_of::<T>() * width * channels.len()),
+                                     subsampling: (1, 1),
+                                     tile_coords: (false, false),
+                                 },
+                                  default.into()));
+        }
+
+        // Add buffer
+        let p = data.as_mut_ptr();
+        let l = data.len() * mem::size_of::<T>();
+        let pd = unsafe { slice::from_raw_parts_mut(p as *mut u8, l) };
+        self.buffers.push(pd);
+    }
+
+    pub fn add_structured_slice<T: EXRPixelStruct>(&mut self,
+                                                   data: &'a mut [T],
+                                                   channels: &[(&'a str, f64)]) {
+        unsafe {
+            self.add_structured_slice_unsafe(data, channels, T::channel_descriptions());
+        }
+    }
+
+    pub unsafe fn add_structured_slice_unsafe<T: EXRPixelStruct>(&mut self,
+                                                                 data: &'a mut [T],
+                                                                 channels: &[(&'a str, f64)],
+                                                                 channel_descriptions: &[(PixelType,
+                                                                                          usize)]) {
+        if data.len() < (self.dimensions.0 * self.dimensions.1) {
+            panic!("Attempted to add too small slice to FrameBuffer.");
+        }
+        if channels.len() == 0 {
+            panic!("Attempted to add slice without channels to FrameBuffer.");
+        }
+        if channels.len() != channel_descriptions.len() {
+            panic!("Number of channels doesn't match number of channel descriptions.");
+        }
+        for &(pixel_type, byte_offset) in channel_descriptions.iter() {
+            if (pixel_type.data_size() + byte_offset) > mem::size_of::<T>() {
+                panic!("Structured data description violates data bounds of type.");
+            }
+        }
+
+        // Insert channels
+        let width = self.dimensions.0;
+        for (&(name, default), &(pixel_type, byte_offset)) in
+            iter::Iterator::zip(channels.iter(), channel_descriptions.iter()) {
+            self.channels.insert(name,
+                                 (self.buffers.len(),
+                                  SliceDescription {
+                                     pixel_type: pixel_type,
+                                     start: byte_offset,
+                                     stride: (mem::size_of::<T>(), mem::size_of::<T>() * width),
+                                     subsampling: (1, 1),
+                                     tile_coords: (false, false),
+                                 },
+                                  default.into()));
+        }
+
+        // Add buffer
+        let p = data.as_mut_ptr();
+        let l = data.len() * mem::size_of::<T>();
+        let pd = slice::from_raw_parts_mut(p as *mut u8, l);
+        self.buffers.push(pd);
+    }
+
+    pub unsafe fn add_raw_slice(&mut self,
+                                data: &'a mut [u8],
+                                descriptions: &[(&'a str, SliceDescription, f64)]) {
         // Make sure we're not creating any duplicate channels.
         // We check this ahead of time instead of in the same loop as inserting the channels
         // so that the FrameBuffer state remains valid.
+        // TODO: more error checking, specifically checking to make sure 'data' is large
+        // enough for all of the described slices.
         for &(name, _, _) in descriptions {
             if self.channels.contains_key(name) {
                 // TODO: return an Err instead of a panicing
@@ -237,7 +400,7 @@ impl Drop for ExrWriter {
 }
 
 impl ExrWriter {
-    pub fn write_pixels(&mut self, frame_buffer: &mut FrameBuffer, num_scan_lines: usize) {
+    pub fn write_pixels(&mut self, frame_buffer: &mut FrameBuffer) {
         // Build the frame buffer.
         let mut cexr_fb = {
             let mut cexr_fb = unsafe { cexr::CEXR_FrameBuffer_new() };
@@ -267,7 +430,9 @@ impl ExrWriter {
         unsafe { cexr::CEXR_OutputFile_set_frame_buffer(&mut self.handle, &mut cexr_fb) };
 
         // Write the pixel data.
-        unsafe { cexr::CEXR_OutputFile_write_pixels(&mut self.handle, num_scan_lines as i32) };
+        unsafe {
+            cexr::CEXR_OutputFile_write_pixels(&mut self.handle, frame_buffer.dimensions.1 as i32)
+        };
 
         // Destroy the framebuffer
         unsafe { cexr::CEXR_FrameBuffer_delete(&mut cexr_fb) };

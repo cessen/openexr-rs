@@ -24,7 +24,7 @@ but I'm working on it!
 
 ## TODO
 
-- [ ] Wrap basic scanline output.
+- [x] Wrap basic scanline output.
 - [ ] Wrap basic scanline input.
 - [ ] Figure out a good way to support Half floats.
 - [ ] Make simple convenience functions for basic RGB/RGBA input and output.

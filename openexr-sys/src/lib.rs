@@ -10,6 +10,15 @@ pub enum CEXR_PixelType {
     F32 = 2, // float (32 bit floating point)
 }
 
+impl CEXR_PixelType {
+    pub fn data_size(&self) -> usize {
+        match self {
+            &CEXR_PixelType::U32 | &CEXR_PixelType::F32 => 4,
+            &CEXR_PixelType::F16 => 2,
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub enum CEXR_CompressionMethod {
