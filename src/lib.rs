@@ -27,6 +27,8 @@ pub struct Box2i {
 
 // ------------------------------------------------------------------------------
 
+/// A trait for types that can be bit-for-bit copied as OpenEXR pixel data with
+/// valid semantics.
 pub unsafe trait EXRPixelData: Copy + Into<f64> {
     fn exr_pixel_data_type() -> PixelType;
 }
@@ -46,6 +48,7 @@ unsafe impl EXRPixelData for f32 {
 
 // ------------------------------------------------------------------------------
 
+/// A trait for types that can be interpreted as a set of pixel channels.
 pub unsafe trait EXRPixelStruct: Copy {
     /// Returns the number if channels in the data
     fn channel_count() -> usize;
@@ -91,6 +94,9 @@ unsafe impl EXRPixelStruct for (f32, f32, f32, f32) {
 
 // ------------------------------------------------------------------------------
 
+/// Describes a channel of an image (e.g. the red channel, alpha channel, an
+/// arbitrary data channel) as stored on disk.  It is used for communication in
+/// the API's, and doesn't actually contain any image data itself.
 #[derive(Copy, Clone)]
 pub struct Channel {
     pub pixel_type: PixelType,
@@ -112,17 +118,24 @@ impl Channel {
 }
 
 
-// ------------------------------------------------------------------------------
-
+/// Describes a channel of an image as stored in memory.  It is used for
+/// communication in the API's, and doesn't actually contain any image
+/// data itself.
 #[derive(Copy, Clone)]
 pub struct SliceDescription {
     pub pixel_type: PixelType,
+    pub subsampling: (u32, u32),
     pub start: usize,
     pub stride: (usize, usize),
-    pub subsampling: (usize, usize),
     pub tile_coords: (bool, bool),
 }
 
+
+// ------------------------------------------------------------------------------
+
+/// Points to and describes the in-memory storage for all channels of an
+/// EXR image.  This is passed to readers and writers so they know where to
+/// read/write image data in memory.
 pub struct FrameBuffer<'a> {
     dimensions: (usize, usize),
     channels: HashMap<&'a str, (usize, SliceDescription, f64)>,
@@ -163,10 +176,10 @@ impl<'a> FrameBuffer<'a> {
                                  (self.buffers.len(),
                                   SliceDescription {
                                      pixel_type: T::exr_pixel_data_type(),
+                                     subsampling: (1, 1),
                                      start: mem::size_of::<T>() * i,
                                      stride: (mem::size_of::<T>(),
                                               mem::size_of::<T>() * width * channels.len()),
-                                     subsampling: (1, 1),
                                      tile_coords: (false, false),
                                  },
                                   default.into()));
@@ -215,9 +228,9 @@ impl<'a> FrameBuffer<'a> {
                                  (self.buffers.len(),
                                   SliceDescription {
                                      pixel_type: pixel_type,
+                                     subsampling: (1, 1),
                                      start: byte_offset,
                                      stride: (mem::size_of::<T>(), mem::size_of::<T>() * width),
-                                     subsampling: (1, 1),
                                      tile_coords: (false, false),
                                  },
                                   default.into()));
@@ -258,6 +271,8 @@ impl<'a> FrameBuffer<'a> {
 
 // ------------------------------------------------------------------------------
 
+/// A builder for an exr writer.  Once everything is set up, use open() to create
+/// the final EXRWriter.
 pub struct ExrWriterBuilder<'a> {
     path: &'a Path,
     display_window: Box2i,
@@ -401,7 +416,7 @@ impl Drop for ExrWriter {
 
 impl ExrWriter {
     pub fn write_pixels(&mut self, frame_buffer: &mut FrameBuffer) {
-        // Build the frame buffer.
+        // Build the C frame buffer from the given frame buffer.
         let mut cexr_fb = {
             let mut cexr_fb = unsafe { cexr::CEXR_FrameBuffer_new() };
             for (&name, &(buf_index, desc, default)) in frame_buffer.channels.iter() {
@@ -426,7 +441,7 @@ impl ExrWriter {
             cexr_fb
         };
 
-        // Set the frame buffer.
+        // Set the C frame buffer.
         unsafe { cexr::CEXR_OutputFile_set_frame_buffer(&mut self.handle, &mut cexr_fb) };
 
         // Write the pixel data.
@@ -434,10 +449,25 @@ impl ExrWriter {
             cexr::CEXR_OutputFile_write_pixels(&mut self.handle, frame_buffer.dimensions.1 as i32)
         };
 
-        // Destroy the framebuffer
+        // Destroy the C framebuffer
         unsafe { cexr::CEXR_FrameBuffer_delete(&mut cexr_fb) };
     }
 }
+
+
+// ------------------------------------------------------------------------------
+pub struct ExrReader {
+    handle: cexr::CEXR_InputFile,
+}
+
+impl Drop for ExrReader {
+    fn drop(&mut self) {
+        unsafe { cexr::CEXR_InputFile_delete(&mut self.handle) };
+    }
+}
+
+
+// ------------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
