@@ -157,13 +157,13 @@ pub struct CEXR_InputFile {
 }
 
 extern "C" {
-    pub fn CEXR_InputFile_new(file_name: *const c_char, num_threads: c_int) -> CEXR_InputFile;
+    pub fn CEXR_InputFile_new(file_name: *const c_char, num_threads: c_int, out: *mut CEXR_InputFile, error: *mut *const c_char) -> c_int;
     pub fn CEXR_InputFile_delete(input_file: *mut CEXR_InputFile);
     pub fn CEXR_InputFile_header(input_file: *const CEXR_InputFile) -> *const CEXR_Header;
     pub fn CEXR_InputFile_version(input_file: *const CEXR_InputFile) -> c_int;
     pub fn CEXR_InputFile_set_frame_buffer(input_file: *mut CEXR_InputFile, frame_buffer: *mut CEXR_FrameBuffer);
     pub fn CEXR_InputFile_is_complete(input_file: *const CEXR_InputFile) -> c_int;
-    pub fn CEXR_InputFile_read_pixels(input_file: *mut CEXR_InputFile, scanline_1: c_int, scanline_2: c_int);
+    pub fn CEXR_InputFile_read_pixels(input_file: *mut CEXR_InputFile, scanline_1: c_int, scanline_2: c_int, error: *mut *const c_char) -> c_int;
 }
 
 

@@ -357,9 +357,11 @@ extern "C" {
         void *input_file;
     };
 
-    CEXR_InputFile CEXR_InputFile_new(
+    int CEXR_InputFile_new(
         const char file_name[],
-        int num_threads);
+        int num_threads,
+        CEXR_InputFile *out,
+        const char **error);
 
     void CEXR_InputFile_delete(
         CEXR_InputFile *input_file);
@@ -377,19 +379,27 @@ extern "C" {
     int CEXR_InputFile_is_complete(
         const CEXR_InputFile *input_file);
 
-    void CEXR_InputFile_read_pixels(
+    int CEXR_InputFile_read_pixels(
         CEXR_InputFile *input_file,
         int scanline_1,
-        int scanline_2);
+        int scanline_2,
+        const char **error);
 };
 
-CEXR_InputFile CEXR_InputFile_new(const char file_name[], int num_threads) {
+int CEXR_InputFile_new(const char file_name[], int num_threads, CEXR_InputFile *out, const char **error) {
     CEXR_InputFile input_file;
-    auto in_file = new InputFile(file_name, num_threads);
-    input_file.header.header = const_cast<void*>(reinterpret_cast<const void*>(&in_file->header()));
-    input_file.input_file = reinterpret_cast<void*>(in_file);
+    InputFile *in_file;
+    try {
+        in_file = new InputFile(file_name, num_threads);
+    } catch(const std::exception &e) {
+        *error = e.what();
+        return 1;
+    }
 
-    return input_file;
+    out->header.header = const_cast<void*>(reinterpret_cast<const void*>(&in_file->header()));
+    out->input_file = reinterpret_cast<void*>(in_file);
+
+    return 0;
 }
 
 void CEXR_InputFile_delete(CEXR_InputFile *input_file) {
@@ -418,7 +428,13 @@ int CEXR_InputFile_is_complete(const CEXR_InputFile *input_file) {
     in_file->isComplete();
 }
 
-void CEXR_InputFile_read_pixels(CEXR_InputFile *input_file, int scanline_1, int scanline_2) {
+int CEXR_InputFile_read_pixels(CEXR_InputFile *input_file, int scanline_1, int scanline_2, const char **error) {
     auto in_file = reinterpret_cast<InputFile*>(input_file->input_file);
-    in_file->readPixels(scanline_1, scanline_2);
+    try {
+        in_file->readPixels(scanline_1, scanline_2);
+    } catch(const std::exception &e) {
+        *error = e.what();
+        return 1;
+    }
+    return 0;
 }
