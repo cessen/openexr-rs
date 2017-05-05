@@ -24,6 +24,7 @@ fn main() {
                 .include("c_wrapper")
                 .include(&exr_include_path)
                 .file("c_wrapper/cexr.cpp")
+                .file("c_wrapper/memory_istream.cpp")
                 .compile("libcexr.a");
 
     // Link all the libs from OpenEXR
