@@ -1,12 +1,10 @@
 extern crate libc;
 extern crate openexr_sys;
 
-use std::mem;
-use std::slice;
-use std::iter;
+use std::{mem, slice, iter, ptr, error, fmt};
 use std::path::Path;
 use std::collections::HashMap;
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 
 use libc::{c_char, c_int, c_float};
 
@@ -16,6 +14,30 @@ pub use openexr_sys::CEXR_PixelType as PixelType;
 pub use openexr_sys::CEXR_CompressionMethod as CompressionMethod;
 pub use openexr_sys::CEXR_LineOrder as LineOrder;
 
+#[derive(Debug, Clone)]
+pub enum Error {
+    Generic(String)
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        use self::Error::*;
+        match *self {
+            Generic(ref x) => x,
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::Error::*;
+        match *self {
+            Generic(ref x) => f.pad(x),
+        }
+    }
+}
+
+pub type Result<T> = ::std::result::Result<T, Error>;
 
 // ------------------------------------------------------------------------------
 
@@ -454,10 +476,73 @@ impl ExrWriter {
     }
 }
 
-
 // ------------------------------------------------------------------------------
 pub struct ExrReader {
     handle: cexr::CEXR_InputFile,
+}
+
+impl ExrReader {
+    pub fn new(path: &Path) -> Result<Self> {
+        let c_path = CString::new(path.to_str().unwrap().as_bytes()).unwrap();
+        let mut error_msg = ptr::null();
+        let mut out = unsafe { mem::uninitialized() };
+        let error = unsafe { cexr::CEXR_InputFile_new(c_path.as_ptr(), 1, &mut out, &mut error_msg) };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_msg) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            Ok(ExrReader {
+                handle: out,
+            })
+        }
+    }
+
+    pub fn read_pixels(&mut self, frame_buffer: &mut FrameBuffer) -> Result<()> {
+        // Build the C frame buffer from the given frame buffer.
+        let mut cexr_fb = {
+            let mut cexr_fb = unsafe { cexr::CEXR_FrameBuffer_new() };
+            for (&name, &(buf_index, desc, default)) in frame_buffer.channels.iter() {
+                let n = CString::new(name.as_bytes()).unwrap();
+                let buf_ptr = unsafe {
+                    frame_buffer.buffers[buf_index].as_mut_ptr().offset(desc.start as isize)
+                } as *mut c_char;
+                unsafe {
+                    cexr::CEXR_FrameBuffer_insert_slice(&mut cexr_fb,
+                                                        n.as_ptr(),
+                                                        desc.pixel_type,
+                                                        buf_ptr,
+                                                        desc.stride.0,
+                                                        desc.stride.1,
+                                                        desc.subsampling.0 as i32,
+                                                        desc.subsampling.1 as i32,
+                                                        default,
+                                                        desc.tile_coords.0 as i32,
+                                                        desc.tile_coords.1 as i32)
+                };
+            }
+            cexr_fb
+        };
+
+        let mut error_msg = ptr::null();
+        let error = unsafe {
+            // Set the C frame buffer.
+            cexr::CEXR_InputFile_set_frame_buffer(&mut self.handle, &mut cexr_fb);
+
+            // Read the pixel data.
+            let err = cexr::CEXR_InputFile_read_pixels(&mut self.handle, 0, (frame_buffer.dimensions.1 - 1) as i32, &mut error_msg);
+
+            // Destroy the C framebuffer
+            cexr::CEXR_FrameBuffer_delete(&mut cexr_fb);
+
+            err
+        };
+        if error != 0 {
+            let err = unsafe { CStr::from_ptr(error_msg) };
+            Err(Error::Generic(err.to_string_lossy().into_owned()))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl Drop for ExrReader {
@@ -468,11 +553,3 @@ impl Drop for ExrReader {
 
 
 // ------------------------------------------------------------------------------
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        println!("woo hoo!");
-    }
-}
