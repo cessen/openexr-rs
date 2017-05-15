@@ -15,17 +15,18 @@ a few unsafe API's as well that expose more nitty-gritty.
 
 ## Status
 
-This repo currently builds and links OpenEXR on Linux with CMake and zlib
-present.
+This repo currently works on Linux with CMake and zlib present.  It will
+look for OpenEXR on the system, and link to that if found, and otherwise
+builds OpenEXR and links it as a static library.
 
 The beginnings of bindings to the scanline input/output classes are there
 and partially working.  These bindings are not yet useful for anything,
-but I'm working on it!
+but we're working on it!
 
 ## TODO
 
-- [x] Wrap basic scanline output.
-- [ ] Wrap basic scanline input.
+- [ ] Wrap basic scanline output.
+- [x] Wrap basic scanline input.
 - [ ] Figure out a good way to support Half floats.
 - [ ] Make simple convenience functions for basic RGB/RGBA input and output.
 - [ ] Wrap basic tiled output.
