@@ -15,9 +15,11 @@ a few unsafe API's as well that expose more nitty-gritty.
 
 ## Status
 
-This repo currently works on Linux with CMake and zlib present.  It will
-look for OpenEXR on the system, and link to that if found, and otherwise
-builds OpenEXR and links it as a static library.
+This repo currently works on at least Linux, but may work on other OS's as
+well.  You will need OpenEXR and zlib installed on your system.  You can
+specify the paths where the libraries are with the OPENEXR_LIBRARY and
+ZLIB_LIBRARY environment variables.  Otherwise pkgconfig will be used to
+try to find the libraries automatically.
 
 The beginnings of bindings to the scanline input/output classes are there
 and partially working.  These bindings are not yet useful for anything,

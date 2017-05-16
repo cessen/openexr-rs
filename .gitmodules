@@ -1,3 +1,0 @@
-[submodule "openexr"]
-	path = openexr-sys/openexr
-	url = https://github.com/openexr/openexr.git
