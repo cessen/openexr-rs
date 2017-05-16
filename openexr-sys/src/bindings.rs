@@ -28,6 +28,32 @@ impl Clone for CEXR_V2i {
 }
 #[repr(C)]
 #[derive(Debug, Copy)]
+pub struct CEXR_V2f {
+    pub x: f32,
+    pub y: f32,
+}
+#[test]
+fn bindgen_test_layout_CEXR_V2f() {
+    assert_eq!(::std::mem::size_of::<CEXR_V2f>() , 8usize , concat ! (
+               "Size of: " , stringify ! ( CEXR_V2f ) ));
+    assert_eq! (::std::mem::align_of::<CEXR_V2f>() , 4usize , concat ! (
+                "Alignment of " , stringify ! ( CEXR_V2f ) ));
+    assert_eq! (unsafe {
+                & ( * ( 0 as * const CEXR_V2f ) ) . x as * const _ as usize }
+                , 0usize , concat ! (
+                "Alignment of field: " , stringify ! ( CEXR_V2f ) , "::" ,
+                stringify ! ( x ) ));
+    assert_eq! (unsafe {
+                & ( * ( 0 as * const CEXR_V2f ) ) . y as * const _ as usize }
+                , 4usize , concat ! (
+                "Alignment of field: " , stringify ! ( CEXR_V2f ) , "::" ,
+                stringify ! ( y ) ));
+}
+impl Clone for CEXR_V2f {
+    fn clone(&self) -> Self { *self }
+}
+#[repr(C)]
+#[derive(Debug, Copy)]
 pub struct CEXR_Box2i {
     pub min: CEXR_V2i,
     pub max: CEXR_V2i,
@@ -55,6 +81,23 @@ impl Clone for CEXR_Box2i {
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CEXR_PixelType { UINT = 0, HALF = 1, FLOAT = 2, }
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum CEXR_LineOrder { INCREASING_Y = 0, DECREASING_Y = 1, RANDOM_Y = 2, }
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum CEXR_Compression {
+    NO_COMPRESSION = 0,
+    RLE_COMPRESSION = 1,
+    ZIPS_COMPRESSION = 2,
+    ZIP_COMPRESSION = 3,
+    PIZ_COMPRESSION = 4,
+    PXR24_COMPRESSION = 5,
+    B44_COMPRESSION = 6,
+    B44A_COMPRESSION = 7,
+    DWAA_COMPRESSION = 8,
+    DWAB_COMPRESSION = 9,
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct CEXR_InputFile {
@@ -87,6 +130,40 @@ extern "C" {
 }
 extern "C" {
     pub fn CEXR_IStream_delete(stream: *mut CEXR_IStream);
+}
+extern "C" {
+    pub fn CEXR_Header_new(displayWindow: *const CEXR_Box2i,
+                           dataWindow: *const CEXR_Box2i,
+                           pixelAspectRatio: f32,
+                           screenWindowCenter: *const CEXR_V2f,
+                           screenWindowWidth: f32, lineOrder: CEXR_LineOrder,
+                           compression: CEXR_Compression) -> *mut CEXR_Header;
+}
+extern "C" {
+    pub fn CEXR_Header_display_window(header: *const CEXR_Header)
+     -> *const CEXR_Box2i;
+}
+extern "C" {
+    pub fn CEXR_Header_data_window(header: *const CEXR_Header)
+     -> *const CEXR_Box2i;
+}
+extern "C" {
+    pub fn CEXR_FrameBuffer_new() -> *mut CEXR_FrameBuffer;
+}
+extern "C" {
+    pub fn CEXR_FrameBuffer_delete(framebuffer: *mut CEXR_FrameBuffer);
+}
+extern "C" {
+    pub fn CEXR_FrameBuffer_insert(framebuffer: *mut CEXR_FrameBuffer,
+                                   name: *const ::std::os::raw::c_char,
+                                   type_: CEXR_PixelType,
+                                   base: *mut ::std::os::raw::c_char,
+                                   xStride: usize, yStride: usize,
+                                   xSampling: ::std::os::raw::c_int,
+                                   ySampling: ::std::os::raw::c_int,
+                                   fillValue: f64,
+                                   xTileCoords: ::std::os::raw::c_int,
+                                   yTileCoords: ::std::os::raw::c_int);
 }
 extern "C" {
     pub fn CEXR_InputFile_from_file(path: *const ::std::os::raw::c_char,
@@ -124,28 +201,30 @@ extern "C" {
      -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn CEXR_Header_display_window(header: *const CEXR_Header)
-     -> *const CEXR_Box2i;
+    pub fn CEXR_OutputFile_from_file(path: *const ::std::os::raw::c_char,
+                                     header: *const CEXR_Header,
+                                     threads: ::std::os::raw::c_int,
+                                     out: *mut *mut CEXR_OutputFile,
+                                     err_out:
+                                         *mut *const ::std::os::raw::c_char)
+     -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn CEXR_Header_data_window(header: *const CEXR_Header)
-     -> *const CEXR_Box2i;
+    pub fn CEXR_OutputFile_delete(file: *mut CEXR_OutputFile);
 }
 extern "C" {
-    pub fn CEXR_FrameBuffer_new() -> *mut CEXR_FrameBuffer;
+    pub fn CEXR_OutputFile_header(file: *mut CEXR_OutputFile)
+     -> *const CEXR_Header;
 }
 extern "C" {
-    pub fn CEXR_FrameBuffer_delete(framebuffer: *mut CEXR_FrameBuffer);
+    pub fn CEXR_OutputFile_set_framebuffer(file: *mut CEXR_OutputFile,
+                                           framebuffer:
+                                               *mut CEXR_FrameBuffer);
 }
 extern "C" {
-    pub fn CEXR_FrameBuffer_insert(framebuffer: *mut CEXR_FrameBuffer,
-                                   name: *const ::std::os::raw::c_char,
-                                   type_: CEXR_PixelType,
-                                   base: *mut ::std::os::raw::c_char,
-                                   xStride: usize, yStride: usize,
-                                   xSampling: ::std::os::raw::c_int,
-                                   ySampling: ::std::os::raw::c_int,
-                                   fillValue: f64,
-                                   xTileCoords: ::std::os::raw::c_int,
-                                   yTileCoords: ::std::os::raw::c_int);
+    pub fn CEXR_OutputFile_write_pixels(file: *mut CEXR_OutputFile,
+                                        num_scanlines: ::std::os::raw::c_int,
+                                        err_out:
+                                            *mut *const ::std::os::raw::c_char)
+     -> ::std::os::raw::c_int;
 }
