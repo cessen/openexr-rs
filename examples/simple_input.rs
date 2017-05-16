@@ -16,10 +16,7 @@ fn main() {
         let mut fb = {
             // Create the frame buffer
             let mut fb = FrameBuffer::new(width as usize, height as usize);
-            fb.insert_pixels(
-                &[("R", 0.0), ("G", 0.0), ("B", 0.0)],
-                &mut pixel_data
-            );
+            fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
             fb
         };
 
