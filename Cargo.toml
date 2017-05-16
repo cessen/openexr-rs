@@ -8,6 +8,7 @@ authors = ["Nathan Vegdahl <cessen@cessen.com>"]
 repository = "https://github.com/cessen/openexr-rs"
 readme = "README.md"
 license = "MIT"
+description = "Rust bindings for OpenEXR"
 keywords = ["OpenEXR"]
 
 [lib]
@@ -19,3 +20,4 @@ libc = "0.2"
 
 [dependencies.openexr-sys]
 path = "openexr-sys"
+version = "0.1.0"

@@ -5,6 +5,7 @@ authors = ["Nathan Vegdahl <cessen@cessen.com>", "Benjamin Saunders <ben.e.saund
 build = "build.rs"
 repository = "https://github.com/cessen/openexr-rs"
 license = "MIT"
+description = "FFI bindings for OpenEXR, used by the openexr crate"
 keywords = ["OpenEXR"]
 
 [lib]
