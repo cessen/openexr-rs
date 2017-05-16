@@ -11,6 +11,8 @@ use libc::{c_char, c_int};
 use openexr_sys::*;
 
 pub use openexr_sys::CEXR_PixelType as PixelType;
+pub use openexr_sys::CEXR_LineOrder as LineOrder;
+pub use openexr_sys::CEXR_Compression as Compression;
 pub use openexr_sys::CEXR_Box2i as Box2i;
 
 #[derive(Debug, Clone)]
@@ -120,6 +122,7 @@ impl<'a> Drop for IStream<'a> {
     }
 }
 
+// ------------------------------------------------------------------------------
 
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
@@ -129,7 +132,7 @@ pub struct InputFile<'a> {
 impl<'a> InputFile<'a> {
     pub fn from_file(path: &Path) -> Result<InputFile<'static>> {
         let c_path = CString::new(path.to_str()
-                                      .expect("non-unicode path handlin is unimplemented")
+                                      .expect("non-unicode path handling is unimplemented")
                                       .as_bytes())
                 .unwrap();
         let mut error_out = ptr::null();
@@ -200,6 +203,104 @@ impl<'a> Drop for InputFile<'a> {
     }
 }
 
+// ------------------------------------------------------------------------------
+
+pub struct OutputFile<'a> {
+    handle: *mut CEXR_OutputFile,
+    header_handle: *mut CEXR_Header,
+    _phantom: PhantomData<&'a ()>,
+}
+
+impl<'a> OutputFile<'a> {
+    pub fn from_file(path: &Path,
+                     resolution: (u32, u32),
+                     compression: Compression)
+                     -> Result<OutputFile<'static>> {
+        // Create header
+        let header = {
+            let display_window = Box2i {
+                min: CEXR_V2i { x: 0, y: 0 },
+                max: CEXR_V2i {
+                    x: resolution.0 as i32 - 1,
+                    y: resolution.1 as i32 - 1,
+                },
+            };
+            let data_window = display_window;
+            let pixel_aspect_ratio = 1.0;
+            let screen_window_center = CEXR_V2f { x: 0.0, y: 0.0 };
+            let screen_window_width = 1.0;
+            let line_order = LineOrder::INCREASING_Y;
+            unsafe {
+                CEXR_Header_new(&display_window,
+                                &data_window,
+                                pixel_aspect_ratio,
+                                &screen_window_center,
+                                screen_window_width,
+                                line_order,
+                                compression)
+            }
+        };
+
+        // Create file
+        let c_path = CString::new(path.to_str()
+                                      .expect("non-unicode path handling is unimplemented")
+                                      .as_bytes())
+                .unwrap();
+        let mut error_out = ptr::null();
+        let mut out = ptr::null_mut();
+        let error = unsafe {
+            CEXR_OutputFile_from_file(c_path.as_ptr(), header, 1, &mut out, &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            Ok(OutputFile {
+                   handle: out,
+                   header_handle: header,
+                   _phantom: PhantomData,
+               })
+        }
+    }
+
+    pub fn write_pixels(&self, framebuffer: &mut FrameBuffer) -> Result<()> {
+        let w = self.data_window();
+        if (w.max.x - w.min.x) as usize != framebuffer.dimensions.0 - 1 ||
+           (w.max.y - w.min.y) as usize != framebuffer.dimensions.1 - 1 {
+            panic!("framebuffer size {}x{} does not match output file dimensions {}x{}",
+                   framebuffer.dimensions.0,
+                   framebuffer.dimensions.1,
+                   w.max.x - w.min.x,
+                   w.max.y - w.min.y)
+        }
+        unsafe { CEXR_OutputFile_set_framebuffer(self.handle, framebuffer.handle) };
+        let mut error_out = ptr::null();
+        let error = unsafe { CEXR_OutputFile_write_pixels(self.handle, w.max.y, &mut error_out) };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn data_window(&self) -> &Box2i {
+        unsafe { &*CEXR_Header_data_window(CEXR_OutputFile_header(self.handle)) }
+    }
+
+    pub fn display_window(&self) -> &Box2i {
+        unsafe { &*CEXR_Header_display_window(CEXR_OutputFile_header(self.handle)) }
+    }
+}
+
+impl<'a> Drop for OutputFile<'a> {
+    fn drop(&mut self) {
+        unsafe { CEXR_OutputFile_delete(self.handle) };
+        unsafe { CEXR_Header_delete(self.header_handle) };
+    }
+}
+
+// ------------------------------------------------------------------------------
 
 pub struct FrameBuffer<'a> {
     handle: *mut CEXR_FrameBuffer,

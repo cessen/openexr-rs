@@ -66,7 +66,7 @@ CEXR_Header *CEXR_Header_new(const CEXR_Box2i *displayWindow,
 	                         float screenWindowWidth,
 	                         CEXR_LineOrder lineOrder,
                              CEXR_Compression compression);
-                             
+void CEXR_Header_delete(CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_data_window(const CEXR_Header *header);
 

@@ -140,6 +140,9 @@ extern "C" {
                            compression: CEXR_Compression) -> *mut CEXR_Header;
 }
 extern "C" {
+    pub fn CEXR_Header_delete(header: *mut CEXR_Header);
+}
+extern "C" {
     pub fn CEXR_Header_display_window(header: *const CEXR_Header)
      -> *const CEXR_Box2i;
 }
