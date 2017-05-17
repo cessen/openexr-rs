@@ -6,46 +6,55 @@ use std::path::PathBuf;
 
 fn main() {
     // Find and link OpenEXR and IlmBase
-    let include_paths = if let Ok(path) = env::var("OPENEXR_DIR") {
-        // There's an environment variable, so let's use that
-        println!("cargo:rustc-link-search=native={}/lib", path);
-        println!("cargo:rustc-link-lib=static=IlmImf-2_2");
-        println!("cargo:rustc-link-lib=static=IlmImfUtil-2_2");
-        println!("cargo:rustc-link-lib=static=IexMath-2_2");
-        println!("cargo:rustc-link-lib=static=Iex-2_2");
-        println!("cargo:rustc-link-lib=static=Imath-2_2");
-        println!("cargo:rustc-link-lib=static=IlmThread-2_2");
-        println!("cargo:rustc-link-lib=static=Half");
-        vec![PathBuf::from(&format!("{}/include", path))]
-    } else {
-        // There's no enviroment variable, so use pkgconfig to find
-        // the libs
-        let openexr_include_paths = pkg_config::Config::new()
-            .atleast_version("2.0.0")
-            .probe("OpenEXR")
-            .map(|openexr_cfg| openexr_cfg.include_paths.clone())
-            .map_err(|err| {
-                         panic!("couldn't find OpenEXR: environment variable \
-                OPENEXR_DIR is unset and pkg-config failed: {}",
-                                err)
-                     })
-            .unwrap();
+    let include_paths = {
+        let mut include_paths = Vec::new();
 
-        let ilmbase_include_paths = pkg_config::Config::new()
-            .atleast_version("2.0.0")
-            .cargo_metadata(false)
-            .probe("IlmBase")
-            .map(|ilmbase_cfg| ilmbase_cfg.include_paths.clone())
-            .map_err(|err| {
-                         panic!("couldn't find IlmBase: environment variable \
-                OPENEXR_DIR is unset and pkg-config failed: {}",
-                                err)
-                     })
-            .unwrap();
+        if let Ok(path) = env::var("OPENEXR_DIR") {
+            // There's an environment variable, so let's use that
+            println!("cargo:rustc-link-search=native={}/lib", path);
+            println!("cargo:rustc-link-lib=static=IlmImf");
+            println!("cargo:rustc-link-lib=static=IlmImfUtil");
+            include_paths.push(PathBuf::from(&format!("{}/include/OpenEXR", path)));
+        } else {
+            // There's no enviroment variable, so use pkgconfig to find
+            // the libs
+            let paths = pkg_config::Config::new()
+                .atleast_version("2.0.0")
+                .probe("OpenEXR")
+                .map(|openexr_cfg| openexr_cfg.include_paths.clone())
+                .map_err(|err| {
+                    panic!("couldn't find OpenEXR: environment variable \
+                            OPENEXR_DIR is unset and pkg-config failed: {}",
+                           err)
+                })
+                .unwrap();
 
-        let mut include_paths = vec![];
-        include_paths.extend_from_slice(&ilmbase_include_paths);
-        include_paths.extend_from_slice(&openexr_include_paths);
+            include_paths.extend_from_slice(&paths);
+        }
+
+        if let Ok(path) = env::var("ILMBASE_DIR") {
+            println!("cargo:rustc-link-search=native={}/lib", path);
+            println!("cargo:rustc-link-lib=static=IexMath");
+            println!("cargo:rustc-link-lib=static=Iex");
+            println!("cargo:rustc-link-lib=static=Imath");
+            println!("cargo:rustc-link-lib=static=IlmThread");
+            println!("cargo:rustc-link-lib=static=Half");
+            include_paths.push(PathBuf::from(&format!("{}/include/OpenEXR", path)));
+        } else {
+            let paths = pkg_config::Config::new()
+                .atleast_version("2.0.0")
+                .cargo_metadata(false) // OpenEXR already pulls in all the flags we need
+                .probe("IlmBase")
+                .map(|ilmbase_cfg| ilmbase_cfg.include_paths.clone())
+                .map_err(|err| {
+                    panic!("couldn't find IlmBase: environment variable \
+                            OPENEXR_DIR is unset and pkg-config failed: {}",
+                           err)
+                })
+                .unwrap();
+            include_paths.extend_from_slice(&paths);
+        }
+
         include_paths
     };
 
