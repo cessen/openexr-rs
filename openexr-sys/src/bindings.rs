@@ -99,6 +99,44 @@ pub enum CEXR_Compression {
     DWAB_COMPRESSION = 9,
 }
 #[repr(C)]
+#[derive(Debug, Copy)]
+pub struct CEXR_Channel {
+    pub pixel_type: CEXR_PixelType,
+    pub x_sampling: ::std::os::raw::c_int,
+    pub y_sampling: ::std::os::raw::c_int,
+    pub p_linear: bool,
+}
+#[test]
+fn bindgen_test_layout_CEXR_Channel() {
+    assert_eq!(::std::mem::size_of::<CEXR_Channel>() , 16usize , concat ! (
+               "Size of: " , stringify ! ( CEXR_Channel ) ));
+    assert_eq! (::std::mem::align_of::<CEXR_Channel>() , 4usize , concat ! (
+                "Alignment of " , stringify ! ( CEXR_Channel ) ));
+    assert_eq! (unsafe {
+                & ( * ( 0 as * const CEXR_Channel ) ) . pixel_type as * const
+                _ as usize } , 0usize , concat ! (
+                "Alignment of field: " , stringify ! ( CEXR_Channel ) , "::" ,
+                stringify ! ( pixel_type ) ));
+    assert_eq! (unsafe {
+                & ( * ( 0 as * const CEXR_Channel ) ) . x_sampling as * const
+                _ as usize } , 4usize , concat ! (
+                "Alignment of field: " , stringify ! ( CEXR_Channel ) , "::" ,
+                stringify ! ( x_sampling ) ));
+    assert_eq! (unsafe {
+                & ( * ( 0 as * const CEXR_Channel ) ) . y_sampling as * const
+                _ as usize } , 8usize , concat ! (
+                "Alignment of field: " , stringify ! ( CEXR_Channel ) , "::" ,
+                stringify ! ( y_sampling ) ));
+    assert_eq! (unsafe {
+                & ( * ( 0 as * const CEXR_Channel ) ) . p_linear as * const _
+                as usize } , 12usize , concat ! (
+                "Alignment of field: " , stringify ! ( CEXR_Channel ) , "::" ,
+                stringify ! ( p_linear ) ));
+}
+impl Clone for CEXR_Channel {
+    fn clone(&self) -> Self { *self }
+}
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct CEXR_InputFile {
     _unused: [u8; 0],
@@ -123,6 +161,11 @@ pub struct CEXR_FrameBuffer {
 pub struct CEXR_IStream {
     _unused: [u8; 0],
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CEXR_ChannelListIter {
+    _unused: [u8; 0],
+}
 extern "C" {
     pub fn CEXR_IStream_from_memory(filename: *const ::std::os::raw::c_char,
                                     data: *mut ::std::os::raw::c_char,
@@ -130,6 +173,14 @@ extern "C" {
 }
 extern "C" {
     pub fn CEXR_IStream_delete(stream: *mut CEXR_IStream);
+}
+extern "C" {
+    pub fn CEXR_ChannelListIter_next(iter: *mut CEXR_ChannelListIter,
+                                     name: *mut *const ::std::os::raw::c_char,
+                                     channel: *mut CEXR_Channel) -> bool;
+}
+extern "C" {
+    pub fn CEXR_ChannelListIter_delete(iter: *mut CEXR_ChannelListIter);
 }
 extern "C" {
     pub fn CEXR_Header_new(displayWindow: *const CEXR_Box2i,
@@ -141,6 +192,15 @@ extern "C" {
 }
 extern "C" {
     pub fn CEXR_Header_delete(header: *mut CEXR_Header);
+}
+extern "C" {
+    pub fn CEXR_Header_insert_channel(header: *mut CEXR_Header,
+                                      name: *const ::std::os::raw::c_char,
+                                      channel: CEXR_Channel);
+}
+extern "C" {
+    pub fn CEXR_Header_channel_list_iter(header: *const CEXR_Header)
+     -> *mut CEXR_ChannelListIter;
 }
 extern "C" {
     pub fn CEXR_Header_display_window(header: *const CEXR_Header)

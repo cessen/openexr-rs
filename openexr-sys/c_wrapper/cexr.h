@@ -2,6 +2,7 @@
 #define CEXR_H_
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,15 @@ typedef enum CEXR_Compression {
     DWAB_COMPRESSION = 9,
 } CEXR_Compression;
 
+// IlmImf/ImfChannelList.h
+// Changed element names slightly to adhere to Rust naming conventions.
+typedef struct CEXR_Channel {
+    CEXR_PixelType pixel_type;
+    int x_sampling;
+    int y_sampling;
+    bool p_linear;
+} CEXR_Channel;
+
 
 // Opaque types
 typedef struct CEXR_InputFile CEXR_InputFile;
@@ -55,10 +65,15 @@ typedef struct CEXR_OutputFile CEXR_OutputFile;
 typedef struct CEXR_Header CEXR_Header;
 typedef struct CEXR_FrameBuffer CEXR_FrameBuffer;
 typedef struct CEXR_IStream CEXR_IStream;
+typedef struct CEXR_ChannelListIter CEXR_ChannelListIter;
 
 
 CEXR_IStream *CEXR_IStream_from_memory(const char *filename, char *data, size_t size);
 void CEXR_IStream_delete(CEXR_IStream *stream);
+
+bool CEXR_ChannelListIter_next(CEXR_ChannelListIter *iter, const char **name, CEXR_Channel *channel);
+void CEXR_ChannelListIter_delete(CEXR_ChannelListIter *iter);
+
 CEXR_Header *CEXR_Header_new(const CEXR_Box2i *displayWindow,
 	                         const CEXR_Box2i *dataWindow,
 	                         float pixelAspectRatio,
@@ -67,6 +82,8 @@ CEXR_Header *CEXR_Header_new(const CEXR_Box2i *displayWindow,
 	                         CEXR_LineOrder lineOrder,
                              CEXR_Compression compression);
 void CEXR_Header_delete(CEXR_Header *header);
+void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel);
+CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_data_window(const CEXR_Header *header);
 
