@@ -208,7 +208,7 @@ impl<'a> Drop for InputFile<'a> {
 pub struct OutputFile<'a> {
     handle: *mut CEXR_OutputFile,
     header_handle: *mut CEXR_Header,
-    _phantom: PhantomData<&'a ()>,
+    _phantom: PhantomData<&'a mut ()>,
 }
 
 impl<'a> OutputFile<'a> {
@@ -263,7 +263,7 @@ impl<'a> OutputFile<'a> {
         }
     }
 
-    pub fn write_pixels(&self, framebuffer: &mut FrameBuffer) -> Result<()> {
+    pub fn write_pixels(&self, framebuffer: &FrameBuffer) -> Result<()> {
         let w = self.data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions.0 - 1 ||
            (w.max.y - w.min.y) as usize != framebuffer.dimensions.1 - 1 {
