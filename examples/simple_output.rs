@@ -16,7 +16,7 @@ fn main() {
                                              &[("R", PixelType::FLOAT),
                                                ("G", PixelType::FLOAT),
                                                ("B", PixelType::FLOAT)],
-                                             Compression::NO_COMPRESSION)
+                                             Compression::PIZ_COMPRESSION)
             .unwrap();
 
     let mut fb = {
