@@ -32,8 +32,8 @@ void CEXR_IStream_delete(CEXR_IStream *stream) {
 //----------------------------------------------------
 // Header
 
-CEXR_Header* CEXR_Header_new(CEXR_Box2i *displayWindow,
-                             CEXR_Box2i *dataWindow,
+CEXR_Header* CEXR_Header_new(const CEXR_Box2i *displayWindow,
+                             const CEXR_Box2i *dataWindow,
                              float pixelAspectRatio,
                              const CEXR_V2f *screenWindowCenter,
                              float screenWindowWidth,
@@ -47,6 +47,11 @@ CEXR_Header* CEXR_Header_new(CEXR_Box2i *displayWindow,
 	                            static_cast<LineOrder>(lineOrder),
                                 static_cast<Compression>(compression));
     return reinterpret_cast<CEXR_Header *>(header);
+}
+
+void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel) {
+    auto h = reinterpret_cast<Header*>(header);
+    h->channels().insert(name, *reinterpret_cast<const Channel *>(&channel));
 }
 
 void CEXR_Header_delete(CEXR_Header *header) {

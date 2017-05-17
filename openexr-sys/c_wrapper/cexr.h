@@ -2,6 +2,7 @@
 #define CEXR_H_
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,15 @@ typedef enum CEXR_Compression {
     DWAB_COMPRESSION = 9,
 } CEXR_Compression;
 
+// IlmImf/ImfChannelList.h
+// Changed element names slightly to adhere to Rust naming conventions.
+typedef struct CEXR_Channel {
+    CEXR_PixelType pixel_type;
+    int x_sampling;
+    int y_sampling;
+    bool p_linear;
+} CEXR_Channel;
+
 
 // Opaque types
 typedef struct CEXR_InputFile CEXR_InputFile;
@@ -67,6 +77,7 @@ CEXR_Header *CEXR_Header_new(const CEXR_Box2i *displayWindow,
 	                         CEXR_LineOrder lineOrder,
                              CEXR_Compression compression);
 void CEXR_Header_delete(CEXR_Header *header);
+void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel);
 const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_data_window(const CEXR_Header *header);
 

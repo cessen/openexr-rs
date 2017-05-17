@@ -214,6 +214,7 @@ pub struct OutputFile<'a> {
 impl<'a> OutputFile<'a> {
     pub fn from_file(path: &Path,
                      resolution: (u32, u32),
+                     channels: &[(&str, PixelType)],
                      compression: Compression)
                      -> Result<OutputFile<'static>> {
         // Create header
@@ -230,7 +231,7 @@ impl<'a> OutputFile<'a> {
             let screen_window_center = CEXR_V2f { x: 0.0, y: 0.0 };
             let screen_window_width = 1.0;
             let line_order = LineOrder::INCREASING_Y;
-            unsafe {
+            let header = unsafe {
                 CEXR_Header_new(&display_window,
                                 &data_window,
                                 pixel_aspect_ratio,
@@ -238,7 +239,18 @@ impl<'a> OutputFile<'a> {
                                 screen_window_width,
                                 line_order,
                                 compression)
+            };
+            for &(name, pixel_type) in channels.iter() {
+                let channel_description = CEXR_Channel {
+                    pixel_type: pixel_type,
+                    x_sampling: 1,
+                    y_sampling: 1,
+                    p_linear: true,
+                };
+                let cname = CString::new(name.as_bytes()).unwrap();
+                unsafe { CEXR_Header_insert_channel(header, cname.as_ptr(), channel_description) };
             }
+            header
         };
 
         // Create file
@@ -275,7 +287,11 @@ impl<'a> OutputFile<'a> {
         }
         unsafe { CEXR_OutputFile_set_framebuffer(self.handle, framebuffer.handle) };
         let mut error_out = ptr::null();
-        let error = unsafe { CEXR_OutputFile_write_pixels(self.handle, w.max.y, &mut error_out) };
+        let error = unsafe {
+            CEXR_OutputFile_write_pixels(self.handle,
+                                         framebuffer.dimensions.1 as i32,
+                                         &mut error_out)
+        };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
