@@ -3,7 +3,7 @@ members = ["openexr-sys"]
 
 [package]
 name = "openexr"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Nathan Vegdahl <cessen@cessen.com>"]
 repository = "https://github.com/cessen/openexr-rs"
 readme = "README.md"
