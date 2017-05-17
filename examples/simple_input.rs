@@ -10,6 +10,9 @@ fn main() {
     let width = window.max.x - window.min.x + 1;
     let height = window.max.y - window.min.y + 1;
 
+    let channels = re.channels().collect::<Vec<_>>();
+    println!("Channels: {:#?}", channels);
+
     let mut pixel_data: Vec<(f32, f32, f32)> = vec![(0.0, 0.0, 0.0); (width*height) as usize];
 
     {

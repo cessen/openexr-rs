@@ -2,6 +2,7 @@ extern crate libc;
 extern crate openexr_sys;
 
 use std::{mem, ptr, error, fmt};
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::ffi::{CString, CStr};
 use std::marker::PhantomData;
@@ -11,6 +12,7 @@ use libc::{c_char, c_int};
 use openexr_sys::*;
 
 pub use openexr_sys::CEXR_PixelType as PixelType;
+pub use openexr_sys::CEXR_Channel as Channel;
 pub use openexr_sys::CEXR_LineOrder as LineOrder;
 pub use openexr_sys::CEXR_Compression as Compression;
 pub use openexr_sys::CEXR_Box2i as Box2i;
@@ -101,6 +103,7 @@ unsafe impl PixelStruct for (f32, f32, f32, f32) {
 #[allow(dead_code)]
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
+    channel_list: BTreeMap<String, Channel>,
     istream: Option<IStream<'a>>,
     _phantom: PhantomData<CEXR_InputFile>,
 }
@@ -121,6 +124,7 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
+                   channel_list: BTreeMap::new(),
                    istream: None,
                    _phantom: PhantomData,
                })
@@ -139,6 +143,7 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
+                   channel_list: BTreeMap::new(),
                    istream: Some(istream),
                    _phantom: PhantomData,
                })
@@ -174,6 +179,14 @@ impl<'a> InputFile<'a> {
     pub fn display_window(&self) -> &Box2i {
         unsafe { &*CEXR_Header_display_window(CEXR_InputFile_header(self.handle)) }
     }
+
+    pub fn channels<'b>(&'b self) -> ChannelIter<'b> {
+        ChannelIter {
+            iterator: unsafe { CEXR_Header_channel_list_iter(CEXR_InputFile_header(self.handle)) },
+            _phantom_1: PhantomData,
+            _phantom_2: PhantomData,
+        }
+    }
 }
 
 impl<'a> Drop for InputFile<'a> {
@@ -181,6 +194,41 @@ impl<'a> Drop for InputFile<'a> {
         unsafe { CEXR_InputFile_delete(self.handle) };
     }
 }
+
+pub struct ChannelIter<'a> {
+    iterator: *mut CEXR_ChannelListIter,
+    _phantom_1: PhantomData<CEXR_ChannelListIter>,
+    _phantom_2: PhantomData<&'a InputFile<'a>>,
+}
+
+impl<'a> Drop for ChannelIter<'a> {
+    fn drop(&mut self) {
+        unsafe { CEXR_ChannelListIter_delete(self.iterator) };
+    }
+}
+
+impl<'a> Iterator for ChannelIter<'a> {
+    type Item = Result<(&'a str, Channel)>;
+    fn next(&mut self) -> Option<Result<(&'a str, Channel)>> {
+        let mut name = unsafe { std::mem::uninitialized() };
+        let mut channel = unsafe { std::mem::uninitialized() };
+        if unsafe { CEXR_ChannelListIter_next(self.iterator, &mut name, &mut channel) } {
+            // TODO: use CStr::from_bytes_with_nul() instead to avoid memory unsafety
+            // if the string is not nul terminated.
+            let cname = unsafe { CStr::from_ptr(name) };
+            let str_name = cname.to_str();
+            if let Ok(n) = str_name {
+                Some(Ok((n, channel)))
+            } else {
+                Some(Err(Error::Generic(format!("Invalid channel name: {:?}", cname))))
+            }
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> ChannelIter<'a> {}
 
 struct IStream<'a> {
     handle: *mut CEXR_IStream,

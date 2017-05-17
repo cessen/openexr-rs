@@ -30,6 +30,30 @@ void CEXR_IStream_delete(CEXR_IStream *stream) {
 
 
 //----------------------------------------------------
+// ChannelListIter
+
+struct CEXR_ChannelListIter {
+    ChannelList::ConstIterator begin;
+    ChannelList::ConstIterator end;
+};
+
+bool CEXR_ChannelListIter_next(CEXR_ChannelListIter *iter, const char **name, CEXR_Channel *channel) {
+    if (iter->begin == iter->end) {
+        return false;
+    } else {
+        *name = iter->begin.name();
+        *channel = *reinterpret_cast<const CEXR_Channel *>(&(iter->begin.channel()));
+        iter->begin++;
+        return true;
+    }
+}
+
+void CEXR_ChannelListIter_delete(CEXR_ChannelListIter *iter) {
+    delete iter;
+}
+
+
+//----------------------------------------------------
 // Header
 
 CEXR_Header* CEXR_Header_new(const CEXR_Box2i *displayWindow,
@@ -52,6 +76,13 @@ CEXR_Header* CEXR_Header_new(const CEXR_Box2i *displayWindow,
 void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel) {
     auto h = reinterpret_cast<Header*>(header);
     h->channels().insert(name, *reinterpret_cast<const Channel *>(&channel));
+}
+
+CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header) {
+    CEXR_ChannelListIter *channel_iter = new CEXR_ChannelListIter();
+    channel_iter->begin = reinterpret_cast<const Header *>(header)->channels().begin();
+    channel_iter->end = reinterpret_cast<const Header *>(header)->channels().end();
+    return channel_iter;
 }
 
 void CEXR_Header_delete(CEXR_Header *header) {
