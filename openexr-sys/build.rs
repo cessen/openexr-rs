@@ -9,11 +9,17 @@ fn main() {
     let include_paths = {
         let mut include_paths = Vec::new();
 
+        let suffix = if let Ok(v) = env::var("OPENEXR_LIB_SUFFIX") {
+            format!("-{}", v)
+        } else {
+            "".into()
+        };
+
         if let Ok(path) = env::var("OPENEXR_DIR") {
             // There's an environment variable, so let's use that
             println!("cargo:rustc-link-search=native={}/lib", path);
-            println!("cargo:rustc-link-lib=static=IlmImf");
-            println!("cargo:rustc-link-lib=static=IlmImfUtil");
+            println!("cargo:rustc-link-lib=static=IlmImf{}", suffix);
+            println!("cargo:rustc-link-lib=static=IlmImfUtil{}", suffix);
             include_paths.push(PathBuf::from(&format!("{}/include/OpenEXR", path)));
         } else {
             // There's no enviroment variable, so use pkgconfig to find
@@ -34,10 +40,10 @@ fn main() {
 
         if let Ok(path) = env::var("ILMBASE_DIR") {
             println!("cargo:rustc-link-search=native={}/lib", path);
-            println!("cargo:rustc-link-lib=static=IexMath");
-            println!("cargo:rustc-link-lib=static=Iex");
-            println!("cargo:rustc-link-lib=static=Imath");
-            println!("cargo:rustc-link-lib=static=IlmThread");
+            println!("cargo:rustc-link-lib=static=IexMath{}", suffix);
+            println!("cargo:rustc-link-lib=static=Iex{}", suffix);
+            println!("cargo:rustc-link-lib=static=Imath{}", suffix);
+            println!("cargo:rustc-link-lib=static=IlmThread{}", suffix);
             println!("cargo:rustc-link-lib=static=Half");
             include_paths.push(PathBuf::from(&format!("{}/include/OpenEXR", path)));
         } else {

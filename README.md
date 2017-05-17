@@ -15,11 +15,13 @@ a few unsafe API's as well that expose more nitty-gritty.
 
 ## Status
 
-This repo currently works on at least Linux, but may work on other OS's as
-well.  You will need OpenEXR and zlib installed on your system.  You can
-specify the prefixes the libraries are installed to with the OPENEXR_DIR and
-ZLIB_DIR environment variables.  If unset, pkgconfig will be used to
-try to find the libraries automatically.
+This repo currently works on at least Linux, but may work on other OS's as well.
+You will need OpenEXR and zlib installed on your system.  You can specify the
+prefixes the libraries are installed to with the ILMBASE_DIR, OPENEXR_DIR, and
+ZLIB_DIR environment variables.  Depending on how your OpenEXR was built, you
+may need to set OPENEXR_LIB_SUFFIX to a value such as "2_2". If an _DIR variable
+is unset, pkgconfig will be used to try to find the corresponding library
+automatically.
 
 The beginnings of bindings to the scanline input/output classes are there
 and partially working.  These bindings are not yet useful for anything,
