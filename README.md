@@ -17,8 +17,8 @@ a few unsafe API's as well that expose more nitty-gritty.
 
 This repo currently works on at least Linux, but may work on other OS's as
 well.  You will need OpenEXR and zlib installed on your system.  You can
-specify the paths where the libraries are with the OPENEXR_LIBRARY and
-ZLIB_LIBRARY environment variables.  Otherwise pkgconfig will be used to
+specify the prefixes the libraries are installed to with the OPENEXR_DIR and
+ZLIB_DIR environment variables.  If unset, pkgconfig will be used to
 try to find the libraries automatically.
 
 The beginnings of bindings to the scanline input/output classes are there

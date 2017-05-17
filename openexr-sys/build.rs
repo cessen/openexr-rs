@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 fn main() {
     // Find and link OpenEXR and IlmBase
-    let include_paths = if let Ok(path) = env::var("OPENEXR_LIBRARY") {
+    let include_paths = if let Ok(path) = env::var("OPENEXR_DIR") {
         // There's an environment variable, so let's use that
         println!("cargo:rustc-link-search=native={}/lib", path);
         println!("cargo:rustc-link-lib=static=IlmImf-2_2");
@@ -26,7 +26,7 @@ fn main() {
             .map(|openexr_cfg| openexr_cfg.include_paths.clone())
             .map_err(|err| {
                          panic!("couldn't find OpenEXR: environment variable \
-                OPENEXR_LIBRARY is unset and pkg-config failed: {}",
+                OPENEXR_DIR is unset and pkg-config failed: {}",
                                 err)
                      })
             .unwrap();
@@ -38,7 +38,7 @@ fn main() {
             .map(|ilmbase_cfg| ilmbase_cfg.include_paths.clone())
             .map_err(|err| {
                          panic!("couldn't find IlmBase: environment variable \
-                OPENEXR_LIBRARY is unset and pkg-config failed: {}",
+                OPENEXR_DIR is unset and pkg-config failed: {}",
                                 err)
                      })
             .unwrap();
@@ -51,11 +51,11 @@ fn main() {
 
     // Find and link zlib, needed for OpenEXR
     // Use environment variable if it exists, and otherwise use pkgconfig.
-    if let Ok(path) = env::var("ZLIB_LIBRARY") {
-        println!("cargo:rustc-link-search=native={}", path);
+    if let Ok(path) = env::var("ZLIB_DIR") {
+        println!("cargo:rustc-link-search=native={}/lib", path);
         println!("cargo:rustc-link-lib=static=zlibstatic");
     } else if let Err(err) = pkg_config::probe_library("zlib") {
-        panic!("couldn't find zlib: environment variable ZLIB_LIBRARY is unset \
+        panic!("couldn't find zlib: environment variable ZLIB_DIR is unset \
             and pkg-config failed: {}",
                err);
     }
