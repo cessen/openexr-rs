@@ -104,7 +104,7 @@ pub struct IStream<'a> {
 }
 
 impl<'a> IStream<'a> {
-    pub fn from_slice(slice: &[u8]) -> Self {
+    pub fn from_slice<'b>(slice: &'b [u8]) -> IStream<'b> {
         IStream {
             handle: unsafe {
                 CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
@@ -126,7 +126,8 @@ impl<'a> Drop for IStream<'a> {
 
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
-    _phantom: PhantomData<&'a ()>,
+    _phantom_1: PhantomData<CEXR_InputFile>,
+    _phantom_2: PhantomData<&'a IStream<'a>>,
 }
 
 impl<'a> InputFile<'a> {
@@ -145,7 +146,8 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
-                   _phantom: PhantomData,
+                   _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }
@@ -161,7 +163,8 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
-                   _phantom: PhantomData,
+                   _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }
@@ -205,18 +208,19 @@ impl<'a> Drop for InputFile<'a> {
 
 // ------------------------------------------------------------------------------
 
-pub struct OutputFile<'a> {
+pub struct OutputFile {
     handle: *mut CEXR_OutputFile,
     header_handle: *mut CEXR_Header,
-    _phantom: PhantomData<&'a ()>,
+    _phantom_1: PhantomData<CEXR_OutputFile>,
+    _phantom_2: PhantomData<CEXR_Header>,
 }
 
-impl<'a> OutputFile<'a> {
+impl OutputFile {
     pub fn from_file(path: &Path,
                      resolution: (u32, u32),
                      channels: &[(&str, PixelType)],
                      compression: Compression)
-                     -> Result<OutputFile<'static>> {
+                     -> Result<OutputFile> {
         // Create header
         let header = {
             let display_window = Box2i {
@@ -270,7 +274,8 @@ impl<'a> OutputFile<'a> {
             Ok(OutputFile {
                    handle: out,
                    header_handle: header,
-                   _phantom: PhantomData,
+                   _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }
@@ -309,7 +314,7 @@ impl<'a> OutputFile<'a> {
     }
 }
 
-impl<'a> Drop for OutputFile<'a> {
+impl Drop for OutputFile {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
         unsafe { CEXR_Header_delete(self.header_handle) };
@@ -321,7 +326,8 @@ impl<'a> Drop for OutputFile<'a> {
 pub struct FrameBuffer<'a> {
     handle: *mut CEXR_FrameBuffer,
     dimensions: (usize, usize),
-    _phantom: PhantomData<&'a mut ()>,
+    _phantom_1: PhantomData<CEXR_FrameBuffer>,
+    _phantom_2: PhantomData<&'a mut ()>,
 }
 
 impl<'a> FrameBuffer<'a> {
@@ -329,7 +335,8 @@ impl<'a> FrameBuffer<'a> {
         FrameBuffer {
             handle: unsafe { CEXR_FrameBuffer_new() },
             dimensions: (width, height),
-            _phantom: PhantomData,
+            _phantom_1: PhantomData,
+            _phantom_2: PhantomData,
         }
     }
 
@@ -374,9 +381,7 @@ impl<'a> FrameBuffer<'a> {
         };
     }
 
-    pub fn insert_pixels<'b, T: PixelStruct>(&mut self,
-                                             channels: &[(&'b str, f64)],
-                                             data: &'a mut [T]) {
+    pub fn insert_pixels<T: PixelStruct>(&mut self, channels: &[(&str, f64)], data: &'a mut [T]) {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
