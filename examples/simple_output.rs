@@ -1,9 +1,7 @@
 extern crate openexr;
 
-use std::slice;
 use std::iter;
 use std::path::Path;
-use std::mem;
 
 use openexr::{FrameBuffer, OutputFile, PixelType, Compression};
 
@@ -26,5 +24,5 @@ fn main() {
         fb
     };
 
-    exr_file.write_pixels(&mut fb);
+    exr_file.write_pixels(&mut fb).unwrap();
 }

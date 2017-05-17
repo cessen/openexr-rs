@@ -98,36 +98,11 @@ unsafe impl PixelStruct for (f32, f32, f32, f32) {
 
 // ------------------------------------------------------------------------------
 
-pub struct IStream<'a> {
-    handle: *mut CEXR_IStream,
-    _phantom: PhantomData<&'a ()>,
-}
-
-impl<'a> IStream<'a> {
-    pub fn from_slice<'b>(slice: &'b [u8]) -> IStream<'b> {
-        IStream {
-            handle: unsafe {
-                CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
-                                         slice.as_ptr() as *mut u8 as *mut c_char,
-                                         slice.len())
-            },
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl<'a> Drop for IStream<'a> {
-    fn drop(&mut self) {
-        unsafe { CEXR_IStream_delete(self.handle) };
-    }
-}
-
-// ------------------------------------------------------------------------------
-
+#[allow(dead_code)]
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
-    _phantom_1: PhantomData<CEXR_InputFile>,
-    _phantom_2: PhantomData<&'a IStream<'a>>,
+    istream: Option<IStream<'a>>,
+    _phantom: PhantomData<CEXR_InputFile>,
 }
 
 impl<'a> InputFile<'a> {
@@ -146,25 +121,26 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
-                   _phantom_1: PhantomData,
-                   _phantom_2: PhantomData,
+                   istream: None,
+                   _phantom: PhantomData,
                })
         }
     }
 
-    pub fn from_stream(stream: &'a IStream) -> Result<InputFile<'a>> {
+    pub fn from_memory(slice: &'a [u8]) -> Result<InputFile<'a>> {
+        let istream = IStream::from_slice(slice);
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
         let error =
-            unsafe { CEXR_InputFile_from_stream(stream.handle, 1, &mut out, &mut error_out) };
+            unsafe { CEXR_InputFile_from_stream(istream.handle, 1, &mut out, &mut error_out) };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
             Ok(InputFile {
                    handle: out,
-                   _phantom_1: PhantomData,
-                   _phantom_2: PhantomData,
+                   istream: Some(istream),
+                   _phantom: PhantomData,
                })
         }
     }
@@ -203,6 +179,30 @@ impl<'a> InputFile<'a> {
 impl<'a> Drop for InputFile<'a> {
     fn drop(&mut self) {
         unsafe { CEXR_InputFile_delete(self.handle) };
+    }
+}
+
+struct IStream<'a> {
+    handle: *mut CEXR_IStream,
+    _phantom: PhantomData<&'a ()>,
+}
+
+impl<'a> IStream<'a> {
+    fn from_slice(slice: &'a [u8]) -> IStream<'a> {
+        IStream {
+            handle: unsafe {
+                CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
+                                         slice.as_ptr() as *mut u8 as *mut c_char,
+                                         slice.len())
+            },
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<'a> Drop for IStream<'a> {
+    fn drop(&mut self) {
+        unsafe { CEXR_IStream_delete(self.handle) };
     }
 }
 
@@ -280,7 +280,7 @@ impl OutputFile {
         }
     }
 
-    pub fn write_pixels(&self, framebuffer: &mut FrameBuffer) -> Result<()> {
+    pub fn write_pixels(&mut self, framebuffer: &mut FrameBuffer) -> Result<()> {
         let w = self.data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions.0 - 1 ||
            (w.max.y - w.min.y) as usize != framebuffer.dimensions.1 - 1 {
