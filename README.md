@@ -13,17 +13,19 @@ Convenient and safe API's will be provided for most functionality.  However,
 to provide the full flexibility of the underlying C++ library, there may be
 a few unsafe API's as well that expose more nitty-gritty.
 
+## Using
+
+You will need builds of OpenEXR and zlib available.  You can specify the
+prefixes the libraries are installed to with the ILMBASE_DIR, OPENEXR_DIR, and
+ZLIB_DIR environment variables.  Depending on how your OpenEXR was built, you
+may also need to set OPENEXR_LIB_SUFFIX to a value such as "2_2".  If an _DIR
+variable is unset, pkgconfig will be used to try to find the corresponding
+library automatically.
+
 ## Status
 
-This repo currently works on at least Linux, but may work on other OS's as
-well.  You will need OpenEXR and zlib installed on your system.  You can
-specify the paths where the libraries are with the OPENEXR_LIBRARY and
-ZLIB_LIBRARY environment variables.  Otherwise pkgconfig will be used to
-try to find the libraries automatically.
-
-The beginnings of bindings to the scanline input/output classes are there
-and partially working.  These bindings are not yet useful for anything,
-but we're working on it!
+This library has been tested on Linux and Windows.  Basic I/O is supported,
+including reading from memory.
 
 ## TODO
 

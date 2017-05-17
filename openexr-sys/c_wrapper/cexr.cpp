@@ -2,15 +2,15 @@
 
 #include <cstdint>
 #include <cstddef>
-#include "OpenEXR/ImathVec.h"
-#include "OpenEXR/ImathBox.h"
-#include "OpenEXR/ImfPixelType.h"
-#include "OpenEXR/ImfChannelList.h"
-#include "OpenEXR/ImfHeader.h"
-#include "OpenEXR/ImfFrameBuffer.h"
-#include "OpenEXR/ImfOutputFile.h"
-#include "OpenEXR/ImfInputFile.h"
-#include "OpenEXR/Iex.h"
+#include "ImathVec.h"
+#include "ImathBox.h"
+#include "ImfPixelType.h"
+#include "ImfChannelList.h"
+#include "ImfHeader.h"
+#include "ImfFrameBuffer.h"
+#include "ImfOutputFile.h"
+#include "ImfInputFile.h"
+#include "Iex.h"
 
 #include "memory_istream.hpp"
 

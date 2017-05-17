@@ -75,11 +75,11 @@ bool CEXR_ChannelListIter_next(CEXR_ChannelListIter *iter, const char **name, CE
 void CEXR_ChannelListIter_delete(CEXR_ChannelListIter *iter);
 
 CEXR_Header *CEXR_Header_new(const CEXR_Box2i *displayWindow,
-	                         const CEXR_Box2i *dataWindow,
-	                         float pixelAspectRatio,
-	                         const CEXR_V2f *screenWindowCenter,
-	                         float screenWindowWidth,
-	                         CEXR_LineOrder lineOrder,
+                             const CEXR_Box2i *dataWindow,
+                             float pixelAspectRatio,
+                             const CEXR_V2f *screenWindowCenter,
+                             float screenWindowWidth,
+                             CEXR_LineOrder lineOrder,
                              CEXR_Compression compression);
 void CEXR_Header_delete(CEXR_Header *header);
 void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel);

@@ -1,7 +1,7 @@
 #ifndef CEXR_MEMORY_ISTREAM_H_
 #define CEXR_MEMORY_ISTREAM_H_
 
-#include "OpenEXR/ImfIO.h"
+#include "ImfIO.h"
 
 #include <cstddef>
 
