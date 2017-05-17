@@ -32,8 +32,8 @@ void CEXR_IStream_delete(CEXR_IStream *stream) {
 //----------------------------------------------------
 // Header
 
-CEXR_Header* CEXR_Header_new(CEXR_Box2i *displayWindow,
-                             CEXR_Box2i *dataWindow,
+CEXR_Header* CEXR_Header_new(const CEXR_Box2i *displayWindow,
+                             const CEXR_Box2i *dataWindow,
                              float pixelAspectRatio,
                              const CEXR_V2f *screenWindowCenter,
                              float screenWindowWidth,

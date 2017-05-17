@@ -60,11 +60,11 @@ typedef struct CEXR_IStream CEXR_IStream;
 CEXR_IStream *CEXR_IStream_from_memory(const char *filename, char *data, size_t size);
 void CEXR_IStream_delete(CEXR_IStream *stream);
 CEXR_Header *CEXR_Header_new(const CEXR_Box2i *displayWindow,
-	                         const CEXR_Box2i *dataWindow,
-	                         float pixelAspectRatio,
-	                         const CEXR_V2f *screenWindowCenter,
-	                         float screenWindowWidth,
-	                         CEXR_LineOrder lineOrder,
+                             const CEXR_Box2i *dataWindow,
+                             float pixelAspectRatio,
+                             const CEXR_V2f *screenWindowCenter,
+                             float screenWindowWidth,
+                             CEXR_LineOrder lineOrder,
                              CEXR_Compression compression);
 void CEXR_Header_delete(CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *header);
