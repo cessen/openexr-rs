@@ -89,11 +89,39 @@ void CEXR_Header_delete(CEXR_Header *header) {
     delete reinterpret_cast<Header *>(header);
 }
 
-const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *file) {
-    return reinterpret_cast<const CEXR_Box2i *>(&reinterpret_cast<const Header *>(file)->displayWindow());
+const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *header) {
+    return reinterpret_cast<const CEXR_Box2i *>(&reinterpret_cast<const Header *>(header)->displayWindow());
 }
-const CEXR_Box2i *CEXR_Header_data_window(const CEXR_Header *file) {
-    return reinterpret_cast<const CEXR_Box2i *>(&reinterpret_cast<const Header *>(file)->dataWindow());
+const CEXR_Box2i *CEXR_Header_data_window(const CEXR_Header *header) {
+    return reinterpret_cast<const CEXR_Box2i *>(&reinterpret_cast<const Header *>(header)->dataWindow());
+}
+
+void CEXR_Header_set_display_window(CEXR_Header *header, CEXR_Box2i window) {
+    *reinterpret_cast<CEXR_Box2i *>(&reinterpret_cast<Header *>(header)->displayWindow()) = window;
+}
+
+void CEXR_Header_set_data_window(CEXR_Header *header, CEXR_Box2i window) {
+    *reinterpret_cast<CEXR_Box2i *>(&reinterpret_cast<Header *>(header)->dataWindow()) = window;
+}
+
+void CEXR_Header_set_pixel_aspect_ratio(CEXR_Header *header, float aspect_ratio) {
+    reinterpret_cast<Header *>(header)->pixelAspectRatio() = aspect_ratio;
+}
+
+void CEXR_Header_set_screen_window_center(CEXR_Header *header, CEXR_V2f center) {
+    *reinterpret_cast<CEXR_V2f *>(&reinterpret_cast<Header *>(header)->screenWindowCenter()) = center;
+}
+
+void CEXR_Header_set_screen_window_width(CEXR_Header *header, float width) {
+    reinterpret_cast<Header *>(header)->screenWindowWidth() = width;
+}
+
+void CEXR_Header_set_line_order(CEXR_Header *header, CEXR_LineOrder line_order) {
+    *reinterpret_cast<CEXR_LineOrder *>(&reinterpret_cast<Header *>(header)->lineOrder()) = line_order;
+}
+
+void CEXR_Header_set_compression(CEXR_Header *header, CEXR_Compression compression) {
+    *reinterpret_cast<CEXR_Compression *>(&reinterpret_cast<Header *>(header)->compression()) = compression;
 }
 
 

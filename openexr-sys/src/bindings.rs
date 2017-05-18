@@ -211,6 +211,34 @@ extern "C" {
      -> *const CEXR_Box2i;
 }
 extern "C" {
+    pub fn CEXR_Header_set_display_window(header: *mut CEXR_Header,
+                                          window: CEXR_Box2i);
+}
+extern "C" {
+    pub fn CEXR_Header_set_data_window(header: *mut CEXR_Header,
+                                       window: CEXR_Box2i);
+}
+extern "C" {
+    pub fn CEXR_Header_set_pixel_aspect_ratio(header: *mut CEXR_Header,
+                                              aspect_ratio: f32);
+}
+extern "C" {
+    pub fn CEXR_Header_set_screen_window_center(header: *mut CEXR_Header,
+                                                center: CEXR_V2f);
+}
+extern "C" {
+    pub fn CEXR_Header_set_screen_window_width(header: *mut CEXR_Header,
+                                               width: f32);
+}
+extern "C" {
+    pub fn CEXR_Header_set_line_order(header: *mut CEXR_Header,
+                                      line_order: CEXR_LineOrder);
+}
+extern "C" {
+    pub fn CEXR_Header_set_compression(header: *mut CEXR_Header,
+                                       compression: CEXR_Compression);
+}
+extern "C" {
     pub fn CEXR_FrameBuffer_new() -> *mut CEXR_FrameBuffer;
 }
 extern "C" {

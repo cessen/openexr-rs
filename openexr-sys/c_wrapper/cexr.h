@@ -86,6 +86,14 @@ void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CE
 CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_data_window(const CEXR_Header *header);
+void CEXR_Header_set_display_window(CEXR_Header *header, CEXR_Box2i window);
+void CEXR_Header_set_data_window(CEXR_Header *header, CEXR_Box2i window);
+void CEXR_Header_set_pixel_aspect_ratio(CEXR_Header *header, float aspect_ratio);
+void CEXR_Header_set_screen_window_center(CEXR_Header *header, CEXR_V2f center);
+void CEXR_Header_set_screen_window_width(CEXR_Header *header, float width);
+void CEXR_Header_set_line_order(CEXR_Header *header, CEXR_LineOrder line_order);
+void CEXR_Header_set_compression(CEXR_Header *header, CEXR_Compression compression);
+
 
 CEXR_FrameBuffer *CEXR_FrameBuffer_new();
 void CEXR_FrameBuffer_delete(CEXR_FrameBuffer *framebuffer);

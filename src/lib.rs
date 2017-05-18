@@ -257,32 +257,25 @@ impl<'a> Drop for IStream<'a> {
 // ------------------------------------------------------------------------------
 
 pub struct OutputFile {
-    handle: *mut CEXR_OutputFile,
     header_handle: *mut CEXR_Header,
     _phantom_1: PhantomData<CEXR_OutputFile>,
     _phantom_2: PhantomData<CEXR_Header>,
 }
 
 impl OutputFile {
-    pub fn from_file(path: &Path,
-                     resolution: (u32, u32),
-                     channels: &[(&str, PixelType)],
-                     compression: Compression)
-                     -> Result<OutputFile> {
+    pub fn new() -> OutputFile {
         // Create header
         let header = {
             let display_window = Box2i {
                 min: CEXR_V2i { x: 0, y: 0 },
-                max: CEXR_V2i {
-                    x: resolution.0 as i32 - 1,
-                    y: resolution.1 as i32 - 1,
-                },
+                max: CEXR_V2i { x: 1, y: 1 },
             };
             let data_window = display_window;
             let pixel_aspect_ratio = 1.0;
             let screen_window_center = CEXR_V2f { x: 0.0, y: 0.0 };
             let screen_window_width = 1.0;
             let line_order = LineOrder::INCREASING_Y;
+            let compression = Compression::PIZ_COMPRESSION;
             let header = unsafe {
                 CEXR_Header_new(&display_window,
                                 &data_window,
@@ -292,19 +285,103 @@ impl OutputFile {
                                 line_order,
                                 compression)
             };
-            for &(name, pixel_type) in channels.iter() {
-                let channel_description = CEXR_Channel {
-                    pixel_type: pixel_type,
-                    x_sampling: 1,
-                    y_sampling: 1,
-                    p_linear: true,
-                };
-                let cname = CString::new(name.as_bytes()).unwrap();
-                unsafe { CEXR_Header_insert_channel(header, cname.as_ptr(), channel_description) };
-            }
             header
         };
 
+        OutputFile {
+            header_handle: header,
+            _phantom_1: PhantomData,
+            _phantom_2: PhantomData,
+        }
+    }
+
+    pub fn resolution(self, width: u32, height: u32) -> OutputFile {
+        let window = Box2i {
+            min: CEXR_V2i { x: 0, y: 0 },
+            max: CEXR_V2i {
+                x: width as i32 - 1,
+                y: height as i32 - 1,
+            },
+        };
+        unsafe {
+            CEXR_Header_set_display_window(self.header_handle, window);
+        }
+        unsafe {
+            CEXR_Header_set_data_window(self.header_handle, window);
+        }
+        self
+    }
+
+    pub fn display_window(self, window: Box2i) -> OutputFile {
+        unsafe {
+            CEXR_Header_set_display_window(self.header_handle, window);
+        }
+        self
+    }
+
+    pub fn data_window(self, window: Box2i) -> OutputFile {
+        unsafe {
+            CEXR_Header_set_data_window(self.header_handle, window);
+        }
+        self
+    }
+
+    pub fn pixel_aspect_ratio(self, aspect_ratio: f32) -> OutputFile {
+        unsafe {
+            CEXR_Header_set_pixel_aspect_ratio(self.header_handle, aspect_ratio);
+        }
+        self
+    }
+
+    pub fn screen_window_center(self, center: (f32, f32)) -> OutputFile {
+        unsafe {
+            CEXR_Header_set_screen_window_center(self.header_handle,
+                                                 CEXR_V2f {
+                                                     x: center.0,
+                                                     y: center.1,
+                                                 });
+        }
+        self
+    }
+
+    pub fn screen_window_width(self, width: f32) -> OutputFile {
+        unsafe {
+            CEXR_Header_set_screen_window_width(self.header_handle, width);
+        }
+        self
+    }
+
+    pub fn line_order(self, line_order: LineOrder) -> OutputFile {
+        unsafe {
+            CEXR_Header_set_line_order(self.header_handle, line_order);
+        }
+        self
+    }
+
+    pub fn compression(self, compression: Compression) -> OutputFile {
+        unsafe {
+            CEXR_Header_set_compression(self.header_handle, compression);
+        }
+        self
+    }
+
+    pub fn channel(self, name: &str, pixel_type: PixelType) -> OutputFile {
+        self.channel_detailed(name,
+                              Channel {
+                                  pixel_type: pixel_type,
+                                  x_sampling: 1,
+                                  y_sampling: 1,
+                                  p_linear: true,
+                              })
+    }
+
+    pub fn channel_detailed(self, name: &str, channel: Channel) -> OutputFile {
+        let cname = CString::new(name.as_bytes()).unwrap();
+        unsafe { CEXR_Header_insert_channel(self.header_handle, cname.as_ptr(), channel) };
+        self
+    }
+
+    pub fn open(self, path: &Path) -> Result<EXRWriter> {
         // Create file
         let c_path = CString::new(path.to_str()
                                       .expect("non-unicode path handling is unimplemented")
@@ -313,21 +390,40 @@ impl OutputFile {
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
         let error = unsafe {
-            CEXR_OutputFile_from_file(c_path.as_ptr(), header, 1, &mut out, &mut error_out)
+            CEXR_OutputFile_from_file(c_path.as_ptr(),
+                                      self.header_handle,
+                                      1,
+                                      &mut out,
+                                      &mut error_out)
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
-            Ok(OutputFile {
+            Ok(EXRWriter {
                    handle: out,
-                   header_handle: header,
+                   header_handle: self.header_handle,
                    _phantom_1: PhantomData,
                    _phantom_2: PhantomData,
                })
         }
     }
+}
 
+impl Drop for OutputFile {
+    fn drop(&mut self) {
+        unsafe { CEXR_Header_delete(self.header_handle) };
+    }
+}
+
+pub struct EXRWriter {
+    handle: *mut CEXR_OutputFile,
+    header_handle: *mut CEXR_Header,
+    _phantom_1: PhantomData<CEXR_OutputFile>,
+    _phantom_2: PhantomData<CEXR_Header>,
+}
+
+impl EXRWriter {
     pub fn write_pixels(&mut self, framebuffer: &mut FrameBuffer) -> Result<()> {
         let w = self.data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions.0 - 1 ||
@@ -354,15 +450,15 @@ impl OutputFile {
     }
 
     pub fn data_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_data_window(CEXR_OutputFile_header(self.handle)) }
+        unsafe { &*CEXR_Header_data_window(self.header_handle) }
     }
 
     pub fn display_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_display_window(CEXR_OutputFile_header(self.handle)) }
+        unsafe { &*CEXR_Header_display_window(self.header_handle) }
     }
 }
 
-impl Drop for OutputFile {
+impl Drop for EXRWriter {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
         unsafe { CEXR_Header_delete(self.header_handle) };
