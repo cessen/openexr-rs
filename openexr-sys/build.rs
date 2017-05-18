@@ -54,7 +54,7 @@ fn main() {
                 .map(|ilmbase_cfg| ilmbase_cfg.include_paths.clone())
                 .map_err(|err| {
                     panic!("couldn't find IlmBase: environment variable \
-                            OPENEXR_DIR is unset and pkg-config failed: {}",
+                            ILMBASE_DIR is unset and pkg-config failed: {}",
                            err)
                 })
                 .unwrap();
