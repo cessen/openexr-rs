@@ -390,6 +390,8 @@ impl OutputFile {
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
         let error = unsafe {
+            // NOTE: we don't need to keep a copy of the header, because this
+            // function makes a deep copy that is stored in the CEXR_OutputFile.
             CEXR_OutputFile_from_file(c_path.as_ptr(),
                                       self.header_handle,
                                       1,
@@ -402,9 +404,7 @@ impl OutputFile {
         } else {
             Ok(EXRWriter {
                    handle: out,
-                   header_handle: self.header_handle,
-                   _phantom_1: PhantomData,
-                   _phantom_2: PhantomData,
+                   _phantom: PhantomData,
                })
         }
     }
@@ -418,9 +418,7 @@ impl Drop for OutputFile {
 
 pub struct EXRWriter {
     handle: *mut CEXR_OutputFile,
-    header_handle: *mut CEXR_Header,
-    _phantom_1: PhantomData<CEXR_OutputFile>,
-    _phantom_2: PhantomData<CEXR_Header>,
+    _phantom: PhantomData<CEXR_OutputFile>,
 }
 
 impl EXRWriter {
@@ -450,18 +448,17 @@ impl EXRWriter {
     }
 
     pub fn data_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_data_window(self.header_handle) }
+        unsafe { &*CEXR_Header_data_window(CEXR_OutputFile_header(self.handle)) }
     }
 
     pub fn display_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_display_window(self.header_handle) }
+        unsafe { &*CEXR_Header_display_window(CEXR_OutputFile_header(self.handle)) }
     }
 }
 
 impl Drop for EXRWriter {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
-        unsafe { CEXR_Header_delete(self.header_handle) };
     }
 }
 
