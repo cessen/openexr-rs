@@ -2,7 +2,6 @@ extern crate libc;
 extern crate openexr_sys;
 
 use std::{mem, ptr, error, fmt};
-use std::collections::BTreeMap;
 use std::path::Path;
 use std::ffi::{CString, CStr};
 use std::marker::PhantomData;
@@ -103,7 +102,6 @@ unsafe impl PixelStruct for (f32, f32, f32, f32) {
 #[allow(dead_code)]
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
-    channel_list: BTreeMap<String, Channel>,
     istream: Option<IStream<'a>>,
     _phantom: PhantomData<CEXR_InputFile>,
 }
@@ -124,7 +122,6 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
-                   channel_list: BTreeMap::new(),
                    istream: None,
                    _phantom: PhantomData,
                })
@@ -143,7 +140,6 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
-                   channel_list: BTreeMap::new(),
                    istream: Some(istream),
                    _phantom: PhantomData,
                })
