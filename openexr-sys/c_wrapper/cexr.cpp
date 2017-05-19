@@ -221,8 +221,8 @@ const CEXR_Header *CEXR_OutputFile_header(CEXR_OutputFile *file) {
     return reinterpret_cast<const CEXR_Header *>(&reinterpret_cast<OutputFile *>(file)->header());
 }
 
-void CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, CEXR_FrameBuffer *fb) {
-    reinterpret_cast<OutputFile *>(file)->setFrameBuffer(*reinterpret_cast<FrameBuffer *>(fb));
+void CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffer *fb) {
+    reinterpret_cast<OutputFile *>(file)->setFrameBuffer(*reinterpret_cast<const FrameBuffer *>(fb));
 }
 
 int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const char **err_out) {
