@@ -69,7 +69,7 @@ pub struct FrameBuffer<'a> {
     _handle: *mut CEXR_FrameBuffer,
     _dimensions: (usize, usize),
     _phantom_1: PhantomData<CEXR_FrameBuffer>,
-    _phantom_2: PhantomData<&'a mut ()>,
+    _phantom_2: PhantomData<&'a mut [u8]>,
 }
 
 impl<'a> FrameBuffer<'a> {

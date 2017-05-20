@@ -11,18 +11,18 @@ use error::*;
 use frame_buffer::FrameBuffer;
 
 
-pub struct ScanlineWriter {
+pub struct ScanlineOutputFile {
     handle: *mut CEXR_OutputFile,
     _phantom: PhantomData<CEXR_OutputFile>,
 }
 
-impl ScanlineWriter {
+impl ScanlineOutputFile {
     // This shouldn't be used outside of this crate, but due to
     // https://github.com/rust-lang/rfcs/pull/1422 not being stable
     // yet (should land in Rust 1.18), just hide from public
     // documentation for now.
     // TODO: once Rust 1.18 comes out, use `pub(super)`.
-    pub fn new(path: *const c_char, header: *const CEXR_Header) -> Result<ScanlineWriter> {
+    pub fn new(path: *const c_char, header: *const CEXR_Header) -> Result<ScanlineOutputFile> {
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
         let error = unsafe {
@@ -34,7 +34,7 @@ impl ScanlineWriter {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
-            Ok(ScanlineWriter {
+            Ok(ScanlineOutputFile {
                    handle: out,
                    _phantom: PhantomData,
                })
@@ -75,7 +75,7 @@ impl ScanlineWriter {
     }
 }
 
-impl Drop for ScanlineWriter {
+impl Drop for ScanlineOutputFile {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
     }

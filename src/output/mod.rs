@@ -1,4 +1,4 @@
-mod scanline_writer;
+mod scanline_output_file;
 
 use std::ffi::CString;
 use std::marker::PhantomData;
@@ -9,17 +9,16 @@ use openexr_sys::*;
 use cexr_type_aliases::*;
 use error::*;
 
-pub use self::scanline_writer::ScanlineWriter;
+pub use self::scanline_output_file::ScanlineOutputFile;
 
 
-pub struct OutputFile {
+pub struct OutputFileBuilder {
     header_handle: *mut CEXR_Header,
-    _phantom_1: PhantomData<CEXR_OutputFile>,
-    _phantom_2: PhantomData<CEXR_Header>,
+    _phantom: PhantomData<CEXR_Header>,
 }
 
-impl OutputFile {
-    pub fn new() -> OutputFile {
+impl OutputFileBuilder {
+    pub fn new() -> Self {
         // Create header
         let header = {
             let display_window = Box2i {
@@ -44,10 +43,9 @@ impl OutputFile {
             header
         };
 
-        OutputFile {
+        Self {
             header_handle: header,
-            _phantom_1: PhantomData,
-            _phantom_2: PhantomData,
+            _phantom: PhantomData,
         }
     }
 
@@ -55,7 +53,7 @@ impl OutputFile {
     ///
     /// This is really just a shortcut for setting both the display window
     /// and data window to `(0, 0), (width-1, height-1)`.
-    pub fn resolution(self, width: u32, height: u32) -> OutputFile {
+    pub fn resolution(self, width: u32, height: u32) -> Self {
         let window = Box2i {
             min: CEXR_V2i { x: 0, y: 0 },
             max: CEXR_V2i {
@@ -73,7 +71,7 @@ impl OutputFile {
     }
 
     /// Sets the display window.
-    pub fn display_window(self, window: Box2i) -> OutputFile {
+    pub fn display_window(self, window: Box2i) -> Self {
         unsafe {
             CEXR_Header_set_display_window(self.header_handle, window);
         }
@@ -81,7 +79,7 @@ impl OutputFile {
     }
 
     /// Sets the data window.
-    pub fn data_window(self, window: Box2i) -> OutputFile {
+    pub fn data_window(self, window: Box2i) -> Self {
         unsafe {
             CEXR_Header_set_data_window(self.header_handle, window);
         }
@@ -89,7 +87,7 @@ impl OutputFile {
     }
 
     /// Sets the pixel aspect ratio.
-    pub fn pixel_aspect_ratio(self, aspect_ratio: f32) -> OutputFile {
+    pub fn pixel_aspect_ratio(self, aspect_ratio: f32) -> Self {
         unsafe {
             CEXR_Header_set_pixel_aspect_ratio(self.header_handle, aspect_ratio);
         }
@@ -97,7 +95,7 @@ impl OutputFile {
     }
 
     /// Sets the screen window center.
-    pub fn screen_window_center(self, center: (f32, f32)) -> OutputFile {
+    pub fn screen_window_center(self, center: (f32, f32)) -> Self {
         unsafe {
             CEXR_Header_set_screen_window_center(self.header_handle,
                                                  CEXR_V2f {
@@ -109,7 +107,7 @@ impl OutputFile {
     }
 
     /// Sets the screen window width.
-    pub fn screen_window_width(self, width: f32) -> OutputFile {
+    pub fn screen_window_width(self, width: f32) -> Self {
         unsafe {
             CEXR_Header_set_screen_window_width(self.header_handle, width);
         }
@@ -117,7 +115,7 @@ impl OutputFile {
     }
 
     /// Sets the line order.
-    pub fn line_order(self, line_order: LineOrder) -> OutputFile {
+    pub fn line_order(self, line_order: LineOrder) -> Self {
         unsafe {
             CEXR_Header_set_line_order(self.header_handle, line_order);
         }
@@ -125,7 +123,7 @@ impl OutputFile {
     }
 
     /// Sets the compression mode.
-    pub fn compression(self, compression: Compression) -> OutputFile {
+    pub fn compression(self, compression: Compression) -> Self {
         unsafe {
             CEXR_Header_set_compression(self.header_handle, compression);
         }
@@ -137,7 +135,7 @@ impl OutputFile {
     /// This is a simplified version of `channel_detailed()`, using some sane
     /// defaults for the details.  Specifially: sampling is set to (1, 1)
     /// and p_linear is set to true.
-    pub fn channel(self, name: &str, pixel_type: PixelType) -> OutputFile {
+    pub fn channel(self, name: &str, pixel_type: PixelType) -> Self {
         self.channel_detailed(name,
                               Channel {
                                   pixel_type: pixel_type,
@@ -148,24 +146,24 @@ impl OutputFile {
     }
 
     /// Adds a channel, specifying full details.
-    pub fn channel_detailed(self, name: &str, channel: Channel) -> OutputFile {
+    pub fn channel_detailed(self, name: &str, channel: Channel) -> Self {
         let cname = CString::new(name.as_bytes()).unwrap();
         unsafe { CEXR_Header_insert_channel(self.header_handle, cname.as_ptr(), channel) };
         self
     }
 
     /// Opens the file as a simple scanline OpenEXR file.
-    pub fn open(self, path: &Path) -> Result<ScanlineWriter> {
+    pub fn open(self, path: &Path) -> Result<ScanlineOutputFile> {
         // Create file
         let c_path = CString::new(path.to_str()
                                       .expect("non-unicode path handling is unimplemented")
                                       .as_bytes())
                 .unwrap();
-        ScanlineWriter::new(c_path.as_ptr(), self.header_handle)
+        ScanlineOutputFile::new(c_path.as_ptr(), self.header_handle)
     }
 }
 
-impl Drop for OutputFile {
+impl Drop for OutputFileBuilder {
     fn drop(&mut self) {
         unsafe { CEXR_Header_delete(self.header_handle) };
     }
