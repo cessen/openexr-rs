@@ -7,7 +7,7 @@ mod frame_buffer;
 mod input;
 mod output;
 
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 
 use openexr_sys::*;
@@ -18,10 +18,13 @@ pub use frame_buffer::*;
 pub use input::*;
 pub use output::*;
 
+// TODO: move Header to its own module once we can use
+// `pub(crate)` on struct fields (should be in Rust 1.18).
 
 /// OpenEXR header.
 pub struct Header {
     handle: *mut CEXR_Header,
+    owned: bool,
     _phantom: PhantomData<CEXR_Header>,
 }
 
@@ -53,6 +56,7 @@ impl Header {
 
         Self {
             handle: header,
+            owned: true,
             _phantom: PhantomData,
         }
     }
@@ -61,7 +65,7 @@ impl Header {
     ///
     /// This is really just a shortcut for setting both the display window
     /// and data window to `(0, 0), (width-1, height-1)`.
-    pub fn resolution(self, width: u32, height: u32) -> Self {
+    pub fn set_resolution(self, width: u32, height: u32) -> Self {
         let window = Box2i {
             min: CEXR_V2i { x: 0, y: 0 },
             max: CEXR_V2i {
@@ -79,7 +83,7 @@ impl Header {
     }
 
     /// Sets the display window.
-    pub fn display_window(self, window: Box2i) -> Self {
+    pub fn set_display_window(self, window: Box2i) -> Self {
         unsafe {
             CEXR_Header_set_display_window(self.handle, window);
         }
@@ -87,7 +91,7 @@ impl Header {
     }
 
     /// Sets the data window.
-    pub fn data_window(self, window: Box2i) -> Self {
+    pub fn set_data_window(self, window: Box2i) -> Self {
         unsafe {
             CEXR_Header_set_data_window(self.handle, window);
         }
@@ -95,7 +99,7 @@ impl Header {
     }
 
     /// Sets the pixel aspect ratio.
-    pub fn pixel_aspect_ratio(self, aspect_ratio: f32) -> Self {
+    pub fn set_pixel_aspect_ratio(self, aspect_ratio: f32) -> Self {
         unsafe {
             CEXR_Header_set_pixel_aspect_ratio(self.handle, aspect_ratio);
         }
@@ -103,7 +107,7 @@ impl Header {
     }
 
     /// Sets the screen window center.
-    pub fn screen_window_center(self, center: (f32, f32)) -> Self {
+    pub fn set_screen_window_center(self, center: (f32, f32)) -> Self {
         unsafe {
             CEXR_Header_set_screen_window_center(self.handle,
                                                  CEXR_V2f {
@@ -115,7 +119,7 @@ impl Header {
     }
 
     /// Sets the screen window width.
-    pub fn screen_window_width(self, width: f32) -> Self {
+    pub fn set_screen_window_width(self, width: f32) -> Self {
         unsafe {
             CEXR_Header_set_screen_window_width(self.handle, width);
         }
@@ -123,7 +127,7 @@ impl Header {
     }
 
     /// Sets the line order.
-    pub fn line_order(self, line_order: LineOrder) -> Self {
+    pub fn set_line_order(self, line_order: LineOrder) -> Self {
         unsafe {
             CEXR_Header_set_line_order(self.handle, line_order);
         }
@@ -131,7 +135,7 @@ impl Header {
     }
 
     /// Sets the compression mode.
-    pub fn compression(self, compression: Compression) -> Self {
+    pub fn set_compression(self, compression: Compression) -> Self {
         unsafe {
             CEXR_Header_set_compression(self.handle, compression);
         }
@@ -140,23 +144,80 @@ impl Header {
 
     /// Adds a channel.
     ///
-    /// This is a simplified version of `channel_detailed()`, using some sane
+    /// This is a simplified version of `add_channel_detailed()`, using some sane
     /// defaults for the details.  Specifially: sampling is set to (1, 1)
     /// and p_linear is set to true.
-    pub fn channel(self, name: &str, pixel_type: PixelType) -> Self {
-        self.channel_detailed(name,
-                              Channel {
-                                  pixel_type: pixel_type,
-                                  x_sampling: 1,
-                                  y_sampling: 1,
-                                  p_linear: true,
-                              })
+    pub fn add_channel(self, name: &str, pixel_type: PixelType) -> Self {
+        self.add_channel_detailed(name,
+                                  Channel {
+                                      pixel_type: pixel_type,
+                                      x_sampling: 1,
+                                      y_sampling: 1,
+                                      p_linear: true,
+                                  })
     }
 
     /// Adds a channel, specifying full details.
-    pub fn channel_detailed(self, name: &str, channel: Channel) -> Self {
+    pub fn add_channel_detailed(self, name: &str, channel: Channel) -> Self {
         let cname = CString::new(name.as_bytes()).unwrap();
         unsafe { CEXR_Header_insert_channel(self.handle, cname.as_ptr(), channel) };
         self
+    }
+
+    pub fn data_window(&self) -> &Box2i {
+        unsafe { &*CEXR_Header_data_window(self.handle) }
+    }
+
+    pub fn display_window(&self) -> &Box2i {
+        unsafe { &*CEXR_Header_display_window(self.handle) }
+    }
+
+    pub fn channels<'b>(&'b self) -> ChannelIter<'b> {
+        ChannelIter {
+            iterator: unsafe { CEXR_Header_channel_list_iter(self.handle) },
+            _phantom_1: PhantomData,
+            _phantom_2: PhantomData,
+        }
+    }
+}
+
+impl Drop for Header {
+    fn drop(&mut self) {
+        if self.owned {
+            unsafe { CEXR_Header_delete(self.handle) };
+        }
+    }
+}
+
+pub struct ChannelIter<'a> {
+    iterator: *mut CEXR_ChannelListIter,
+    _phantom_1: PhantomData<CEXR_ChannelListIter>,
+    _phantom_2: PhantomData<&'a InputFile<'a>>,
+}
+
+impl<'a> Drop for ChannelIter<'a> {
+    fn drop(&mut self) {
+        unsafe { CEXR_ChannelListIter_delete(self.iterator) };
+    }
+}
+
+impl<'a> Iterator for ChannelIter<'a> {
+    type Item = Result<(&'a str, Channel)>;
+    fn next(&mut self) -> Option<Result<(&'a str, Channel)>> {
+        let mut name = unsafe { std::mem::uninitialized() };
+        let mut channel = unsafe { std::mem::uninitialized() };
+        if unsafe { CEXR_ChannelListIter_next(self.iterator, &mut name, &mut channel) } {
+            // TODO: use CStr::from_bytes_with_nul() instead to avoid memory unsafety
+            // if the string is not nul terminated.
+            let cname = unsafe { CStr::from_ptr(name) };
+            let str_name = cname.to_str();
+            if let Ok(n) = str_name {
+                Some(Ok((n, channel)))
+            } else {
+                Some(Err(Error::Generic(format!("Invalid channel name: {:?}", cname))))
+            }
+        } else {
+            None
+        }
     }
 }

@@ -5,7 +5,6 @@ use std::ptr;
 
 use openexr_sys::*;
 
-use cexr_type_aliases::*;
 use error::*;
 use frame_buffer::FrameBuffer;
 use Header;
@@ -13,6 +12,7 @@ use Header;
 
 pub struct ScanlineOutputFile {
     handle: *mut CEXR_OutputFile,
+    header_ref: Header,
     _phantom: PhantomData<CEXR_OutputFile>,
 }
 
@@ -35,13 +35,21 @@ impl ScanlineOutputFile {
         } else {
             Ok(ScanlineOutputFile {
                    handle: out,
+                   header_ref: Header {
+                       // NOTE: We're casting to *mut here to satisfy the
+                       // field's type, but importantly we only return a
+                       // const & of the Header so it retains const semantics.
+                       handle: unsafe { CEXR_OutputFile_header(out) } as *mut CEXR_Header,
+                       owned: false,
+                       _phantom: PhantomData,
+                   },
                    _phantom: PhantomData,
                })
         }
     }
 
     pub fn write_pixels(&mut self, framebuffer: &mut FrameBuffer) -> Result<()> {
-        let w = self.data_window();
+        let w = self.header().data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions().0 - 1 ||
            (w.max.y - w.min.y) as usize != framebuffer.dimensions().1 - 1 {
             panic!("framebuffer size {}x{} does not match output file dimensions {}x{}",
@@ -65,12 +73,8 @@ impl ScanlineOutputFile {
         }
     }
 
-    pub fn data_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_data_window(CEXR_OutputFile_header(self.handle)) }
-    }
-
-    pub fn display_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_display_window(CEXR_OutputFile_header(self.handle)) }
+    pub fn header(&self) -> &Header {
+        &self.header_ref
     }
 }
 

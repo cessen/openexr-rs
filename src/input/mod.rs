@@ -1,4 +1,3 @@
-use std;
 use std::ffi::{CString, CStr};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -8,14 +7,15 @@ use libc::c_char;
 
 use openexr_sys::*;
 
-use cexr_type_aliases::*;
 use error::*;
 use frame_buffer::FrameBuffer;
+use Header;
 
 
 #[allow(dead_code)]
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
+    header_ref: Header,
     istream: Option<IStream<'a>>,
     _phantom: PhantomData<CEXR_InputFile>,
 }
@@ -36,6 +36,14 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
+                   header_ref: Header {
+                       // NOTE: We're casting to *mut here to satisfy the
+                       // field's type, but importantly we only return a
+                       // const & of the Header so it retains const semantics.
+                       handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
+                       owned: false,
+                       _phantom: PhantomData,
+                   },
                    istream: None,
                    _phantom: PhantomData,
                })
@@ -54,6 +62,14 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
+                   header_ref: Header {
+                       // NOTE: We're casting to *mut here to satisfy the
+                       // field's type, but importantly we only return a
+                       // const & of the Header so it retains const semantics.
+                       handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
+                       owned: false,
+                       _phantom: PhantomData,
+                   },
                    istream: Some(istream),
                    _phantom: PhantomData,
                })
@@ -61,7 +77,7 @@ impl<'a> InputFile<'a> {
     }
 
     pub fn read_pixels(&self, framebuffer: &mut FrameBuffer) -> Result<()> {
-        let w = self.data_window();
+        let w = self.header().data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions().0 - 1 ||
            (w.max.y - w.min.y) as usize != framebuffer.dimensions().1 - 1 {
             panic!("framebuffer size {}x{} does not match input file dimensions {}x{}",
@@ -82,20 +98,8 @@ impl<'a> InputFile<'a> {
         }
     }
 
-    pub fn data_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_data_window(CEXR_InputFile_header(self.handle)) }
-    }
-
-    pub fn display_window(&self) -> &Box2i {
-        unsafe { &*CEXR_Header_display_window(CEXR_InputFile_header(self.handle)) }
-    }
-
-    pub fn channels<'b>(&'b self) -> ChannelIter<'b> {
-        ChannelIter {
-            iterator: unsafe { CEXR_Header_channel_list_iter(CEXR_InputFile_header(self.handle)) },
-            _phantom_1: PhantomData,
-            _phantom_2: PhantomData,
-        }
+    pub fn header(&self) -> &Header {
+        &self.header_ref
     }
 }
 
@@ -104,41 +108,6 @@ impl<'a> Drop for InputFile<'a> {
         unsafe { CEXR_InputFile_delete(self.handle) };
     }
 }
-
-pub struct ChannelIter<'a> {
-    iterator: *mut CEXR_ChannelListIter,
-    _phantom_1: PhantomData<CEXR_ChannelListIter>,
-    _phantom_2: PhantomData<&'a InputFile<'a>>,
-}
-
-impl<'a> Drop for ChannelIter<'a> {
-    fn drop(&mut self) {
-        unsafe { CEXR_ChannelListIter_delete(self.iterator) };
-    }
-}
-
-impl<'a> Iterator for ChannelIter<'a> {
-    type Item = Result<(&'a str, Channel)>;
-    fn next(&mut self) -> Option<Result<(&'a str, Channel)>> {
-        let mut name = unsafe { std::mem::uninitialized() };
-        let mut channel = unsafe { std::mem::uninitialized() };
-        if unsafe { CEXR_ChannelListIter_next(self.iterator, &mut name, &mut channel) } {
-            // TODO: use CStr::from_bytes_with_nul() instead to avoid memory unsafety
-            // if the string is not nul terminated.
-            let cname = unsafe { CStr::from_ptr(name) };
-            let str_name = cname.to_str();
-            if let Ok(n) = str_name {
-                Some(Ok((n, channel)))
-            } else {
-                Some(Err(Error::Generic(format!("Invalid channel name: {:?}", cname))))
-            }
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a> ChannelIter<'a> {}
 
 struct IStream<'a> {
     handle: *mut CEXR_IStream,

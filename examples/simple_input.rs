@@ -5,13 +5,17 @@ use std::path::Path;
 use openexr::{FrameBuffer, InputFile};
 
 fn main() {
-    let re = InputFile::from_file(Path::new("/tmp/test.exr")).unwrap();
-    let window = re.data_window();
+    let exr_file = InputFile::from_file(Path::new("/tmp/test.exr")).unwrap();
+    let window = exr_file.header().data_window();
     let width = window.max.x - window.min.x + 1;
     let height = window.max.y - window.min.y + 1;
 
-    let channels = re.channels().collect::<Vec<_>>();
-    println!("Channels: {:#?}", channels);
+    println!("Channels:");
+    for channel in exr_file.header().channels() {
+        if let Ok((name, channel_desc)) = channel {
+            println!("    \"{}\": {:?}", name, channel_desc.pixel_type);
+        }
+    }
 
     let mut pixel_data: Vec<(f32, f32, f32)> = vec![(0.0, 0.0, 0.0); (width*height) as usize];
 
@@ -23,7 +27,7 @@ fn main() {
             fb
         };
 
-        re.read_pixels(&mut fb).unwrap();
+        exr_file.read_pixels(&mut fb).unwrap();
     }
 
     for pixel in pixel_data {

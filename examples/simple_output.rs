@@ -11,10 +11,10 @@ fn main() {
 
     let mut exr_file = ScanlineOutputFile::new(Path::new("/tmp/test.exr"),
                                                &Header::new()
-                                                    .resolution(256, 256)
-                                                    .channel("R", PixelType::FLOAT)
-                                                    .channel("G", PixelType::FLOAT)
-                                                    .channel("B", PixelType::FLOAT))
+                                                    .set_resolution(256, 256)
+                                                    .add_channel("R", PixelType::FLOAT)
+                                                    .add_channel("G", PixelType::FLOAT)
+                                                    .add_channel("B", PixelType::FLOAT))
             .unwrap();
 
     let mut fb = {
