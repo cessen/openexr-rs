@@ -1,14 +1,14 @@
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
+use std::path::Path;
 use std::ptr;
-
-use libc::c_char;
 
 use openexr_sys::*;
 
 use cexr_type_aliases::*;
 use error::*;
 use frame_buffer::FrameBuffer;
+use Header;
 
 
 pub struct ScanlineOutputFile {
@@ -17,18 +17,17 @@ pub struct ScanlineOutputFile {
 }
 
 impl ScanlineOutputFile {
-    // This shouldn't be used outside of this crate, but due to
-    // https://github.com/rust-lang/rfcs/pull/1422 not being stable
-    // yet (should land in Rust 1.18), just hide from public
-    // documentation for now.
-    // TODO: once Rust 1.18 comes out, use `pub(super)`.
-    pub fn new(path: *const c_char, header: *const CEXR_Header) -> Result<ScanlineOutputFile> {
+    pub fn new(path: &Path, header: &Header) -> Result<ScanlineOutputFile> {
+        let c_path = CString::new(path.to_str()
+                                      .expect("non-unicode path handling is unimplemented")
+                                      .as_bytes())
+                .unwrap();
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
         let error = unsafe {
             // NOTE: we don't need to keep a copy of the header, because this
             // function makes a deep copy that is stored in the CEXR_OutputFile.
-            CEXR_OutputFile_from_file(path, header, 1, &mut out, &mut error_out)
+            CEXR_OutputFile_from_file(c_path.as_ptr(), header.handle, 1, &mut out, &mut error_out)
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
