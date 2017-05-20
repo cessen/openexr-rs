@@ -230,6 +230,14 @@ extern "C" {
                                       channel: CEXR_Channel);
 }
 extern "C" {
+    pub fn CEXR_Header_get_channel(header: *const CEXR_Header,
+                                   name: *const ::std::os::raw::c_char,
+                                   out: *mut *const CEXR_Channel,
+                                   err_out:
+                                       *mut *const ::std::os::raw::c_char)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn CEXR_Header_channel_list_iter(header: *const CEXR_Header)
      -> *mut CEXR_ChannelListIter;
 }

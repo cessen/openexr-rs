@@ -179,6 +179,19 @@ impl Header {
             _phantom_2: PhantomData,
         }
     }
+
+    pub fn get_channel<'a>(&'a self, name: &str) -> Option<&'a Channel> {
+        let c_name = CString::new(name.as_bytes()).unwrap();
+        let mut error_out = std::ptr::null();
+        let mut out = std::ptr::null();
+        if unsafe {
+               CEXR_Header_get_channel(self.handle, c_name.as_ptr(), &mut out, &mut error_out)
+           } == 0 {
+            Some(unsafe { &(*out) })
+        } else {
+            None
+        }
+    }
 }
 
 impl Drop for Header {

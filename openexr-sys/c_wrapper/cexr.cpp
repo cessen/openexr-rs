@@ -78,6 +78,19 @@ void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CE
     h->channels().insert(name, *reinterpret_cast<const Channel *>(&channel));
 }
 
+int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out, const char **err_out) {
+    auto h = reinterpret_cast<const Header*>(header);
+
+    try {
+        *out = reinterpret_cast<const CEXR_Channel *>(&(h->channels()[name]));
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
+}
+
 CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header) {
     CEXR_ChannelListIter *channel_iter = new CEXR_ChannelListIter();
     channel_iter->begin = reinterpret_cast<const Header *>(header)->channels().begin();
