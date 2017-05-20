@@ -65,7 +65,7 @@ impl Header {
     ///
     /// This is really just a shortcut for setting both the display window
     /// and data window to `(0, 0), (width-1, height-1)`.
-    pub fn set_resolution(self, width: u32, height: u32) -> Self {
+    pub fn set_resolution(&mut self, width: u32, height: u32) -> &mut Self {
         let window = Box2i {
             min: CEXR_V2i { x: 0, y: 0 },
             max: CEXR_V2i {
@@ -83,7 +83,7 @@ impl Header {
     }
 
     /// Sets the display window.
-    pub fn set_display_window(self, window: Box2i) -> Self {
+    pub fn set_display_window(&mut self, window: Box2i) -> &mut Self {
         unsafe {
             CEXR_Header_set_display_window(self.handle, window);
         }
@@ -91,7 +91,7 @@ impl Header {
     }
 
     /// Sets the data window.
-    pub fn set_data_window(self, window: Box2i) -> Self {
+    pub fn set_data_window(&mut self, window: Box2i) -> &mut Self {
         unsafe {
             CEXR_Header_set_data_window(self.handle, window);
         }
@@ -99,7 +99,7 @@ impl Header {
     }
 
     /// Sets the pixel aspect ratio.
-    pub fn set_pixel_aspect_ratio(self, aspect_ratio: f32) -> Self {
+    pub fn set_pixel_aspect_ratio(&mut self, aspect_ratio: f32) -> &mut Self {
         unsafe {
             CEXR_Header_set_pixel_aspect_ratio(self.handle, aspect_ratio);
         }
@@ -107,7 +107,7 @@ impl Header {
     }
 
     /// Sets the screen window center.
-    pub fn set_screen_window_center(self, center: (f32, f32)) -> Self {
+    pub fn set_screen_window_center(&mut self, center: (f32, f32)) -> &mut Self {
         unsafe {
             CEXR_Header_set_screen_window_center(self.handle,
                                                  CEXR_V2f {
@@ -119,7 +119,7 @@ impl Header {
     }
 
     /// Sets the screen window width.
-    pub fn set_screen_window_width(self, width: f32) -> Self {
+    pub fn set_screen_window_width(&mut self, width: f32) -> &mut Self {
         unsafe {
             CEXR_Header_set_screen_window_width(self.handle, width);
         }
@@ -127,7 +127,7 @@ impl Header {
     }
 
     /// Sets the line order.
-    pub fn set_line_order(self, line_order: LineOrder) -> Self {
+    pub fn set_line_order(&mut self, line_order: LineOrder) -> &mut Self {
         unsafe {
             CEXR_Header_set_line_order(self.handle, line_order);
         }
@@ -135,7 +135,7 @@ impl Header {
     }
 
     /// Sets the compression mode.
-    pub fn set_compression(self, compression: Compression) -> Self {
+    pub fn set_compression(&mut self, compression: Compression) -> &mut Self {
         unsafe {
             CEXR_Header_set_compression(self.handle, compression);
         }
@@ -147,7 +147,7 @@ impl Header {
     /// This is a simplified version of `add_channel_detailed()`, using some sane
     /// defaults for the details.  Specifially: sampling is set to (1, 1)
     /// and p_linear is set to true.
-    pub fn add_channel(self, name: &str, pixel_type: PixelType) -> Self {
+    pub fn add_channel(&mut self, name: &str, pixel_type: PixelType) -> &mut Self {
         self.add_channel_detailed(name,
                                   Channel {
                                       pixel_type: pixel_type,
@@ -158,7 +158,7 @@ impl Header {
     }
 
     /// Adds a channel, specifying full details.
-    pub fn add_channel_detailed(self, name: &str, channel: Channel) -> Self {
+    pub fn add_channel_detailed(&mut self, name: &str, channel: Channel) -> &mut Self {
         let cname = CString::new(name.as_bytes()).unwrap();
         unsafe { CEXR_Header_insert_channel(self.handle, cname.as_ptr(), channel) };
         self
@@ -172,7 +172,7 @@ impl Header {
         unsafe { &*CEXR_Header_display_window(self.handle) }
     }
 
-    pub fn channels<'b>(&'b self) -> ChannelIter<'b> {
+    pub fn channels<'a>(&'a self) -> ChannelIter<'a> {
         ChannelIter {
             iterator: unsafe { CEXR_Header_channel_list_iter(self.handle) },
             _phantom_1: PhantomData,
@@ -192,7 +192,7 @@ impl Drop for Header {
 pub struct ChannelIter<'a> {
     iterator: *mut CEXR_ChannelListIter,
     _phantom_1: PhantomData<CEXR_ChannelListIter>,
-    _phantom_2: PhantomData<&'a InputFile<'a>>,
+    _phantom_2: PhantomData<&'a Header>,
 }
 
 impl<'a> Drop for ChannelIter<'a> {
