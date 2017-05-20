@@ -1,5 +1,4 @@
 use std;
-use std::collections::BTreeMap;
 use std::ffi::{CString, CStr};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -17,7 +16,6 @@ use frame_buffer::FrameBuffer;
 #[allow(dead_code)]
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
-    channel_list: BTreeMap<String, Channel>,
     istream: Option<IStream<'a>>,
     _phantom: PhantomData<CEXR_InputFile>,
 }
@@ -38,7 +36,6 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
-                   channel_list: BTreeMap::new(),
                    istream: None,
                    _phantom: PhantomData,
                })
@@ -57,7 +54,6 @@ impl<'a> InputFile<'a> {
         } else {
             Ok(InputFile {
                    handle: out,
-                   channel_list: BTreeMap::new(),
                    istream: Some(istream),
                    _phantom: PhantomData,
                })
