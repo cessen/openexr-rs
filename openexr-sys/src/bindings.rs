@@ -406,7 +406,10 @@ extern "C" {
 }
 extern "C" {
     pub fn CEXR_InputFile_set_framebuffer(file: *mut CEXR_InputFile,
-                                          framebuffer: *mut CEXR_FrameBuffer);
+                                          framebuffer: *mut CEXR_FrameBuffer,
+                                          err_out:
+                                              *mut *const ::std::os::raw::c_char)
+     -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn CEXR_InputFile_read_pixels(file: *mut CEXR_InputFile,
@@ -435,7 +438,10 @@ extern "C" {
 extern "C" {
     pub fn CEXR_OutputFile_set_framebuffer(file: *mut CEXR_OutputFile,
                                            framebuffer:
-                                               *const CEXR_FrameBuffer);
+                                               *const CEXR_FrameBuffer,
+                                           err_out:
+                                               *mut *const ::std::os::raw::c_char)
+     -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn CEXR_OutputFile_write_pixels(file: *mut CEXR_OutputFile,

@@ -8,6 +8,8 @@ use libc::{c_char, c_int};
 use openexr_sys::*;
 
 use cexr_type_aliases::*;
+use error::*;
+use Header;
 
 
 /// Points to and describes in-memory image data for reading and writing.
@@ -148,6 +150,24 @@ impl<'a> FrameBuffer<'a> {
     pub fn handle_mut(&mut self) -> *mut CEXR_FrameBuffer {
         self._handle
     }
+
+    // TODO: this should probably be part of Header.  It's only here
+    // right now to allow access to both struct's internals, but it won't
+    // have to be here for that once `pub(crate)` lands in Rust 1.18.
+    pub fn validate_header_for_output(&self, header: &Header) -> Result<()> {
+        let w = header.data_window();
+        if (w.max.x - w.min.x) as usize != self.dimensions().0 - 1 ||
+           (w.max.y - w.min.y) as usize != self.dimensions().1 - 1 {
+            return Err(Error::Generic(format!("framebuffer size {}x{} does not \
+                match output file dimensions {}x{}",
+                                              self.dimensions().0,
+                                              self.dimensions().1,
+                                              w.max.x - w.min.x,
+                                              w.max.y - w.min.y)));
+        }
+
+        Ok(())
+    }
 }
 
 impl<'a> Drop for FrameBuffer<'a> {
@@ -225,27 +245,27 @@ include!(concat!(env!("OUT_DIR"), "/data_type_offsets.rs"));
 
 unsafe impl PixelDataStruct for (f16, f16) {
     fn channels() -> &'static [(PixelType, usize)] {
-        static TYPES: [(PixelType, usize); 2] = [(PixelType::FLOAT, T2_F16.0),
-                                                 (PixelType::FLOAT, T2_F16.1)];
+        static TYPES: [(PixelType, usize); 2] = [(PixelType::HALF, T2_F16.0),
+                                                 (PixelType::HALF, T2_F16.1)];
         &TYPES
     }
 }
 
 unsafe impl PixelDataStruct for (f16, f16, f16) {
     fn channels() -> &'static [(PixelType, usize)] {
-        static TYPES: [(PixelType, usize); 3] = [(PixelType::FLOAT, T3_F16.0),
-                                                 (PixelType::FLOAT, T3_F16.1),
-                                                 (PixelType::FLOAT, T3_F16.2)];
+        static TYPES: [(PixelType, usize); 3] = [(PixelType::HALF, T3_F16.0),
+                                                 (PixelType::HALF, T3_F16.1),
+                                                 (PixelType::HALF, T3_F16.2)];
         &TYPES
     }
 }
 
 unsafe impl PixelDataStruct for (f16, f16, f16, f16) {
     fn channels() -> &'static [(PixelType, usize)] {
-        static TYPES: [(PixelType, usize); 4] = [(PixelType::FLOAT, T4_F16.0),
-                                                 (PixelType::FLOAT, T4_F16.1),
-                                                 (PixelType::FLOAT, T4_F16.2),
-                                                 (PixelType::FLOAT, T4_F16.3)];
+        static TYPES: [(PixelType, usize); 4] = [(PixelType::HALF, T4_F16.0),
+                                                 (PixelType::HALF, T4_F16.1),
+                                                 (PixelType::HALF, T4_F16.2),
+                                                 (PixelType::HALF, T4_F16.3)];
         &TYPES
     }
 }

@@ -197,8 +197,15 @@ const CEXR_Header *CEXR_InputFile_header(CEXR_InputFile *file) {
     return reinterpret_cast<const CEXR_Header *>(&reinterpret_cast<InputFile *>(file)->header());
 }
 
-void CEXR_InputFile_set_framebuffer(CEXR_InputFile *file, CEXR_FrameBuffer *fb) {
-    reinterpret_cast<InputFile *>(file)->setFrameBuffer(*reinterpret_cast<FrameBuffer *>(fb));
+int CEXR_InputFile_set_framebuffer(CEXR_InputFile *file, CEXR_FrameBuffer *fb, const char **err_out) {
+    try {
+        reinterpret_cast<InputFile *>(file)->setFrameBuffer(*reinterpret_cast<FrameBuffer *>(fb));
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
 }
 
 int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanline_2, const char **err_out) {
@@ -234,8 +241,15 @@ const CEXR_Header *CEXR_OutputFile_header(CEXR_OutputFile *file) {
     return reinterpret_cast<const CEXR_Header *>(&reinterpret_cast<OutputFile *>(file)->header());
 }
 
-void CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffer *fb) {
-    reinterpret_cast<OutputFile *>(file)->setFrameBuffer(*reinterpret_cast<const FrameBuffer *>(fb));
+int CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffer *fb, const char **err_out) {
+    try {
+        reinterpret_cast<OutputFile *>(file)->setFrameBuffer(*reinterpret_cast<const FrameBuffer *>(fb));
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
 }
 
 int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const char **err_out) {

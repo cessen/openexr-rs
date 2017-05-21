@@ -200,13 +200,13 @@ int CEXR_InputFile_from_file(const char *path, int threads, CEXR_InputFile **out
 int CEXR_InputFile_from_stream(CEXR_IStream *stream, int threads, CEXR_InputFile **out, const char **err_out);
 void CEXR_InputFile_delete(CEXR_InputFile *file);
 const CEXR_Header *CEXR_InputFile_header(CEXR_InputFile *file);
-void CEXR_InputFile_set_framebuffer(CEXR_InputFile *file, CEXR_FrameBuffer *framebuffer);
+int CEXR_InputFile_set_framebuffer(CEXR_InputFile *file, CEXR_FrameBuffer *framebuffer, const char **err_out);
 int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanline_2, const char **err_out);
 
 int CEXR_OutputFile_from_file(const char *path, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out);
 void CEXR_OutputFile_delete(CEXR_OutputFile *file);
 const CEXR_Header *CEXR_OutputFile_header(CEXR_OutputFile *file);
-void CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffer *framebuffer);
+int CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffer *framebuffer, const char **err_out);
 int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const char **err_out);
 
 

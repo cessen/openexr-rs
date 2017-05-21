@@ -49,17 +49,18 @@ impl ScanlineOutputFile {
     }
 
     pub fn write_pixels(&mut self, framebuffer: &mut FrameBuffer) -> Result<()> {
-        let w = self.header().data_window();
-        if (w.max.x - w.min.x) as usize != framebuffer.dimensions().0 - 1 ||
-           (w.max.y - w.min.y) as usize != framebuffer.dimensions().1 - 1 {
-            panic!("framebuffer size {}x{} does not match output file dimensions {}x{}",
-                   framebuffer.dimensions().0,
-                   framebuffer.dimensions().1,
-                   w.max.x - w.min.x,
-                   w.max.y - w.min.y)
-        }
-        unsafe { CEXR_OutputFile_set_framebuffer(self.handle, framebuffer.handle()) };
+        framebuffer.validate_header_for_output(self.header())?;
+
         let mut error_out = ptr::null();
+
+        let error = unsafe {
+            CEXR_OutputFile_set_framebuffer(self.handle, framebuffer.handle(), &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+        }
+
         let error = unsafe {
             CEXR_OutputFile_write_pixels(self.handle,
                                          framebuffer.dimensions().1 as i32,

@@ -86,8 +86,17 @@ impl<'a> InputFile<'a> {
                    w.max.x - w.min.x,
                    w.max.y - w.min.y)
         }
-        unsafe { CEXR_InputFile_set_framebuffer(self.handle, framebuffer.handle_mut()) };
+
         let mut error_out = ptr::null();
+
+        let error = unsafe {
+            CEXR_InputFile_set_framebuffer(self.handle, framebuffer.handle_mut(), &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+        }
+
         let error =
             unsafe { CEXR_InputFile_read_pixels(self.handle, w.min.y, w.max.y, &mut error_out) };
         if error != 0 {
