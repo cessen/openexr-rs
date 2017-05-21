@@ -44,8 +44,8 @@ impl<'a> ScanlineOutputFile<'a> {
                        owned: false,
                        _phantom: PhantomData,
                    },
-                _phantom_1: PhantomData,
-                _phantom_2: PhantomData,
+                   _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }

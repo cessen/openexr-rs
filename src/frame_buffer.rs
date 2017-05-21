@@ -53,7 +53,7 @@ impl<'a> FrameBuffer<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_channel<T: ChannelData>(&mut self, name: &str, fill: f64, data: &'a mut [T]) {
+    pub fn insert_channel<T: PixelData>(&mut self, name: &str, fill: f64, data: &'a mut [T]) {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -75,16 +75,14 @@ impl<'a> FrameBuffer<'a> {
     /// Insert multiple channels from a slice of structs or tuples.
     ///
     /// The number of channels to be inserted is determined by the
-    /// implementation of the `PixelData` trait on `T`.  `channels` should
+    /// implementation of the `PixelStruct` trait on `T`.  `channels` should
     /// contain that number of elements, and each element is a tuple of the
     /// channel's name and default fill value.
     ///
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_pixels<T: PixelData>(&mut self,
-                                       channels: &[(&str, f64)],
-                                       data: &'a mut [T]) {
+    pub fn insert_pixels<T: PixelStruct>(&mut self, channels: &[(&str, f64)], data: &'a mut [T]) {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -181,26 +179,29 @@ impl<'a> Drop for FrameBuffer<'a> {
 /// `PixelType` variants.
 ///
 /// Implementing this trait on a type allows the type to be used directly by the
-/// library to write data out to and read data in from EXR files.  Types used by
-/// OpenEXR to represent a value held by a particular channel at a particular
-/// point, suitable for being directly accessed by the OpenEXR implementation.
-pub unsafe trait ChannelData {
+/// library to write data out to and read data in from EXR files.
+///
+/// NOTE: unless you really know what you're doing, you probably shouldn't
+/// implement this for anything. It's already been implemented for the
+/// relevant built-in Rust types.  The only exception might be implementing it
+/// for alternative implementations of half floats.
+pub unsafe trait PixelData {
     fn pixel_type() -> PixelType;
 }
 
-unsafe impl ChannelData for u32 {
+unsafe impl PixelData for u32 {
     fn pixel_type() -> PixelType {
         PixelType::UINT
     }
 }
 
-unsafe impl ChannelData for f16 {
+unsafe impl PixelData for f16 {
     fn pixel_type() -> PixelType {
         PixelType::HALF
     }
 }
 
-unsafe impl ChannelData for f32 {
+unsafe impl PixelData for f32 {
     fn pixel_type() -> PixelType {
         PixelType::FLOAT
     }
@@ -216,7 +217,7 @@ unsafe impl ChannelData for f32 {
 /// # Examples
 ///
 /// ```
-/// use openexr::{PixelData, PixelType};
+/// use openexr::{PixelStruct, PixelType};
 ///
 /// #[repr(C)]
 /// #[derive(Copy, Clone)]
@@ -226,7 +227,7 @@ unsafe impl ChannelData for f32 {
 ///     b: f32,
 /// }
 ///
-/// unsafe impl PixelData for RGB {
+/// unsafe impl PixelStruct for RGB {
 ///     fn channel_count() -> usize { 3 }
 ///     fn channel(i: usize) -> (PixelType, usize) {
 ///         [(PixelType::FLOAT, 0),
@@ -235,7 +236,7 @@ unsafe impl ChannelData for f32 {
 ///     }
 /// }
 /// ```
-pub unsafe trait PixelData {
+pub unsafe trait PixelStruct {
     /// Returns the number of channels in this type
     fn channel_count() -> usize;
 
@@ -245,16 +246,21 @@ pub unsafe trait PixelData {
     fn channel(i: usize) -> (PixelType, usize);
 
     /// Returns an iterator over the set of channels
-    fn channels() -> PixelDataChannels {
+    fn channels() -> PixelStructChannels {
         (0..Self::channel_count()).map(Self::channel)
     }
 }
 
-pub type PixelDataChannels = ::std::iter::Map<::std::ops::Range<usize>, fn(usize) -> (PixelType, usize)>;
+pub type PixelStructChannels = ::std::iter::Map<::std::ops::Range<usize>,
+                                                fn(usize) -> (PixelType, usize)>;
 
-unsafe impl<T: ChannelData> PixelData for T {
-    fn channel_count() -> usize { 1 }
-    fn channel(_: usize) -> (PixelType, usize) { (T::pixel_type(), 0) }
+unsafe impl<T: PixelData> PixelStruct for T {
+    fn channel_count() -> usize {
+        1
+    }
+    fn channel(_: usize) -> (PixelType, usize) {
+        (T::pixel_type(), 0)
+    }
 }
 
 macro_rules! offset_of {
@@ -263,60 +269,94 @@ macro_rules! offset_of {
     }
 }
 
-unsafe impl<A: ChannelData> PixelData for (A,) {
-    fn channel_count() -> usize { 1 }
-    fn channel(_: usize) -> (PixelType, usize) { (A::pixel_type(), offset_of!(Self, 0)) }
+unsafe impl<A: PixelData> PixelStruct for (A,) {
+    fn channel_count() -> usize {
+        1
+    }
+    fn channel(_: usize) -> (PixelType, usize) {
+        (A::pixel_type(), offset_of!(Self, 0))
+    }
 }
 
-unsafe impl<A, B> PixelData for (A, B)
-    where A: ChannelData, B: ChannelData
+unsafe impl<A, B> PixelStruct for (A, B)
+    where A: PixelData,
+          B: PixelData
 {
-    fn channel_count() -> usize { 2 }
+    fn channel_count() -> usize {
+        2
+    }
     fn channel(i: usize) -> (PixelType, usize) {
         [(A::pixel_type(), offset_of!(Self, 0)),
          (B::pixel_type(), offset_of!(Self, 1))][i]
     }
 }
 
-unsafe impl<A, B, C> PixelData for (A, B, C)
-    where A: ChannelData, B: ChannelData, C: ChannelData
+unsafe impl<A, B, C> PixelStruct for (A, B, C)
+    where A: PixelData,
+          B: PixelData,
+          C: PixelData
 {
-    fn channel_count() -> usize { 3 }
+    fn channel_count() -> usize {
+        3
+    }
     fn channel(i: usize) -> (PixelType, usize) {
         [(A::pixel_type(), offset_of!(Self, 0)),
          (B::pixel_type(), offset_of!(Self, 1)),
-         (C::pixel_type(), offset_of!(Self, 2))][i]
+         (C::pixel_type(), offset_of!(Self, 2))]
+            [i]
     }
 }
 
-unsafe impl<A, B, C, D> PixelData for (A, B, C, D)
-    where A: ChannelData, B: ChannelData, C: ChannelData, D: ChannelData
+unsafe impl<A, B, C, D> PixelStruct for (A, B, C, D)
+    where A: PixelData,
+          B: PixelData,
+          C: PixelData,
+          D: PixelData
 {
-    fn channel_count() -> usize { 4 }
+    fn channel_count() -> usize {
+        4
+    }
     fn channel(i: usize) -> (PixelType, usize) {
         [(A::pixel_type(), offset_of!(Self, 0)),
          (B::pixel_type(), offset_of!(Self, 1)),
          (C::pixel_type(), offset_of!(Self, 2)),
-         (D::pixel_type(), offset_of!(Self, 3))][i]
+         (D::pixel_type(), offset_of!(Self, 3))]
+            [i]
     }
 }
 
-unsafe impl<T: ChannelData> PixelData for [T; 1] {
-    fn channel_count() -> usize { 1 }
-    fn channel(_: usize) -> (PixelType, usize) { (T::pixel_type(), 0) }
+unsafe impl<T: PixelData> PixelStruct for [T; 1] {
+    fn channel_count() -> usize {
+        1
+    }
+    fn channel(_: usize) -> (PixelType, usize) {
+        (T::pixel_type(), 0)
+    }
 }
 
-unsafe impl<T: ChannelData> PixelData for [T; 2] {
-    fn channel_count() -> usize { 2 }
-    fn channel(i: usize) -> (PixelType, usize) { (T::pixel_type(), i * mem::size_of::<T>()) }
+unsafe impl<T: PixelData> PixelStruct for [T; 2] {
+    fn channel_count() -> usize {
+        2
+    }
+    fn channel(i: usize) -> (PixelType, usize) {
+        (T::pixel_type(), i * mem::size_of::<T>())
+    }
 }
 
-unsafe impl<T: ChannelData> PixelData for [T; 3] {
-    fn channel_count() -> usize { 3 }
-    fn channel(i: usize) -> (PixelType, usize) { (T::pixel_type(), i * mem::size_of::<T>()) }
+unsafe impl<T: PixelData> PixelStruct for [T; 3] {
+    fn channel_count() -> usize {
+        3
+    }
+    fn channel(i: usize) -> (PixelType, usize) {
+        (T::pixel_type(), i * mem::size_of::<T>())
+    }
 }
 
-unsafe impl<T: ChannelData> PixelData for [T; 4] {
-    fn channel_count() -> usize { 4 }
-    fn channel(i: usize) -> (PixelType, usize) { (T::pixel_type(), i * mem::size_of::<T>()) }
+unsafe impl<T: PixelData> PixelStruct for [T; 4] {
+    fn channel_count() -> usize {
+        4
+    }
+    fn channel(i: usize) -> (PixelType, usize) {
+        (T::pixel_type(), i * mem::size_of::<T>())
+    }
 }
