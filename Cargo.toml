@@ -15,9 +15,6 @@ keywords = ["OpenEXR"]
 libc = "0.2"
 half = "1"
 
-[build-dependencies]
-half = "1"
-
 [dependencies.openexr-sys]
 path = "openexr-sys"
 version = "0.3.0"
