@@ -21,7 +21,7 @@ pub struct InputFile<'a> {
 }
 
 impl<'a> InputFile<'a> {
-    pub fn from_file(path: &Path) -> Result<InputFile<'static>> {
+    pub fn new(path: &Path) -> Result<InputFile<'static>> {
         let c_path = CString::new(path.to_str()
                                       .expect("non-unicode path handling is unimplemented")
                                       .as_bytes())
@@ -50,7 +50,7 @@ impl<'a> InputFile<'a> {
         }
     }
 
-    pub fn from_memory(slice: &'a [u8]) -> Result<InputFile<'a>> {
+    pub fn from_slice(slice: &'a [u8]) -> Result<InputFile<'a>> {
         let istream = IStream::from_slice(slice);
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
