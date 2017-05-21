@@ -19,8 +19,8 @@ use Header;
 /// used by the input and output file types to know where in memory to read
 /// from and write to when writing and reading files.
 pub struct FrameBuffer<'a> {
-    _handle: *mut CEXR_FrameBuffer,
-    _dimensions: (usize, usize),
+    handle: *mut CEXR_FrameBuffer,
+    dimensions: (usize, usize),
     _phantom_1: PhantomData<CEXR_FrameBuffer>,
     _phantom_2: PhantomData<&'a mut [u8]>,
 }
@@ -32,8 +32,8 @@ impl<'a> FrameBuffer<'a> {
     /// independent of the dimensions specified here.
     pub fn new(width: usize, height: usize) -> Self {
         FrameBuffer {
-            _handle: unsafe { CEXR_FrameBuffer_new() },
-            _dimensions: (width, height),
+            handle: unsafe { CEXR_FrameBuffer_new() },
+            dimensions: (width, height),
             _phantom_1: PhantomData,
             _phantom_2: PhantomData,
         }
@@ -41,7 +41,7 @@ impl<'a> FrameBuffer<'a> {
 
     /// Return the dimensions of the frame buffer.
     pub fn dimensions(&self) -> (usize, usize) {
-        self._dimensions
+        self.dimensions
     }
 
     /// Insert a single channel.
@@ -54,13 +54,13 @@ impl<'a> FrameBuffer<'a> {
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
     pub fn insert_channel<T: ChannelData>(&mut self, name: &str, fill: f64, data: &'a mut [T]) {
-        if data.len() != self._dimensions.0 * self._dimensions.1 {
+        if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
-                   self._dimensions.0,
-                   self._dimensions.1);
+                   self.dimensions.0,
+                   self.dimensions.1);
         }
-        let width = self._dimensions.0;
+        let width = self.dimensions.0;
         unsafe {
             self.insert_raw(name,
                             T::pixel_type(),
@@ -83,15 +83,15 @@ impl<'a> FrameBuffer<'a> {
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
     pub fn insert_pixels<T: PixelData>(&mut self,
-                                             channels: &[(&str, f64)],
-                                             data: &'a mut [T]) {
-        if data.len() != self._dimensions.0 * self._dimensions.1 {
+                                       channels: &[(&str, f64)],
+                                       data: &'a mut [T]) {
+        if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
-                   self._dimensions.0,
-                   self._dimensions.1);
+                   self.dimensions.0,
+                   self.dimensions.1);
         }
-        let width = self._dimensions.0;
+        let width = self.dimensions.0;
         for (&(name, fill), (ty, offset)) in channels.iter().zip(T::channels()) {
             unsafe {
                 self.insert_raw(name,
@@ -122,7 +122,7 @@ impl<'a> FrameBuffer<'a> {
                              fill_value: f64,
                              tile_coords: (bool, bool)) {
         let c_name = CString::new(name).unwrap();
-        CEXR_FrameBuffer_insert(self._handle,
+        CEXR_FrameBuffer_insert(self.handle,
                                 c_name.as_ptr(),
                                 type_,
                                 base,
@@ -143,12 +143,12 @@ impl<'a> FrameBuffer<'a> {
     // just use direct field access via `pub(crate)`.
     #[doc(hidden)]
     pub fn handle(&self) -> *const CEXR_FrameBuffer {
-        self._handle
+        self.handle
     }
 
     #[doc(hidden)]
     pub fn handle_mut(&mut self) -> *mut CEXR_FrameBuffer {
-        self._handle
+        self.handle
     }
 
     // TODO: this should probably be part of Header.  It's only here
@@ -172,7 +172,7 @@ impl<'a> FrameBuffer<'a> {
 
 impl<'a> Drop for FrameBuffer<'a> {
     fn drop(&mut self) {
-        unsafe { CEXR_FrameBuffer_delete(self._handle) };
+        unsafe { CEXR_FrameBuffer_delete(self.handle) };
     }
 }
 
