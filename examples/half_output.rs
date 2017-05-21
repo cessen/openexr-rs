@@ -1,6 +1,7 @@
 extern crate half;
 extern crate openexr;
 
+use std::env;
 use std::iter;
 use std::path::Path;
 
@@ -13,7 +14,7 @@ fn main() {
             .take(256 * 256)
             .collect();
 
-    let mut exr_file = ScanlineOutputFile::new(Path::new("/tmp/test.exr"),
+    let mut exr_file = ScanlineOutputFile::new(Path::new(&env::args_os().nth(1).expect("argument required")),
                                                &Header::new()
                                                     .set_resolution(256, 256)
                                                     .add_channel("R", PixelType::HALF)

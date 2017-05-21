@@ -5,22 +5,14 @@ members = ["openexr-sys"]
 name = "openexr"
 version = "0.3.0"
 authors = ["Nathan Vegdahl <cessen@cessen.com>"]
-build = "build.rs"
 repository = "https://github.com/cessen/openexr-rs"
 readme = "README.md"
 license = "MIT"
 description = "Rust bindings for OpenEXR"
 keywords = ["OpenEXR"]
 
-[lib]
-name = "openexr"
-path = "src/lib.rs"
-
 [dependencies]
 libc = "0.2"
-half = "1"
-
-[build-dependencies]
 half = "1"
 
 [dependencies.openexr-sys]

@@ -1,5 +1,6 @@
 extern crate openexr;
 
+use std::env;
 use std::iter;
 use std::path::Path;
 
@@ -9,7 +10,7 @@ fn main() {
     let mut pixel_data: Vec<(f32, f32, f32)> =
         iter::repeat((0.82, 1.78, 0.21)).take(256 * 256).collect();
 
-    let mut exr_file = ScanlineOutputFile::new(Path::new("/tmp/test.exr"),
+    let mut exr_file = ScanlineOutputFile::new(Path::new(&env::args_os().nth(1).expect("argument required")),
                                                &Header::new()
                                                     .set_resolution(256, 256)
                                                     .add_channel("R", PixelType::FLOAT)

@@ -11,7 +11,24 @@ use error::*;
 use frame_buffer::FrameBuffer;
 use Header;
 
-
+/// Common input interface for all types of OpenEXR files
+///
+/// # Examples
+/// ```rust,no_run
+/// # use openexr::{InputFile, FrameBuffer};
+/// # use std::path::Path;
+/// # let path = "/path/to/file.exr";
+/// # let path = Path::new(&path);
+/// let file = InputFile::new(path).unwrap();
+/// let window = file.header().data_window();
+/// let width = window.max.x - window.min.x + 1;
+/// let height = window.max.y - window.min.y + 1;
+///
+/// let mut pixel_data: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; (width*height) as usize];
+/// let mut fb = FrameBuffer::new(width as usize, height as usize);
+/// fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0), ("A", 0.0)], &mut pixel_data);
+/// file.read_pixels(&mut fb).unwrap();
+/// ```
 #[allow(dead_code)]
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
@@ -21,7 +38,7 @@ pub struct InputFile<'a> {
 }
 
 impl<'a> InputFile<'a> {
-    pub fn from_file(path: &Path) -> Result<InputFile<'static>> {
+    pub fn new(path: &Path) -> Result<InputFile<'static>> {
         let c_path = CString::new(path.to_str()
                                       .expect("non-unicode path handling is unimplemented")
                                       .as_bytes())
@@ -50,7 +67,7 @@ impl<'a> InputFile<'a> {
         }
     }
 
-    pub fn from_memory(slice: &'a [u8]) -> Result<InputFile<'a>> {
+    pub fn from_slice(slice: &'a [u8]) -> Result<InputFile<'a>> {
         let istream = IStream::from_slice(slice);
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
