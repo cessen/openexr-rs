@@ -9,19 +9,41 @@ extern "C" {
 #endif
 
 // Transparent types
+/**
+ * An 2d integer vector.
+ *
+ * Used in various parts of OpenEXR's APIs.
+ */
 typedef struct CEXR_V2i {
     int x, y;
 } CEXR_V2i;
 
+/**
+ * An 2d floating point vector.
+ *
+ * Used in various parts of OpenEXR's APIs.
+ */
 typedef struct CEXR_V2f {
     float x, y;
 } CEXR_V2f;
 
+/**
+ * An 2d integer bounding box.
+ *
+ * Used in various parts of OpenEXR's APIs.
+ */
 typedef struct CEXR_Box2i {
     CEXR_V2i min, max;
 } CEXR_Box2i;
 
 // From IlmImf/ImfPixelType.h
+/**
+ * Describes the datatype of an image channel.
+ *
+ * * `UINT`: 32-bit unsigned integer.
+ * * `HALF`: 16-bit floating point (conforming to IEEE 754).
+ * * `FLOAT`: 32-bit floating point (conforming to IEEE 754)
+ */
 typedef enum CEXR_PixelType {
     UINT   = 0,
     HALF   = 1,
@@ -29,6 +51,42 @@ typedef enum CEXR_PixelType {
 } CEXR_PixelType;
 
 // from IlmImf/ImfLineOrder.h
+/**
+ * Defines the line order of a scanline image.
+ *
+ * For scanline images, only `INCREASING_Y` and `DECREASING_Y` are valid
+ * values:
+ *
+ * * `INCREASING_Y`: scanline 0 is the first scanline in the file, and
+ *   scanlines are written and read in that order.
+ *
+ * * `DECREASING_Y`: scanline 0 is the last scanline in the file, and
+ *   scanlines are written and read in that order.
+ *
+ * In both cases, scanlines are written to and read from files in the order
+ * they are stored on disk, and any `FrameBuffer` you pass is interpretted
+ * that way as well.
+ *
+ * For tiled images, all values are valid, but they have different meanings:
+ *
+ * * `INCREASING_Y`: the tiles are stored in a particular order.  See
+ *   OpenEXR's
+ *   [ImfTiledOutputFile.h]
+ *   (https://github.com/openexr/openexr/blob/develop/OpenEXR/IlmImf/ImfTiledOutputFile.h)
+ *   header for specifics.
+ * 
+ * * `DECREASING_Y`: the tiles are stored in a different particular order.
+ *   See OpenEXR's
+ *   [ImfTiledOutputFile.h]
+ *   (https://github.com/openexr/openexr/blob/develop/OpenEXR/IlmImf/ImfTiledOutputFile.h)
+ *   header for specifics.
+ * 
+ * * `RANDOM_Y`: the tiles are stored in the order written.
+ *
+ * For tiled files, `RANDOM_Y` is probably a good choice, as it gives you
+ * control over the tile layout and doesn't require the OpenEXR library to
+ * do any buffering.
+ */
 typedef enum CEXR_LineOrder {
     INCREASING_Y = 0,
     DECREASING_Y = 1,
@@ -36,6 +94,31 @@ typedef enum CEXR_LineOrder {
 } CEXR_LineOrder;
 
 // from IlmImf/ImfCompression.h
+/**
+ * Compression mode of an OpenEXR file.
+ *
+ * These modes are lossless:
+ * 
+ * * `NO_COMPRESSION`
+ * * `RLE_COMPRESSION`
+ * * `ZIPS_COMPRESSION`
+ * * `ZIP_COMPRESSION`
+ * * `PIZ_COMPRESSION`
+ *
+ * These modes are lossy:
+ *
+ * * `PXR24_COMPRESSION`
+ * * `B44_COMPRESSION`
+ * * `B44A_COMPRESSION`
+ * * `DWAA_COMPRESSION`
+ * * `DWAB_COMPRESSION`
+ *
+ * And `PXR24_COMPRESSION` is only lossy for 32-bit floating point channels,
+ * which it converts to 24-bit floating point.
+ *
+ * See OpenEXR's documentation and header files for more details on the
+ * compression modes.
+ */
 typedef enum CEXR_Compression {
     NO_COMPRESSION  = 0,
     RLE_COMPRESSION = 1,
@@ -51,6 +134,9 @@ typedef enum CEXR_Compression {
 
 // IlmImf/ImfChannelList.h
 // Changed element names slightly to adhere to Rust naming conventions.
+/**
+ * Describes an image channel.
+ */
 typedef struct CEXR_Channel {
     CEXR_PixelType pixel_type;
     int x_sampling;

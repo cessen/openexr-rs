@@ -31,6 +31,11 @@ fn bindgen_test_layout_max_align_t() {
 impl Clone for max_align_t {
     fn clone(&self) -> Self { *self }
 }
+/**
+ * An 2d integer vector.
+ *
+ * Used in various parts of OpenEXR's APIs.
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct CEXR_V2i {
@@ -57,6 +62,11 @@ fn bindgen_test_layout_CEXR_V2i() {
 impl Clone for CEXR_V2i {
     fn clone(&self) -> Self { *self }
 }
+/**
+ * An 2d floating point vector.
+ *
+ * Used in various parts of OpenEXR's APIs.
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct CEXR_V2f {
@@ -83,6 +93,11 @@ fn bindgen_test_layout_CEXR_V2f() {
 impl Clone for CEXR_V2f {
     fn clone(&self) -> Self { *self }
 }
+/**
+ * An 2d integer bounding box.
+ *
+ * Used in various parts of OpenEXR's APIs.
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct CEXR_Box2i {
@@ -110,12 +125,80 @@ impl Clone for CEXR_Box2i {
     fn clone(&self) -> Self { *self }
 }
 #[repr(u32)]
+/**
+ * Describes the datatype of an image channel.
+ *
+ * * `UINT`: 32-bit unsigned integer.
+ * * `HALF`: 16-bit floating point (conforming to IEEE 754).
+ * * `FLOAT`: 32-bit floating point (conforming to IEEE 754)
+ */
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CEXR_PixelType { UINT = 0, HALF = 1, FLOAT = 2, }
 #[repr(u32)]
+/**
+ * Defines the line order of a scanline image.
+ *
+ * For scanline images, only `INCREASING_Y` and `DECREASING_Y` are valid
+ * values:
+ *
+ * * `INCREASING_Y`: scanline 0 is the first scanline in the file, and
+ *   scanlines are written and read in that order.
+ *
+ * * `DECREASING_Y`: scanline 0 is the last scanline in the file, and
+ *   scanlines are written and read in that order.
+ *
+ * In both cases, scanlines are written to and read from files in the order
+ * they are stored on disk, and any `FrameBuffer` you pass is interpretted
+ * that way as well.
+ *
+ * For tiled images, all values are valid, but they have different meanings:
+ *
+ * * `INCREASING_Y`: the tiles are stored in a particular order.  See
+ *   OpenEXR's
+ *   [ImfTiledOutputFile.h]
+ *   (https://github.com/openexr/openexr/blob/develop/OpenEXR/IlmImf/ImfTiledOutputFile.h)
+ *   header for specifics.
+ * 
+ * * `DECREASING_Y`: the tiles are stored in a different particular order.
+ *   See OpenEXR's
+ *   [ImfTiledOutputFile.h]
+ *   (https://github.com/openexr/openexr/blob/develop/OpenEXR/IlmImf/ImfTiledOutputFile.h)
+ *   header for specifics.
+ * 
+ * * `RANDOM_Y`: the tiles are stored in the order written.
+ *
+ * For tiled files, `RANDOM_Y` is probably a good choice, as it gives you
+ * control over the tile layout and doesn't require the OpenEXR library to
+ * do any buffering.
+ */
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CEXR_LineOrder { INCREASING_Y = 0, DECREASING_Y = 1, RANDOM_Y = 2, }
 #[repr(u32)]
+/**
+ * Compression mode of an OpenEXR file.
+ *
+ * These modes are lossless:
+ * 
+ * * `NO_COMPRESSION`
+ * * `RLE_COMPRESSION`
+ * * `ZIPS_COMPRESSION`
+ * * `ZIP_COMPRESSION`
+ * * `PIZ_COMPRESSION`
+ *
+ * These modes are lossy:
+ *
+ * * `PXR24_COMPRESSION`
+ * * `B44_COMPRESSION`
+ * * `B44A_COMPRESSION`
+ * * `DWAA_COMPRESSION`
+ * * `DWAB_COMPRESSION`
+ *
+ * And `PXR24_COMPRESSION` is only lossy for 32-bit floating point channels, which
+ * it converts to 24-bit floating point.
+ *
+ * See OpenEXR's documentation and header files for more details on the compression
+ * modes.
+ */
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CEXR_Compression {
     NO_COMPRESSION = 0,
@@ -129,6 +212,9 @@ pub enum CEXR_Compression {
     DWAA_COMPRESSION = 8,
     DWAB_COMPRESSION = 9,
 }
+/**
+ * Describes an image channel.
+ */
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct CEXR_Channel {

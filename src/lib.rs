@@ -1,3 +1,18 @@
+//! Rust bindings for the [http://openexr.com](OpenEXR) C++ library.
+//!
+//! OpenEXR is a bitmap image file format that can store high dynamic images
+//! along with other arbitrary per-pixel data. It is used heavily in the VFX
+//! and 3D animation industries.
+//!
+//! Although this wrapper differs a little in its API compared to the C++
+//! library, it tried not to differ wildly.  Therefore the
+//! [C++ OpenEXR documentation]
+//! (https://github.com/openexr/openexr/tree/develop/OpenEXR/doc) is still
+//! useful as an introduction and rough reference.  Moreover, the file format
+//! itself is also documented there.
+
+// #![warn(missing_docs)]
+
 extern crate libc;
 extern crate openexr_sys;
 
@@ -21,7 +36,26 @@ pub use output::*;
 // TODO: move Header to its own module once we can use
 // `pub(crate)` on struct fields (should be in Rust 1.18).
 
-/// OpenEXR header.
+/// File header of an OpenEXR file.
+///
+/// This represents the header of an OpenEXR file.  It contains attributes, channel
+/// descriptions, image resolution information, etc.  It is used both for fetching
+/// information about a loaded EXR file and for defining the header of a file to be
+/// written.
+///
+/// # Examples
+///
+/// Creating a header for a file that will be written:
+///
+/// ```
+/// use openexr::{Header, PixelType};
+///
+/// Header::new()
+///     .set_resolution(1920, 1080)
+///     .add_channel("R", PixelType::FLOAT)
+///     .add_channel("G", PixelType::FLOAT)
+///     .add_channel("B", PixelType::FLOAT);
+/// ```
 pub struct Header {
     handle: *mut CEXR_Header,
     owned: bool,
@@ -29,6 +63,7 @@ pub struct Header {
 }
 
 impl Header {
+    /// Creates a new header.
     pub fn new() -> Self {
         // Create underlying C header
         let header = {
@@ -83,6 +118,8 @@ impl Header {
     }
 
     /// Sets the display window.
+    ///
+    /// For simple use-cases, it's better to use `set_resolution()` instead.
     pub fn set_display_window(&mut self, window: Box2i) -> &mut Self {
         unsafe {
             CEXR_Header_set_display_window(self.handle, window);
@@ -91,6 +128,8 @@ impl Header {
     }
 
     /// Sets the data window.
+    ///
+    /// For simple use-cases, it's better to use `set_resolution()` instead.
     pub fn set_data_window(&mut self, window: Box2i) -> &mut Self {
         unsafe {
             CEXR_Header_set_data_window(self.handle, window);
@@ -144,8 +183,8 @@ impl Header {
 
     /// Adds a channel.
     ///
-    /// This is a simplified version of `add_channel_detailed()`, using some sane
-    /// defaults for the details.  Specifially: sampling is set to (1, 1)
+    /// This is a simplified version of `add_channel_detailed()`, using some reasonable
+    /// defaults for the details.  Specifically: sampling is set to (1, 1)
     /// and p_linear is set to true.
     pub fn add_channel(&mut self, name: &str, pixel_type: PixelType) -> &mut Self {
         self.add_channel_detailed(name,
@@ -164,14 +203,17 @@ impl Header {
         self
     }
 
+    /// Access to the data window.
     pub fn data_window(&self) -> &Box2i {
         unsafe { &*CEXR_Header_data_window(self.handle) }
     }
 
+    /// Access to the display window.
     pub fn display_window(&self) -> &Box2i {
         unsafe { &*CEXR_Header_display_window(self.handle) }
     }
 
+    /// Returns an iterator over the channels in the header.
     pub fn channels<'a>(&'a self) -> ChannelIter<'a> {
         ChannelIter {
             iterator: unsafe { CEXR_Header_channel_list_iter(self.handle) },
@@ -180,6 +222,7 @@ impl Header {
         }
     }
 
+    /// Access channels by name.
     pub fn get_channel<'a>(&'a self, name: &str) -> Option<&'a Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
         let mut error_out = std::ptr::null();

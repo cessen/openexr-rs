@@ -1,7 +1,9 @@
 use std;
 
+/// Error type for this crate.
 #[derive(Debug, Clone)]
 pub enum Error {
+    /// A generic error, with a description string.
     Generic(String),
 }
 
@@ -23,4 +25,5 @@ impl std::fmt::Display for Error {
     }
 }
 
+/// Result type for this crate.
 pub type Result<T> = std::result::Result<T, Error>;
