@@ -193,11 +193,11 @@ pub enum CEXR_LineOrder { INCREASING_Y = 0, DECREASING_Y = 1, RANDOM_Y = 2, }
  * * `DWAA_COMPRESSION`
  * * `DWAB_COMPRESSION`
  *
- * And `PXR24_COMPRESSION` is only lossy for 32-bit floating point channels, which
- * it converts to 24-bit floating point.
+ * And `PXR24_COMPRESSION` is only lossy for 32-bit floating point channels,
+ * which it converts to 24-bit floating point.
  *
- * See OpenEXR's documentation and header files for more details on the compression
- * modes.
+ * See OpenEXR's documentation and header files for more details on the
+ * compression modes.
  */
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CEXR_Compression {
