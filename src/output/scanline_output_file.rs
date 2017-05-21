@@ -10,14 +10,15 @@ use frame_buffer::FrameBuffer;
 use Header;
 
 
-pub struct ScanlineOutputFile {
+pub struct ScanlineOutputFile<'a> {
     handle: *mut CEXR_OutputFile,
     header_ref: Header,
-    _phantom: PhantomData<CEXR_OutputFile>,
+    _phantom_1: PhantomData<CEXR_OutputFile>,
+    _phantom_2: PhantomData<&'a mut [u8]>,
 }
 
-impl ScanlineOutputFile {
-    pub fn new(path: &Path, header: &Header) -> Result<ScanlineOutputFile> {
+impl<'a> ScanlineOutputFile<'a> {
+    pub fn new(path: &Path, header: &Header) -> Result<ScanlineOutputFile<'static>> {
         let c_path = CString::new(path.to_str()
                                       .expect("non-unicode path handling is unimplemented")
                                       .as_bytes())
@@ -43,7 +44,8 @@ impl ScanlineOutputFile {
                        owned: false,
                        _phantom: PhantomData,
                    },
-                   _phantom: PhantomData,
+                _phantom_1: PhantomData,
+                _phantom_2: PhantomData,
                })
         }
     }
@@ -79,7 +81,7 @@ impl ScanlineOutputFile {
     }
 }
 
-impl Drop for ScanlineOutputFile {
+impl<'a> Drop for ScanlineOutputFile<'a> {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
     }
