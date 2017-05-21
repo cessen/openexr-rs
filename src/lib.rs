@@ -13,6 +13,7 @@
 
 // #![warn(missing_docs)]
 
+extern crate half;
 extern crate libc;
 extern crate openexr_sys;
 

@@ -31,7 +31,7 @@ including reading from memory.
 
 - [x] Wrap basic scanline output.
 - [x] Wrap basic scanline input.
-- [ ] Figure out a good way to support Half floats.
+- [x] Figure out a good way to support Half floats.
 - [ ] Make simple convenience functions for basic RGB/RGBA input and output.
 - [ ] Wrap basic tiled output.
 - [ ] Wrap basic tiled input.

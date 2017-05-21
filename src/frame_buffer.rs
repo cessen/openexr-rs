@@ -2,6 +2,7 @@ use std::ffi::CString;
 use std::marker::PhantomData;
 use std::mem;
 
+use half::f16;
 use libc::{c_char, c_int};
 
 use openexr_sys::*;
@@ -172,6 +173,12 @@ unsafe impl PixelData for u32 {
     }
 }
 
+unsafe impl PixelData for f16 {
+    fn pixel_type() -> PixelType {
+        PixelType::HALF
+    }
+}
+
 unsafe impl PixelData for f32 {
     fn pixel_type() -> PixelType {
         PixelType::FLOAT
@@ -215,6 +222,33 @@ pub unsafe trait PixelDataStruct: Copy {
 
 // T2_F32, T3_F32, T4_F32,
 include!(concat!(env!("OUT_DIR"), "/data_type_offsets.rs"));
+
+unsafe impl PixelDataStruct for (f16, f16) {
+    fn channels() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 2] = [(PixelType::FLOAT, T2_F16.0),
+                                                 (PixelType::FLOAT, T2_F16.1)];
+        &TYPES
+    }
+}
+
+unsafe impl PixelDataStruct for (f16, f16, f16) {
+    fn channels() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 3] = [(PixelType::FLOAT, T3_F16.0),
+                                                 (PixelType::FLOAT, T3_F16.1),
+                                                 (PixelType::FLOAT, T3_F16.2)];
+        &TYPES
+    }
+}
+
+unsafe impl PixelDataStruct for (f16, f16, f16, f16) {
+    fn channels() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 4] = [(PixelType::FLOAT, T4_F16.0),
+                                                 (PixelType::FLOAT, T4_F16.1),
+                                                 (PixelType::FLOAT, T4_F16.2),
+                                                 (PixelType::FLOAT, T4_F16.3)];
+        &TYPES
+    }
+}
 
 unsafe impl PixelDataStruct for (f32, f32) {
     fn channels() -> &'static [(PixelType, usize)] {

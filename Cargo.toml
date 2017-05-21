@@ -18,6 +18,10 @@ path = "src/lib.rs"
 
 [dependencies]
 libc = "0.2"
+half = "1"
+
+[build-dependencies]
+half = "1"
 
 [dependencies.openexr-sys]
 path = "openexr-sys"
