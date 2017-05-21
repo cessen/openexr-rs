@@ -263,6 +263,11 @@ macro_rules! offset_of {
     }
 }
 
+unsafe impl<A: ChannelData> PixelData for (A,) {
+    fn channel_count() -> usize { 1 }
+    fn channel(_: usize) -> (PixelType, usize) { (A::pixel_type(), offset_of!(Self, 0)) }
+}
+
 unsafe impl<A, B> PixelData for (A, B)
     where A: ChannelData, B: ChannelData
 {
