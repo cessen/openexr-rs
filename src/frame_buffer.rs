@@ -213,14 +213,44 @@ pub unsafe trait PixelDataStruct: Copy {
     fn channels() -> &'static [(PixelType, usize)];
 }
 
+// T2_F32, T3_F32, T4_F32,
+include!(concat!(env!("OUT_DIR"), "/data_type_offsets.rs"));
+
 unsafe impl PixelDataStruct for (f32, f32) {
+    fn channels() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 2] = [(PixelType::FLOAT, T2_F32.0),
+                                                 (PixelType::FLOAT, T2_F32.1)];
+        &TYPES
+    }
+}
+
+unsafe impl PixelDataStruct for (f32, f32, f32) {
+    fn channels() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 3] = [(PixelType::FLOAT, T3_F32.0),
+                                                 (PixelType::FLOAT, T3_F32.1),
+                                                 (PixelType::FLOAT, T3_F32.2)];
+        &TYPES
+    }
+}
+
+unsafe impl PixelDataStruct for (f32, f32, f32, f32) {
+    fn channels() -> &'static [(PixelType, usize)] {
+        static TYPES: [(PixelType, usize); 4] = [(PixelType::FLOAT, T4_F32.0),
+                                                 (PixelType::FLOAT, T4_F32.1),
+                                                 (PixelType::FLOAT, T4_F32.2),
+                                                 (PixelType::FLOAT, T4_F32.3)];
+        &TYPES
+    }
+}
+
+unsafe impl PixelDataStruct for [f32; 2] {
     fn channels() -> &'static [(PixelType, usize)] {
         static TYPES: [(PixelType, usize); 2] = [(PixelType::FLOAT, 0), (PixelType::FLOAT, 4)];
         &TYPES
     }
 }
 
-unsafe impl PixelDataStruct for (f32, f32, f32) {
+unsafe impl PixelDataStruct for [f32; 3] {
     fn channels() -> &'static [(PixelType, usize)] {
         static TYPES: [(PixelType, usize); 3] = [(PixelType::FLOAT, 0),
                                                  (PixelType::FLOAT, 4),
@@ -229,7 +259,7 @@ unsafe impl PixelDataStruct for (f32, f32, f32) {
     }
 }
 
-unsafe impl PixelDataStruct for (f32, f32, f32, f32) {
+unsafe impl PixelDataStruct for [f32; 4] {
     fn channels() -> &'static [(PixelType, usize)] {
         static TYPES: [(PixelType, usize); 4] = [(PixelType::FLOAT, 0),
                                                  (PixelType::FLOAT, 4),
