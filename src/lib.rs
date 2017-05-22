@@ -1,4 +1,4 @@
-//! Rust bindings for the [http://openexr.com](OpenEXR) C++ library.
+//! Rust bindings for the [OpenEXR](http://openexr.com) C++ library.
 //!
 //! OpenEXR is a bitmap image file format that can store high dynamic images
 //! along with other arbitrary per-pixel data. It is used heavily in the VFX
