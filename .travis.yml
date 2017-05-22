@@ -1,9 +1,9 @@
 language: rust
 sudo: required
 rust:
+  - stable
   - beta
   - nightly
-  - stable
 env:
   - OPENEXR_DIR=/usr/local ILMBASE_DIR=/usr/local
 before_install:
