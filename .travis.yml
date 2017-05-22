@@ -4,6 +4,9 @@ rust:
   - beta
   - nightly
   - stable
+env:
+  - OPENEXR_DIR=/usr/local
+  - ILMBASE_DIR=/usr/local
 before_install:
   - wget https://github.com/openexr/openexr/archive/v2.2.0.tar.gz -O openexr2.2.tar.gz
   - tar xzf openexr2.2.tar.gz
