@@ -1,0 +1,11 @@
+language: rust
+sudo: required
+rust:
+  - beta
+  - nightly
+  - stable
+before_install:
+  - wget https://github.com/openexr/openexr/archive/v2.2.0.tar.gz -O openexr2.2.tar.gz
+  - tar xzf openexr2.2.tar.gz
+  - pushd openexr-2.2.0/IlmBase && cmake && make && sudo make install && popd
+  - pushd openexr-2.2.0/OpenEXR && cmake && make && sudo make install && popd

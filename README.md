@@ -1,4 +1,4 @@
-# OpenEXR-rs
+# OpenEXR-rs [![Build Status][trav-ci-img]][trav-ci] [![crates.io badge][crates-io-badge]][crates-io-url]
 
 Rust bindings for [OpenEXR](http://www.openexr.com).
 
