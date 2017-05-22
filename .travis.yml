@@ -5,9 +5,10 @@ rust:
   - beta
   - nightly
 env:
-  - OPENEXR_DIR=/usr/local ILMBASE_DIR=/usr/local
+  - OPENEXR_DIR=/usr/local ILMBASE_DIR=/usr/local OPENEXR_LIB_SUFFIX=2_2
 before_install:
   - wget https://github.com/openexr/openexr/archive/v2.2.0.tar.gz -O openexr2.2.tar.gz
   - tar xzf openexr2.2.tar.gz
   - pushd openexr-2.2.0/IlmBase && cmake -D CMAKE_INSTALL_PREFIX=/usr/local ./ && make && sudo make install && popd
-  - pushd openexr-2.2.0/OpenEXR && cmake -D CMAKE_INSTALL_PREFIX=/usr/local -D ILMBASE_PACKAGE_PREFIX=/usr/local ./ && make && sudo make install && popd
+  - pushd openexr-2.2.0/IlmBase && rm CMakeCache.txt && cmake -D CMAKE_INSTALL_PREFIX=/usr/local -D BUILD_SHARED_LIBS=OFF ./ && make && sudo make install && popd
+  - pushd openexr-2.2.0/OpenEXR && cmake -D CMAKE_INSTALL_PREFIX=/usr/local -D ILMBASE_PACKAGE_PREFIX=/usr/local -D BUILD_SHARED_LIBS=OFF ./ && make && sudo make install && popd
