@@ -14,21 +14,13 @@ fn main() {
     let height = window.max.y - window.min.y + 1;
 
     // Make sure the channels we want exist in the file
-    assert!(exr_file
-                .header()
-                .get_channel("R")
-                .expect("Didn't find channel 'R'.")
-                .pixel_type == PixelType::FLOAT);
-    assert!(exr_file
-                .header()
-                .get_channel("G")
-                .expect("Didn't find channel 'G'.")
-                .pixel_type == PixelType::FLOAT);
-    assert!(exr_file
-                .header()
-                .get_channel("B")
-                .expect("Didn't find channel 'B'.")
-                .pixel_type == PixelType::FLOAT);
+    for channel_name in ["R", "G", "B"].iter() {
+        let channel = exr_file
+            .header()
+            .get_channel(channel_name)
+            .expect(&format!("Didn't find channel {}.", channel_name));
+        assert!(channel.pixel_type == PixelType::FLOAT);
+    }
 
     // Create our pixel data buffer and load the data from the file
     let mut pixel_data: Vec<(f32, f32, f32)> = vec![(0.0, 0.0, 0.0); (width*height) as usize];

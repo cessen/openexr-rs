@@ -10,6 +10,85 @@
 //! (https://github.com/openexr/openexr/tree/develop/OpenEXR/doc) is still
 //! useful as an introduction and rough reference.  Moreover, the file format
 //! itself is also documented there.
+//!
+//! # Examples
+//!
+//! Writing a scanline RGB file.
+//!
+//! ```no_run
+//! use std::path::Path;
+//! use openexr::{FrameBuffer, Header, ScanlineOutputFile, PixelType};
+//!
+//! // Pixel data for a 256x256 floating point RGB image.
+//! let mut pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
+//!
+//! // Create a file to write to.  The `Header` determines the properties of the
+//! // file, like resolution and what channels it has.
+//! let mut output_file = ScanlineOutputFile::new(
+//!     Path::new("output_file.exr"),
+//!     Header::new()
+//!         .set_resolution(256, 256)
+//!         .add_channel("R", PixelType::FLOAT)
+//!         .add_channel("G", PixelType::FLOAT)
+//!         .add_channel("B", PixelType::FLOAT)).unwrap();
+//!
+//! // The `FrameBuffer` points to and describes pixel data in memory. In this
+//! // case, it points to `pixel_data` and says it has three channels: 'R', 'G',
+//! // and 'B'.  The data type of the channels is inferred from `pixel_data`'s
+//! // type.
+//! //
+//! // The `0.0`'s are fallback values for each channel in case of missing
+//! // pixel data when reading from a file.  In this example they aren't used.
+//! let mut fb = FrameBuffer::new(256, 256);
+//! fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+//!
+//! // Write pixel data to the file.  We pass our framebuffer to it so it knows
+//! // what pixel data to write.
+//! output_file.write_pixels(&mut fb).unwrap();
+//! ```
+//!
+//! Reading an RGB file.
+//!
+//! ```no_run
+//! use std::path::Path;
+//! use openexr::{FrameBuffer, InputFile, PixelType};
+//!
+//! // Open the EXR file.
+//! let input_file = InputFile::new(Path::new("input_file.exr")).unwrap();
+//!
+//! // Get the image dimensions, so we know how large of a buffer to make.
+//! let window = input_file.header().data_window();
+//! let width = window.max.x - window.min.x + 1;
+//! let height = window.max.y - window.min.y + 1;
+//!
+//! // Make sure the channels we want exist in the file and are of the type we
+//! // expect.  If you statically know the properties of the file you're
+//! // loading, this isn't necessary.
+//! for channel_name in ["R", "G", "B"].iter() {
+//!     let channel = input_file
+//!         .header()
+//!         .get_channel(channel_name)
+//!         .expect(&format!("Didn't find channel {}.", channel_name));
+//!     assert!(channel.pixel_type == PixelType::FLOAT);
+//! }
+//!
+//! // Space to read pixel data into.
+//! let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); (width*height) as usize];
+//!
+//! // New scope because `FrameBuffer` mutably borrows `pixel_data`, so we need
+//! // it to go out of scope before we can access our `pixel_data` again.
+//! {
+//!     // Create `FrameBuffer`.  Same drill as for output.
+//!     let mut fb = FrameBuffer::new(width as usize, height as usize);
+//!     fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+//!
+//!     // Read in pixel data.
+//!     input_file.read_pixels(&mut fb).unwrap();
+//! }
+//!
+//! // The image data is now loaded into `pixel_data`.
+//! ```
+
 
 // #![warn(missing_docs)]
 
