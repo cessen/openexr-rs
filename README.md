@@ -1,4 +1,4 @@
-# OpenEXR-rs
+# OpenEXR-rs [![Build Status][trav-ci-img]][trav-ci] [![crates.io badge][crates-io-badge]][crates-io-url]
 
 Rust bindings for [OpenEXR](http://www.openexr.com).
 
@@ -54,3 +54,8 @@ details).  The code for OpenEXR itself is distributed under the terms of a
 modified BSD license (see http://www.openexr.com/license.html for details).
 zlib is distributed under the terms of the zlib license (see
 http://zlib.net/zlib_license.html for details).
+
+[crates-io-badge]: https://img.shields.io/crates/v/openexr.svg
+[crates-io-url]: https://crates.io/crates/openexr
+[trav-ci-img]: https://travis-ci.org/cessen/openexr-rs.svg?branch=master
+[trav-ci]: https://travis-ci.org/cessen/openexr-rs
