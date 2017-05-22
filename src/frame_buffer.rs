@@ -53,7 +53,7 @@ impl<'a> FrameBuffer<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_channel<T: PixelData>(&mut self, name: &str, fill: f64, data: &'a mut [T]) {
+    pub fn insert_channel<T: PixelData>(&mut self, name: &str, fill: f64, data: &'a mut [T]) -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -70,6 +70,7 @@ impl<'a> FrameBuffer<'a> {
                             fill,
                             (false, false))
         };
+        self
     }
 
     /// Insert multiple channels from a slice of structs or tuples.
@@ -82,7 +83,7 @@ impl<'a> FrameBuffer<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_pixels<T: PixelStruct>(&mut self, channels: &[(&str, f64)], data: &'a mut [T]) {
+    pub fn insert_pixels<T: PixelStruct>(&mut self, channels: &[(&str, f64)], data: &'a mut [T]) -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -101,6 +102,7 @@ impl<'a> FrameBuffer<'a> {
                                 (false, false))
             };
         }
+        self
     }
 
     /// The raw method for inserting a new channel.
@@ -118,7 +120,7 @@ impl<'a> FrameBuffer<'a> {
                              stride: (usize, usize),
                              sampling: (c_int, c_int),
                              fill_value: f64,
-                             tile_coords: (bool, bool)) {
+                             tile_coords: (bool, bool)) -> &mut Self {
         let c_name = CString::new(name).unwrap();
         CEXR_FrameBuffer_insert(self.handle,
                                 c_name.as_ptr(),
@@ -131,6 +133,7 @@ impl<'a> FrameBuffer<'a> {
                                 fill_value,
                                 tile_coords.0 as c_int,
                                 tile_coords.1 as c_int);
+        self
     }
 
     // These shouldn't be used outside of this crate, but due to
