@@ -53,7 +53,11 @@ impl<'a> FrameBuffer<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_channel<T: PixelData>(&mut self, name: &str, fill: f64, data: &'a mut [T]) -> &mut Self {
+    pub fn insert_channel<T: PixelData>(&mut self,
+                                        name: &str,
+                                        fill: f64,
+                                        data: &'a mut [T])
+                                        -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -83,7 +87,10 @@ impl<'a> FrameBuffer<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_pixels<T: PixelStruct>(&mut self, channels: &[(&str, f64)], data: &'a mut [T]) -> &mut Self {
+    pub fn insert_pixels<T: PixelStruct>(&mut self,
+                                         channels: &[(&str, f64)],
+                                         data: &'a mut [T])
+                                         -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -120,7 +127,8 @@ impl<'a> FrameBuffer<'a> {
                              stride: (usize, usize),
                              sampling: (c_int, c_int),
                              fill_value: f64,
-                             tile_coords: (bool, bool)) -> &mut Self {
+                             tile_coords: (bool, bool))
+                             -> &mut Self {
         let c_name = CString::new(name).unwrap();
         CEXR_FrameBuffer_insert(self.handle,
                                 c_name.as_ptr(),

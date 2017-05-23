@@ -1,4 +1,5 @@
 use std::ffi::{CStr, CString};
+use std::io::{Write, Seek};
 use std::marker::PhantomData;
 use std::path::Path;
 use std::ptr;
@@ -18,6 +19,41 @@ pub struct ScanlineOutputFile<'a> {
 }
 
 impl<'a> ScanlineOutputFile<'a> {
+    // pub fn from_writer<T: Write + Seek>(writer: &'a mut T, header: &Header) ->
+    //     Result<ScanlineOutputFile<'a>> {
+    //     let mut error_out = ptr::null();
+    //     let mut out = ptr::null_mut();
+    //     let error = unsafe {
+    //         // NOTE: we don't need to keep a copy of the header, because this
+    //         // function makes a deep copy that is stored in the CEXR_OutputFile.
+    //         CEXR_OutputFile_from_writer(
+    //             writer,
+    //             header.handle,
+    //             1,
+    //             &mut out,
+    //             &mut error_out
+    //         )
+    //     };
+    //     if error != 0 {
+    //         let msg = unsafe { CStr::from_ptr(error_out) };
+    //         Err(Error::Generic(msg.to_string_lossy().into_owned()))
+    //     } else {
+    //         Ok(ScanlineOutputFile {
+    //                handle: out,
+    //                header_ref: Header {
+    //                    // NOTE: We're casting to *mut here to satisfy the
+    //                    // field's type, but importantly we only return a
+    //                    // const & of the Header so it retains const semantics.
+    //                    handle: unsafe { CEXR_OutputFile_header(out) } as *mut CEXR_Header,
+    //                    owned: false,
+    //                    _phantom: PhantomData,
+    //                },
+    //                _phantom_1: PhantomData,
+    //                _phantom_2: PhantomData,
+    //            })
+    //     }
+    // }
+
     pub fn new(path: &Path, header: &Header) -> Result<ScanlineOutputFile<'static>> {
         let c_path = CString::new(path.to_str()
                                       .expect("non-unicode path handling is unimplemented")
