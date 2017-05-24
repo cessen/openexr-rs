@@ -104,20 +104,17 @@ fn memory_io() {
 //
 // Run tests with `--nocapture` to see output. (`cargo test -- --nocapture`)
 #[derive(Debug)]
-struct DummyWriter {
-    pos: usize,
-}
+struct DummyWriter {}
 
 impl DummyWriter {
     pub fn new() -> DummyWriter {
-        DummyWriter { pos: 0 }
+        DummyWriter {}
     }
 }
 
 impl Write for DummyWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         println!("Write: {:?}", buf);
-        self.pos += buf.len();
         Ok(buf.len())
     }
 
@@ -144,19 +141,13 @@ impl Seek for DummyWriter {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         match pos {
             SeekFrom::Start(n) => {
-                let old_pos = self.pos;
-                self.pos = n as usize;
-                println!("SeekFromStart: ({}) {} -> {}", n, old_pos, self.pos);
+                println!("SeekFromStart: {}", n);
+                return Ok(n);
             }
             SeekFrom::End(n) => unimplemented!(),
-            SeekFrom::Current(n) => {
-                let old_pos = self.pos;
-                self.pos = (self.pos as i64 + n) as usize;
-                println!("SeekFromCurrent: ({}) {} -> {}", n, old_pos, self.pos);
-            }
+            SeekFrom::Current(n) => unimplemented!(),
         }
 
-        Ok(self.pos as u64)
     }
 }
 
