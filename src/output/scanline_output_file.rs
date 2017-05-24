@@ -71,41 +71,34 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
                                                 Some(write_ptr),
                                                 Some(tellp_ptr),
                                                 Some(seekp_ptr))
-            };
+            }
         };
 
-        //let mut error_out = ptr::null();
-        //let mut out = ptr::null_mut();
-        //let error = unsafe {
-        //    // NOTE: we don't need to keep a copy of the header, because this
-        //    // function makes a deep copy that is stored in the CEXR_OutputFile.
-        //    CEXR_OutputFile_from_writer(
-        //        writer,
-        //        header.handle,
-        //        1,
-        //        &mut out,
-        //        &mut error_out
-        //    )
-        //};
-        //if error != 0 {
-        //    let msg = unsafe { CStr::from_ptr(error_out) };
-        //    Err(Error::Generic(msg.to_string_lossy().into_owned()))
-        //} else {
-        //    Ok(ScanlineOutputFile {
-        //           handle: out,
-        //           header_ref: Header {
-        //               // NOTE: We're casting to *mut here to satisfy the
-        //               // field's type, but importantly we only return a
-        //               // const & of the Header so it retains const semantics.
-        //               handle: unsafe { CEXR_OutputFile_header(out) } as *mut CEXR_Header,
-        //               owned: false,
-        //               _phantom: PhantomData,
-        //           },
-        //           _phantom_1: PhantomData,
-        //           _phantom_2: PhantomData,
-        //       })
-        //}
-        unimplemented!()
+        let mut error_out = ptr::null();
+        let mut out = ptr::null_mut();
+        let error = unsafe {
+            // NOTE: we don't need to keep a copy of the header, because this
+            // function makes a deep copy that is stored in the CEXR_OutputFile.
+            CEXR_OutputFile_from_stream(ostream_ptr, header.handle, 1, &mut out, &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            Ok(ScanlineOutputFile {
+                   handle: out,
+                   header_ref: Header {
+                       // NOTE: We're casting to *mut here to satisfy the
+                       // field's type, but importantly we only return a
+                       // const & of the Header so it retains const semantics.
+                       handle: unsafe { CEXR_OutputFile_header(out) } as *mut CEXR_Header,
+                       owned: false,
+                       _phantom: PhantomData,
+                   },
+                   stream_writer: Some((stream_writer, ostream_ptr)),
+                   _phantom_1: PhantomData,
+               })
+        }
     }
 
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {

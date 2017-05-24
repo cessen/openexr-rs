@@ -71,6 +71,7 @@ pub unsafe extern "C" fn seekp<T: Write + Seek>(stream_writer: *mut c_void, pos:
 
 pub struct UnusedIOStream {}
 
+#[allow(unused_variables)]
 impl Read for UnusedIOStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         unimplemented!()
@@ -89,6 +90,7 @@ impl Read for UnusedIOStream {
     }
 }
 
+#[allow(unused_variables)]
 impl Write for UnusedIOStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         unimplemented!()
@@ -107,6 +109,7 @@ impl Write for UnusedIOStream {
     }
 }
 
+#[allow(unused_variables)]
 impl Seek for UnusedIOStream {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         unimplemented!()

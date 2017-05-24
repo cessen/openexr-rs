@@ -247,6 +247,17 @@ int CEXR_OutputFile_from_file(const char *path, const CEXR_Header *header, int t
     return 0;
 }
 
+int CEXR_OutputFile_from_stream(CEXR_OStream *stream, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out) {
+    try {
+        *out = reinterpret_cast<CEXR_OutputFile *>(new OutputFile(*reinterpret_cast<OStream *>(stream), threads));
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
+}
+
 void CEXR_OutputFile_delete(CEXR_OutputFile *file) {
     delete reinterpret_cast<OutputFile *>(file);
 }
