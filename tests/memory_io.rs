@@ -6,7 +6,8 @@ use std::path::Path;
 
 use openexr::{FrameBuffer, Header, ScanlineOutputFile, InputFile, PixelType};
 
-fn main() {
+#[test]
+fn memory_io() {
     let mut in_memory_buffer = Cursor::new(Vec::<u8>::new());
 
     {

@@ -2,6 +2,7 @@
 #define CEXR_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -151,11 +152,19 @@ typedef struct CEXR_OutputFile CEXR_OutputFile;
 typedef struct CEXR_Header CEXR_Header;
 typedef struct CEXR_FrameBuffer CEXR_FrameBuffer;
 typedef struct CEXR_IStream CEXR_IStream;
+typedef struct CEXR_IStream CEXR_OStream;
 typedef struct CEXR_ChannelListIter CEXR_ChannelListIter;
 
 
 CEXR_IStream *CEXR_IStream_from_memory(const char *filename, char *data, size_t size);
 void CEXR_IStream_delete(CEXR_IStream *stream);
+CEXR_OStream *CEXR_OStream_from_stream_writer(
+    void *writer,
+    int (*write_ptr)(void *, const char *, int),
+    uint64_t (*tellp_ptr)(void *),
+    int (*seekp_ptr)(void *, uint64_t)
+);
+void CEXR_OStream_delete(CEXR_OStream *stream);
 
 bool CEXR_ChannelListIter_next(CEXR_ChannelListIter *iter, const char **name, CEXR_Channel *channel);
 void CEXR_ChannelListIter_delete(CEXR_ChannelListIter *iter);

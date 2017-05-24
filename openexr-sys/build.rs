@@ -87,5 +87,6 @@ fn main() {
     }
     gcc.file("c_wrapper/cexr.cpp")
         .file("c_wrapper/memory_istream.cpp")
+        .file("c_wrapper/rust_ostream.cpp")
         .compile("libcexr.a");
 }
