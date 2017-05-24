@@ -12,15 +12,16 @@ public:
     RustOStream(
         void *writer,
         int (*write_ptr)(void *, const char *, int),
-        uint64_t (*tellp_ptr)(void *),
         int (*seekp_ptr)(void *, uint64_t)
     )
         : OStream{"Rust StreamWriter"},
         writer{writer},
         write_ptr{write_ptr},
-        tellp_ptr{tellp_ptr},
-        seekp_ptr{seekp_ptr}
-    {}
+        seekp_ptr{seekp_ptr},
+        cursor_pos{0}
+    {
+        seekp_ptr(writer, 0);
+    }
 
     virtual void write (const char c[/*n*/], int n);
     virtual uint64_t tellp ();
@@ -31,6 +32,7 @@ private:
     int (*write_ptr)(void *, const char *, int);
     uint64_t (*tellp_ptr)(void *);
     int (*seekp_ptr)(void *, uint64_t);
+    uint64_t cursor_pos;
 };
 
 #endif

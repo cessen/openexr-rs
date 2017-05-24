@@ -9,15 +9,15 @@ use openexr_sys::*;
 use error::*;
 use frame_buffer::FrameBuffer;
 use Header;
-use stream_io;
-use stream_io::{StreamWriter, UnusedIOStream};
+use stream_io::{UnusedIOStream, write_stream, seek_stream};
 
 
 pub struct ScanlineOutputFile<'a, T: 'a + Write + Seek> {
     handle: *mut CEXR_OutputFile,
     header_ref: Header,
-    stream_writer: Option<(StreamWriter<'a, T>, *mut CEXR_OStream)>,
+    stream_writer: Option<*mut CEXR_OStream>,
     _phantom_1: PhantomData<CEXR_OutputFile>,
+    _phantom_2: PhantomData<&'a mut T>,
 }
 
 impl ScanlineOutputFile<'static, UnusedIOStream> {
@@ -51,6 +51,7 @@ impl ScanlineOutputFile<'static, UnusedIOStream> {
                    },
                    stream_writer: None,
                    _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }
@@ -60,16 +61,12 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
     pub fn from_writer<'b>(writer: &'b mut T,
                            header: &Header)
                            -> Result<ScanlineOutputFile<'b, T>> {
-        let mut stream_writer = StreamWriter::new(writer);
         let ostream_ptr = {
-            let write_ptr = stream_io::write::<T>;
-            let tellp_ptr = stream_io::tellp::<T>;
-            let seekp_ptr = stream_io::seekp::<T>;
+            let write_ptr = write_stream::<T>;
+            let seekp_ptr = seek_stream::<T>;
             unsafe {
-                CEXR_OStream_from_stream_writer(&mut stream_writer as *mut StreamWriter<T> as
-                                                *mut _,
+                CEXR_OStream_from_stream_writer(writer as *mut T as *mut _,
                                                 Some(write_ptr),
-                                                Some(tellp_ptr),
                                                 Some(seekp_ptr))
             }
         };
@@ -95,8 +92,9 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
                        owned: false,
                        _phantom: PhantomData,
                    },
-                   stream_writer: Some((stream_writer, ostream_ptr)),
+                   stream_writer: Some(ostream_ptr),
                    _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }
@@ -135,7 +133,7 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
 impl<'a, T: 'a + Write + Seek> Drop for ScanlineOutputFile<'a, T> {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
-        if let Some((_, ostream_ptr)) = self.stream_writer {
+        if let Some(ostream_ptr) = self.stream_writer {
             unsafe { CEXR_OStream_delete(ostream_ptr) };
         }
     }

@@ -10,10 +10,11 @@ void RustOStream::write(const char c[], int n) {
     if (res != 0) {
         throw std::runtime_error("error writing data");
     }
+    cursor_pos += n;
 }
 
 uint64_t RustOStream::tellp() {
-    return tellp_ptr(writer);
+    return cursor_pos;
 }
 
 void RustOStream::seekp(uint64_t pos) {
@@ -21,4 +22,5 @@ void RustOStream::seekp(uint64_t pos) {
     if (res != 0) {
         throw std::runtime_error("error seeking in OStream");
     }
+    cursor_pos = pos;
 }

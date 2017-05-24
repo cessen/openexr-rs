@@ -161,7 +161,6 @@ void CEXR_IStream_delete(CEXR_IStream *stream);
 CEXR_OStream *CEXR_OStream_from_stream_writer(
     void *writer,
     int (*write_ptr)(void *, const char *, int),
-    uint64_t (*tellp_ptr)(void *),
     int (*seekp_ptr)(void *, uint64_t)
 );
 void CEXR_OStream_delete(CEXR_OStream *stream);

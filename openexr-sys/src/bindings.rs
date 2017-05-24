@@ -391,11 +391,6 @@ extern "C" {
                                                                                               ::std::os::raw::c_int)
                                                                          ->
                                                                              ::std::os::raw::c_int>,
-                                           tellp_ptr:
-                                               ::std::option::Option<unsafe extern "C" fn(arg1:
-                                                                                              *mut ::std::os::raw::c_void)
-                                                                         ->
-                                                                             u64>,
                                            seekp_ptr:
                                                ::std::option::Option<unsafe extern "C" fn(arg1:
                                                                                               *mut ::std::os::raw::c_void,
