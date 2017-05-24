@@ -101,6 +101,7 @@ mod error;
 mod frame_buffer;
 mod input;
 mod output;
+mod stream_io;
 
 use std::ffi::{CStr, CString};
 use std::marker::PhantomData;

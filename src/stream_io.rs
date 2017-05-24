@@ -1,5 +1,7 @@
+use std::fmt::Arguments;
+use std::io;
+use std::io::{Read, Write, Seek, SeekFrom};
 use std::os::raw::{c_char, c_int};
-use std::io::{Write, Seek, SeekFrom};
 use std::slice;
 
 /// A pointer to this is passed to the OpenEXR C++ API for writing
@@ -59,5 +61,51 @@ pub extern "C" fn seekp<T: Write + Seek>(stream_writer: *mut StreamWriter<T>, po
         return 0;
     } else {
         return 1;
+    }
+}
+
+// ----------------------------------------------------------------
+
+pub struct UnusedIOStream {}
+
+impl Read for UnusedIOStream {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        unimplemented!()
+    }
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
+        unimplemented!()
+    }
+    fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
+        unimplemented!()
+    }
+    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
+        unimplemented!()
+    }
+    fn by_ref(&mut self) -> &mut Self {
+        unimplemented!()
+    }
+}
+
+impl Write for UnusedIOStream {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        unimplemented!()
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        unimplemented!()
+    }
+    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        unimplemented!()
+    }
+    fn write_fmt(&mut self, fmt: Arguments) -> io::Result<()> {
+        unimplemented!()
+    }
+    fn by_ref(&mut self) -> &mut Self {
+        unimplemented!()
+    }
+}
+
+impl Seek for UnusedIOStream {
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        unimplemented!()
     }
 }
