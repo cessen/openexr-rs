@@ -1,18 +1,15 @@
 extern crate openexr;
 
-use std::env;
-use std::io;
-use std::fmt::Arguments;
-use std::io::{Cursor, Write, Seek, SeekFrom};
-use std::path::Path;
+use std::io::Cursor;
 
 use openexr::{FrameBuffer, Header, ScanlineOutputFile, InputFile, PixelType};
 
 #[test]
 fn memory_io() {
-    // let mut in_memory_buffer = DummyWriter::new();
+    // Target memory for writing
     let mut in_memory_buffer = Cursor::new(Vec::<u8>::new());
 
+    // Write file to memory
     {
         let mut pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
 
@@ -35,6 +32,7 @@ fn memory_io() {
         exr_file.write_pixels(&mut fb).unwrap();
     }
 
+    // Read file from memory, and verify its contents
     {
         let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 256];
 
@@ -70,64 +68,5 @@ fn memory_io() {
         for pixel in pixel_data {
             assert_eq!(pixel, (0.82, 1.78, 0.21));
         }
-    }
-}
-
-// Dummy class that doesn't actually write anything, but instead
-// prints when its various methods are called.  Provides some insight
-// into what OpenEXR is doing internally.
-//
-// Run tests with `--nocapture` to see output. (`cargo test -- --nocapture`)
-#[derive(Debug)]
-struct DummyWriter {}
-
-impl DummyWriter {
-    pub fn new() -> DummyWriter {
-        DummyWriter {}
-    }
-}
-
-impl Write for DummyWriter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        println!("Write: {:?}", buf);
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        println!("Flush");
-        Ok(())
-    }
-
-    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.write(buf);
-        Ok(())
-    }
-
-    fn write_fmt(&mut self, fmt: Arguments) -> io::Result<()> {
-        unimplemented!()
-    }
-
-    fn by_ref(&mut self) -> &mut Self {
-        unimplemented!()
-    }
-}
-
-impl Seek for DummyWriter {
-    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
-        match pos {
-            SeekFrom::Start(n) => {
-                println!("SeekFromStart: {}", n);
-                return Ok(n);
-            }
-            SeekFrom::End(n) => unimplemented!(),
-            SeekFrom::Current(n) => unimplemented!(),
-        }
-
-    }
-}
-
-impl Drop for DummyWriter {
-    fn drop(&mut self) {
-        println!("Dropping DummyWriter!");
     }
 }
