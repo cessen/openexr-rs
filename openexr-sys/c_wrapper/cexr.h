@@ -152,7 +152,7 @@ typedef struct CEXR_OutputFile CEXR_OutputFile;
 typedef struct CEXR_Header CEXR_Header;
 typedef struct CEXR_FrameBuffer CEXR_FrameBuffer;
 typedef struct CEXR_IStream CEXR_IStream;
-typedef struct CEXR_IStream CEXR_OStream;
+typedef struct CEXR_OStream CEXR_OStream;
 typedef struct CEXR_ChannelListIter CEXR_ChannelListIter;
 
 

@@ -247,7 +247,11 @@ pub struct CEXR_FrameBuffer {
 pub struct CEXR_IStream {
     _unused: [u8; 0],
 }
-pub type CEXR_OStream = CEXR_IStream;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CEXR_OStream {
+    _unused: [u8; 0],
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct CEXR_ChannelListIter {
