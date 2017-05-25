@@ -46,7 +46,7 @@ impl<'a> InputFile<'a> {
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
         let error =
-            unsafe { CEXR_InputFile_from_file(c_path.as_ptr(), 1, &mut out, &mut error_out) };
+            unsafe { CEXR_InputFile_from_file_path(c_path.as_ptr(), 1, &mut out, &mut error_out) };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))

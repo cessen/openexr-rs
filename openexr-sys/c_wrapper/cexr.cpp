@@ -29,7 +29,7 @@ void CEXR_IStream_delete(CEXR_IStream *stream) {
     delete reinterpret_cast<IStream *>(stream);
 }
 
-CEXR_OStream *CEXR_OStream_from_stream_writer(
+CEXR_OStream *CEXR_OStream_from_writer(
     void *writer,
     int (*write_ptr)(void *, const char *, int),
     int (*seekp_ptr)(void *, uint64_t)
@@ -180,7 +180,7 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *fb,
 //----------------------------------------------------
 // InputFile
 
-int CEXR_InputFile_from_file(const char *path, int threads, CEXR_InputFile **out, const char **err_out) {
+int CEXR_InputFile_from_file_path(const char *path, int threads, CEXR_InputFile **out, const char **err_out) {
     try {
         *out = reinterpret_cast<CEXR_InputFile *>(new InputFile(path, threads));
     } catch(const std::exception &e) {
@@ -235,7 +235,7 @@ int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanlin
 //----------------------------------------------------
 // OutputFile
 
-int CEXR_OutputFile_from_file(const char *path, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out) {
+int CEXR_OutputFile_from_file_path(const char *path, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out) {
     try {
         *out = reinterpret_cast<CEXR_OutputFile *>(new OutputFile(path, *reinterpret_cast<const Header *>(header), threads));
     } catch(const std::exception &e) {

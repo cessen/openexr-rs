@@ -34,10 +34,12 @@ pub unsafe extern "C" fn seek_stream<T: Seek>(seeker: *mut c_void, pos: u64) -> 
 
 // ----------------------------------------------------------------
 
-pub struct UnusedIOStream {}
+// Indicates an unused io stream in the type parameters of the various
+// input/output file types.
+pub struct Unused {}
 
 #[allow(unused_variables)]
-impl Read for UnusedIOStream {
+impl Read for Unused {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         unimplemented!()
     }
@@ -56,7 +58,7 @@ impl Read for UnusedIOStream {
 }
 
 #[allow(unused_variables)]
-impl Write for UnusedIOStream {
+impl Write for Unused {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         unimplemented!()
     }
@@ -75,7 +77,7 @@ impl Write for UnusedIOStream {
 }
 
 #[allow(unused_variables)]
-impl Seek for UnusedIOStream {
+impl Seek for Unused {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
         unimplemented!()
     }

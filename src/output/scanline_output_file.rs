@@ -9,7 +9,8 @@ use openexr_sys::*;
 use error::*;
 use frame_buffer::FrameBuffer;
 use Header;
-use stream_io::{UnusedIOStream, write_stream, seek_stream};
+use stream_io;
+use stream_io::{write_stream, seek_stream};
 
 
 pub struct ScanlineOutputFile<'a, T: 'a + Write + Seek> {
@@ -20,10 +21,10 @@ pub struct ScanlineOutputFile<'a, T: 'a + Write + Seek> {
     _phantom_2: PhantomData<&'a mut T>,
 }
 
-impl ScanlineOutputFile<'static, UnusedIOStream> {
+impl ScanlineOutputFile<'static, stream_io::Unused> {
     pub fn new(path: &Path,
                header: &Header)
-               -> Result<ScanlineOutputFile<'static, UnusedIOStream>> {
+               -> Result<ScanlineOutputFile<'static, stream_io::Unused>> {
         let c_path = CString::new(path.to_str()
                                       .expect("non-unicode path handling is unimplemented")
                                       .as_bytes())
@@ -33,7 +34,11 @@ impl ScanlineOutputFile<'static, UnusedIOStream> {
         let error = unsafe {
             // NOTE: we don't need to keep a copy of the header, because this
             // function makes a deep copy that is stored in the CEXR_OutputFile.
-            CEXR_OutputFile_from_file(c_path.as_ptr(), header.handle, 1, &mut out, &mut error_out)
+            CEXR_OutputFile_from_file_path(c_path.as_ptr(),
+                                           header.handle,
+                                           1,
+                                           &mut out,
+                                           &mut error_out)
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
@@ -65,9 +70,9 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
             let write_ptr = write_stream::<T>;
             let seekp_ptr = seek_stream::<T>;
             unsafe {
-                CEXR_OStream_from_stream_writer(writer as *mut T as *mut _,
-                                                Some(write_ptr),
-                                                Some(seekp_ptr))
+                CEXR_OStream_from_writer(writer as *mut T as *mut _,
+                                         Some(write_ptr),
+                                         Some(seekp_ptr))
             }
         };
 
