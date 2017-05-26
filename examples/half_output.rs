@@ -23,12 +23,12 @@ fn main() {
                                                     .add_channel("B", PixelType::HALF))
             .unwrap();
 
-    let mut fb = {
+    let fb = {
         // Create the frame buffer
         let mut fb = FrameBuffer::new(256, 256);
         fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
         fb
     };
 
-    exr_file.write_pixels(&mut fb).unwrap();
+    exr_file.write_pixels(&fb).unwrap();
 }

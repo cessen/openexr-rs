@@ -46,7 +46,7 @@
 //!
 //! // Write pixel data to the file.  We pass our framebuffer to it so it knows
 //! // what pixel data to write.
-//! output_file.write_pixels(&mut fb).unwrap();
+//! output_file.write_pixels(&fb).unwrap();
 //! ```
 //!
 //! Reading an RGB file.

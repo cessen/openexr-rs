@@ -59,7 +59,7 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
         }
     }
 
-    pub fn write_pixels(&mut self, framebuffer: &mut FrameBuffer) -> Result<()> {
+    pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
         framebuffer.validate_header_for_output(self.header())?;
 
         let mut error_out = ptr::null();
