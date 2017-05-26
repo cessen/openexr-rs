@@ -211,7 +211,6 @@ const CEXR_Header *CEXR_InputFile_header(CEXR_InputFile *file);
 int CEXR_InputFile_set_framebuffer(CEXR_InputFile *file, CEXR_FrameBuffer *framebuffer, const char **err_out);
 int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanline_2, const char **err_out);
 
-int CEXR_OutputFile_from_file_path(const char *path, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out);
 int CEXR_OutputFile_from_stream(CEXR_OStream *stream, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out);
 void CEXR_OutputFile_delete(CEXR_OutputFile *file);
 const CEXR_Header *CEXR_OutputFile_header(CEXR_OutputFile *file);

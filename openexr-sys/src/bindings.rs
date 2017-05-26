@@ -417,15 +417,6 @@ extern "C" {
      -> ::std::os::raw::c_int;
 }
 extern "C" {
-    pub fn CEXR_OutputFile_from_file_path(path: *const ::std::os::raw::c_char,
-                                          header: *const CEXR_Header,
-                                          threads: ::std::os::raw::c_int,
-                                          out: *mut *mut CEXR_OutputFile,
-                                          err_out:
-                                              *mut *const ::std::os::raw::c_char)
-     -> ::std::os::raw::c_int;
-}
-extern "C" {
     pub fn CEXR_OutputFile_from_stream(stream: *mut CEXR_OStream,
                                        header: *const CEXR_Header,
                                        threads: ::std::os::raw::c_int,

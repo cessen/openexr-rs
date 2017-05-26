@@ -13,14 +13,13 @@ fn memory_io() {
     {
         let mut pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
 
-        let mut exr_file =
-            ScanlineOutputFile::from_writer(&mut in_memory_buffer,
-                                            &Header::new()
-                                                 .set_resolution(256, 256)
-                                                 .add_channel("R", PixelType::FLOAT)
-                                                 .add_channel("G", PixelType::FLOAT)
-                                                 .add_channel("B", PixelType::FLOAT))
-                    .unwrap();
+        let mut exr_file = ScanlineOutputFile::new(&mut in_memory_buffer,
+                                                   &Header::new()
+                                                        .set_resolution(256, 256)
+                                                        .add_channel("R", PixelType::FLOAT)
+                                                        .add_channel("G", PixelType::FLOAT)
+                                                        .add_channel("B", PixelType::FLOAT))
+                .unwrap();
 
         let mut fb = {
             // Create the frame buffer

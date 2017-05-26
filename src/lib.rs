@@ -16,6 +16,7 @@
 //! Writing a scanline RGB file.
 //!
 //! ```no_run
+//! use std::fs::File;
 //! use std::path::Path;
 //! use openexr::{FrameBuffer, Header, ScanlineOutputFile, PixelType};
 //!
@@ -24,8 +25,9 @@
 //!
 //! // Create a file to write to.  The `Header` determines the properties of the
 //! // file, like resolution and what channels it has.
+//! let mut file = File::create("output_file.exr").unwrap();
 //! let mut output_file = ScanlineOutputFile::new(
-//!     Path::new("output_file.exr"),
+//!     &mut file,
 //!     Header::new()
 //!         .set_resolution(256, 256)
 //!         .add_channel("R", PixelType::FLOAT)

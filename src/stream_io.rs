@@ -1,6 +1,4 @@
-use std::fmt::Arguments;
-use std::io;
-use std::io::{Read, Write, Seek, SeekFrom};
+use std::io::{Write, Seek, SeekFrom};
 use std::os::raw::{c_char, c_int, c_void};
 use std::slice;
 
@@ -29,56 +27,5 @@ pub unsafe extern "C" fn seek_stream<T: Seek>(seeker: *mut c_void, pos: u64) -> 
         return 0;
     } else {
         return 1;
-    }
-}
-
-// ----------------------------------------------------------------
-
-// Indicates an unused io stream in the type parameters of the various
-// input/output file types.
-pub struct Unused {}
-
-#[allow(unused_variables)]
-impl Read for Unused {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unimplemented!()
-    }
-    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
-        unimplemented!()
-    }
-    fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
-        unimplemented!()
-    }
-    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
-        unimplemented!()
-    }
-    fn by_ref(&mut self) -> &mut Self {
-        unimplemented!()
-    }
-}
-
-#[allow(unused_variables)]
-impl Write for Unused {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unimplemented!()
-    }
-    fn flush(&mut self) -> io::Result<()> {
-        unimplemented!()
-    }
-    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        unimplemented!()
-    }
-    fn write_fmt(&mut self, fmt: Arguments) -> io::Result<()> {
-        unimplemented!()
-    }
-    fn by_ref(&mut self) -> &mut Self {
-        unimplemented!()
-    }
-}
-
-#[allow(unused_variables)]
-impl Seek for Unused {
-    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
-        unimplemented!()
     }
 }

@@ -2,6 +2,7 @@ extern crate half;
 extern crate openexr;
 
 use std::env;
+use std::fs::File;
 use std::iter;
 use std::path::Path;
 
@@ -14,14 +15,16 @@ fn main() {
             .take(256 * 256)
             .collect();
 
-    let mut exr_file =
-        ScanlineOutputFile::new(Path::new(&env::args_os().nth(1).expect("argument required")),
-                                &Header::new()
-                                     .set_resolution(256, 256)
-                                     .add_channel("R", PixelType::HALF)
-                                     .add_channel("G", PixelType::HALF)
-                                     .add_channel("B", PixelType::HALF))
-                .unwrap();
+    let mut file = File::create(Path::new(&env::args_os().nth(1).expect("argument required")))
+        .unwrap();
+
+    let mut exr_file = ScanlineOutputFile::new(&mut file,
+                                               &Header::new()
+                                                    .set_resolution(256, 256)
+                                                    .add_channel("R", PixelType::HALF)
+                                                    .add_channel("G", PixelType::HALF)
+                                                    .add_channel("B", PixelType::HALF))
+            .unwrap();
 
     let mut fb = {
         // Create the frame buffer

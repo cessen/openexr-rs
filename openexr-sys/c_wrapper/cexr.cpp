@@ -235,17 +235,6 @@ int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanlin
 //----------------------------------------------------
 // OutputFile
 
-int CEXR_OutputFile_from_file_path(const char *path, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out) {
-    try {
-        *out = reinterpret_cast<CEXR_OutputFile *>(new OutputFile(path, *reinterpret_cast<const Header *>(header), threads));
-    } catch(const std::exception &e) {
-        *err_out = e.what();
-        return 1;
-    }
-
-    return 0;
-}
-
 int CEXR_OutputFile_from_stream(CEXR_OStream *stream, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out) {
     try {
         *out = reinterpret_cast<CEXR_OutputFile *>(new OutputFile(*reinterpret_cast<OStream *>(stream), *reinterpret_cast<const Header *>(header), threads));
