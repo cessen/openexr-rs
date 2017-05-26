@@ -29,12 +29,21 @@ void CEXR_IStream_delete(CEXR_IStream *stream) {
     delete reinterpret_cast<IStream *>(stream);
 }
 
-CEXR_OStream *CEXR_OStream_from_writer(
+int CEXR_OStream_from_writer(
     void *writer,
-    int (*write_ptr)(void *, const char *, int),
-    int (*seekp_ptr)(void *, uint64_t)
+    int (*write_ptr)(void *, const char *, int, int *err_out),
+    int (*seekp_ptr)(void *, uint64_t, int *err_out),
+    CEXR_OStream **out,
+    const char **err_out
 ) {
-    return reinterpret_cast<CEXR_OStream *>(new RustOStream(writer, write_ptr, seekp_ptr));
+    try {
+        *out = reinterpret_cast<CEXR_OStream *>(new RustOStream(writer, write_ptr, seekp_ptr));
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
 }
 
 void CEXR_OStream_delete(CEXR_OStream *stream) {

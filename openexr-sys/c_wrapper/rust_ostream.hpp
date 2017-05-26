@@ -9,8 +9,8 @@ class RustOStream: public Imf::OStream {
 public:
     RustOStream(
         void *writer,
-        int (*write_ptr)(void *, const char *, int),
-        int (*seekp_ptr)(void *, std::uint64_t)
+        int (*write_ptr)(void *, const char *, int, int *err_out),
+        int (*seekp_ptr)(void *, std::uint64_t, int *err_out)
     )
         : OStream{"Rust StreamWriter"},
         writer{writer},
@@ -18,7 +18,7 @@ public:
         seekp_ptr{seekp_ptr},
         cursor_pos{0}
     {
-        seekp_ptr(writer, 0);
+        seekp(0);
     }
 
     virtual void write (const char c[/*n*/], int n);
@@ -27,9 +27,9 @@ public:
 
 private:
     void *writer;
-    int (*write_ptr)(void *, const char *, int);
+    int (*write_ptr)(void *, const char *, int, int *err_out);
     std::uint64_t (*tellp_ptr)(void *);
-    int (*seekp_ptr)(void *, std::uint64_t);
+    int (*seekp_ptr)(void *, std::uint64_t, int *err_out);
     std::uint64_t cursor_pos;
 };
 

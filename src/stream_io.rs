@@ -8,12 +8,21 @@ use std::slice;
 /// virtual void write (const char c[/*n*/], int n) = 0;
 pub unsafe extern "C" fn write_stream<T: Write>(writer: *mut c_void,
                                                 c: *const c_char,
-                                                n: c_int)
+                                                n: c_int,
+                                                err_out: *mut c_int)
                                                 -> c_int {
     let bytes = slice::from_raw_parts(c as *const u8, n as usize);
     match (*(writer as *mut T)).write_all(bytes) {
         Ok(_) => return 0,
-        Err(e) => return e.raw_os_error().unwrap_or(1) as c_int,
+        Err(e) => {
+            if let Some(err) = e.raw_os_error() {
+                *err_out = err as c_int;
+                return 1;
+            } else {
+                *err_out = 0;
+                return 2;
+            }
+        }
     }
 }
 
@@ -21,9 +30,20 @@ pub unsafe extern "C" fn write_stream<T: Write>(writer: *mut c_void,
 ///
 /// ImfIO.h:
 /// virtual void seekp (Int64 pos) = 0;
-pub unsafe extern "C" fn seek_stream<T: Seek>(seeker: *mut c_void, pos: u64) -> c_int {
+pub unsafe extern "C" fn seek_stream<T: Seek>(seeker: *mut c_void,
+                                              pos: u64,
+                                              err_out: *mut c_int)
+                                              -> c_int {
     match (*(seeker as *mut T)).seek(SeekFrom::Start(pos)) {
         Ok(_) => return 0,
-        Err(e) => return e.raw_os_error().unwrap_or(1) as c_int,
+        Err(e) => {
+            if let Some(err) = e.raw_os_error() {
+                *err_out = err as c_int;
+                return 1;
+            } else {
+                *err_out = 0;
+                return 2;
+            }
+        }
     }
 }

@@ -24,10 +24,22 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
         let ostream_ptr = {
             let write_ptr = write_stream::<T>;
             let seekp_ptr = seek_stream::<T>;
-            unsafe {
+
+            let mut error_out = ptr::null();
+            let mut out = ptr::null_mut();
+            let error = unsafe {
                 CEXR_OStream_from_writer(writer as *mut T as *mut _,
                                          Some(write_ptr),
-                                         Some(seekp_ptr))
+                                         Some(seekp_ptr),
+                                         &mut out,
+                                         &mut error_out)
+            };
+
+            if error != 0 {
+                let msg = unsafe { CStr::from_ptr(error_out) };
+                return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+            } else {
+                out
             }
         };
 
