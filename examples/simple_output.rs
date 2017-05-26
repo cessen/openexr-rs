@@ -2,14 +2,12 @@ extern crate openexr;
 
 use std::env;
 use std::fs::File;
-use std::iter;
 use std::path::Path;
 
 use openexr::{FrameBuffer, Header, ScanlineOutputFile, PixelType};
 
 fn main() {
-    let mut pixel_data: Vec<(f32, f32, f32)> =
-        iter::repeat((0.82, 1.78, 0.21)).take(256 * 256).collect();
+    let mut pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
 
     let mut file = File::create(Path::new(&env::args_os().nth(1).expect("argument required")))
         .unwrap();
