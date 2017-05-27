@@ -38,11 +38,3 @@ void RustIStream::seekg(std::uint64_t pos) {
         throw std::runtime_error("error seeking in input");
     }
 }
-
-bool RustIStream::isMemoryMapped() const {
-    return false;
-}
-
-char *RustIStream::readMemoryMapped(int n) {
-    throw std::runtime_error("tried to read non-memory-mapped input as memory-mapped");
-}

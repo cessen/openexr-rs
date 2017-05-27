@@ -22,11 +22,9 @@ public:
         seekg(0);
     }
 
-    virtual bool read(char c[/*n*/], int n);
-    virtual std::uint64_t tellg();
-    virtual void seekg(std::uint64_t pos);
-    virtual bool isMemoryMapped() const;
-    virtual char *readMemoryMapped(int n);
+    bool read(char c[/*n*/], int n);
+    std::uint64_t tellg();
+    void seekg(std::uint64_t pos);
 
 private:
     void *reader;
