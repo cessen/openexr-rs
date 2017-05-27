@@ -42,7 +42,7 @@
 //! // The `0.0`'s are fallback values for each channel in case of missing
 //! // pixel data when reading from a file.  In this example they aren't used.
 //! let mut fb = FrameBuffer::new(256, 256);
-//! fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+//! fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &pixel_data);
 //!
 //! // Write pixel data to the file.  We pass our framebuffer to it so it knows
 //! // what pixel data to write.
@@ -54,7 +54,7 @@
 //! ```no_run
 //! use std::fs::File;
 //! use std::path::Path;
-//! use openexr::{FrameBuffer, InputFile, PixelType};
+//! use openexr::{FrameBufferMut, InputFile, PixelType};
 //!
 //! // Open the EXR file.
 //! let mut file = File::open(Path::new("input_file.exr")).unwrap();
@@ -82,9 +82,10 @@
 //! // New scope because `FrameBuffer` mutably borrows `pixel_data`, so we need
 //! // it to go out of scope before we can access our `pixel_data` again.
 //! {
-//!     // Create `FrameBuffer`.  Same drill as for output.
-//!     let mut fb = FrameBuffer::new(width as usize, height as usize);
-//!     fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+//!     // Create `FrameBufferMut`.  Same drill as for output, except the
+//!     // mut version.
+//!     let mut fb = FrameBufferMut::new(width as usize, height as usize);
+//!     fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 //!
 //!     // Read in pixel data.
 //!     input_file.read_pixels(&mut fb).unwrap();

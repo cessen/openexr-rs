@@ -4,7 +4,7 @@ use std::env;
 use std::fs::File;
 use std::path::Path;
 
-use openexr::{FrameBuffer, InputFile, PixelType};
+use openexr::{FrameBufferMut, InputFile, PixelType};
 
 fn main() {
     // Open the EXR file and get its dimensions.
@@ -30,8 +30,8 @@ fn main() {
     {
         let mut fb = {
             // Create the frame buffer
-            let mut fb = FrameBuffer::new(width as usize, height as usize);
-            fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+            let mut fb = FrameBufferMut::new(width as usize, height as usize);
+            fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
             fb
         };
 

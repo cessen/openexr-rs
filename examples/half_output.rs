@@ -9,7 +9,7 @@ use half::f16;
 use openexr::{FrameBuffer, Header, ScanlineOutputFile, PixelType};
 
 fn main() {
-    let mut pixel_data =
+    let pixel_data =
         vec![(f16::from_f32(0.82), f16::from_f32(1.78), f16::from_f32(0.21)); 256 * 256];
 
     let mut file = File::create(Path::new(&env::args_os().nth(1).expect("argument required")))
@@ -26,7 +26,7 @@ fn main() {
     let fb = {
         // Create the frame buffer
         let mut fb = FrameBuffer::new(256, 256);
-        fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+        fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &pixel_data);
         fb
     };
 
