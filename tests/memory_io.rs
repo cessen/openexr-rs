@@ -22,7 +22,7 @@ fn memory_io() {
                 .unwrap();
 
         let mut fb = FrameBuffer::new(256, 256);
-        fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+        fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 
         exr_file.write_pixels(&mut fb).unwrap();
     }
@@ -50,7 +50,7 @@ fn memory_io() {
         // Read in the pixel data.
         {
             let mut fb = FrameBuffer::new(width as usize, height as usize);
-            fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+            fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 
             exr_file.read_pixels(&mut fb).unwrap();
         }

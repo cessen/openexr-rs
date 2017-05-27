@@ -87,10 +87,10 @@ impl<'a> FrameBuffer<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_pixels<T: PixelStruct>(&mut self,
-                                         channels: &[(&str, f64)],
-                                         data: &'a mut [T])
-                                         -> &mut Self {
+    pub fn insert_channels<T: PixelStruct>(&mut self,
+                                           channels: &[(&str, f64)],
+                                           data: &'a mut [T])
+                                           -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),

@@ -42,7 +42,7 @@
 //! // The `0.0`'s are fallback values for each channel in case of missing
 //! // pixel data when reading from a file.  In this example they aren't used.
 //! let mut fb = FrameBuffer::new(256, 256);
-//! fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+//! fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 //!
 //! // Write pixel data to the file.  We pass our framebuffer to it so it knows
 //! // what pixel data to write.
@@ -84,7 +84,7 @@
 //! {
 //!     // Create `FrameBuffer`.  Same drill as for output.
 //!     let mut fb = FrameBuffer::new(width as usize, height as usize);
-//!     fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+//!     fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 //!
 //!     // Read in pixel data.
 //!     input_file.read_pixels(&mut fb).unwrap();
