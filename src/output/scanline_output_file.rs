@@ -11,7 +11,7 @@ use Header;
 use stream_io::{write_stream, seek_stream};
 
 
-pub struct ScanlineOutputFile<'a, T: 'a + Write + Seek> {
+pub struct ScanlineOutputFile<'a, T: 'a> {
     handle: *mut CEXR_OutputFile,
     header_ref: Header,
     ostream: *mut CEXR_OStream,
@@ -19,8 +19,10 @@ pub struct ScanlineOutputFile<'a, T: 'a + Write + Seek> {
     _phantom_2: PhantomData<&'a mut T>,
 }
 
-impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
-    pub fn new<'b>(writer: &'b mut T, header: &Header) -> Result<ScanlineOutputFile<'b, T>> {
+impl<'a, T: 'a> ScanlineOutputFile<'a, T> {
+    pub fn new<'b>(writer: &'b mut T, header: &Header) -> Result<ScanlineOutputFile<'b, T>>
+        where T: 'b + Write + Seek
+    {
         let ostream_ptr = {
             let write_ptr = write_stream::<T>;
             let seekp_ptr = seek_stream::<T>;
@@ -102,7 +104,7 @@ impl<'a, T: 'a + Write + Seek> ScanlineOutputFile<'a, T> {
     }
 }
 
-impl<'a, T: 'a + Write + Seek> Drop for ScanlineOutputFile<'a, T> {
+impl<'a, T: 'a> Drop for ScanlineOutputFile<'a, T> {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
         unsafe { CEXR_OStream_delete(self.ostream) };
