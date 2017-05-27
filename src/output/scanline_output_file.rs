@@ -11,16 +11,20 @@ use Header;
 use stream_io::{write_stream, seek_stream};
 
 
-pub struct ScanlineOutputFile<'a, T: 'a> {
+pub struct ScanlineOutputFile<'a> {
     handle: *mut CEXR_OutputFile,
     header_ref: Header,
     ostream: *mut CEXR_OStream,
     _phantom_1: PhantomData<CEXR_OutputFile>,
-    _phantom_2: PhantomData<&'a mut T>,
+    _phantom_2: PhantomData<&'a mut ()>, // Represents the borrowed writer
+
+    // NOTE: Because we don't know what type the writer might be, it's important
+    // that this struct remains neither Sync nor Send.  Please don't implement
+    // them!
 }
 
-impl<'a, T: 'a> ScanlineOutputFile<'a, T> {
-    pub fn new<'b>(writer: &'b mut T, header: &Header) -> Result<ScanlineOutputFile<'b, T>>
+impl<'a> ScanlineOutputFile<'a> {
+    pub fn new<'b, T: 'b>(writer: &'b mut T, header: &Header) -> Result<ScanlineOutputFile<'b>>
         where T: 'b + Write + Seek
     {
         let ostream_ptr = {
@@ -104,7 +108,7 @@ impl<'a, T: 'a> ScanlineOutputFile<'a, T> {
     }
 }
 
-impl<'a, T: 'a> Drop for ScanlineOutputFile<'a, T> {
+impl<'a> Drop for ScanlineOutputFile<'a> {
     fn drop(&mut self) {
         unsafe { CEXR_OutputFile_delete(self.handle) };
         unsafe { CEXR_OStream_delete(self.ostream) };

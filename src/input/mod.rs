@@ -33,17 +33,21 @@ use stream_io::{read_stream, seek_stream};
 /// input_file.read_pixels(&mut fb).unwrap();
 /// ```
 #[allow(dead_code)]
-pub struct InputFile<'a, T: 'a> {
+pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
     header_ref: Header,
     istream: *mut CEXR_IStream,
     _phantom_1: PhantomData<CEXR_InputFile>,
-    _phantom_2: PhantomData<&'a mut T>,
+    _phantom_2: PhantomData<&'a mut ()>, // Represents the borrowed reader
+
+    // NOTE: Because we don't know what type the reader might be, it's important
+    // that this struct remains neither Sync nor Send.  Please don't implement
+    // them!
 }
 
-impl<'a, T: 'a> InputFile<'a, T> {
-    pub fn new<'b>(reader: &'b mut T) -> Result<InputFile<'b, T>>
-        where T: 'b + Read + Seek
+impl<'a> InputFile<'a> {
+    pub fn new<'b, T: 'b>(reader: &'b mut T) -> Result<InputFile<'b>>
+        where T: Read + Seek
     {
         let istream_ptr = {
             let read_ptr = read_stream::<T>;
@@ -65,6 +69,37 @@ impl<'a, T: 'a> InputFile<'a, T> {
             } else {
                 out
             }
+        };
+
+        let mut error_out = ptr::null();
+        let mut out = ptr::null_mut();
+        let error = unsafe { CEXR_InputFile_from_stream(istream_ptr, 1, &mut out, &mut error_out) };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            Ok(InputFile {
+                   handle: out,
+                   header_ref: Header {
+                       // NOTE: We're casting to *mut here to satisfy the
+                       // field's type, but importantly we only return a
+                       // const & of the Header so it retains const semantics.
+                       handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
+                       owned: false,
+                       _phantom: PhantomData,
+                   },
+                   istream: istream_ptr,
+                   _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
+               })
+        }
+    }
+
+    pub fn from_slice<'b>(slice: &'b [u8]) -> Result<InputFile<'b>> {
+        let istream_ptr = unsafe {
+            CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
+                                     slice.as_ptr() as *mut u8 as *mut c_char,
+                                     slice.len())
         };
 
         let mut error_out = ptr::null();
@@ -127,40 +162,7 @@ impl<'a, T: 'a> InputFile<'a, T> {
     }
 }
 
-impl<'a> InputFile<'a, &'a [u8]> {
-    pub fn from_slice<'b>(slice: &'b [u8]) -> Result<InputFile<'b, &'b [u8]>> {
-        let istream_ptr = unsafe {
-            CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
-                                     slice.as_ptr() as *mut u8 as *mut c_char,
-                                     slice.len())
-        };
-
-        let mut error_out = ptr::null();
-        let mut out = ptr::null_mut();
-        let error = unsafe { CEXR_InputFile_from_stream(istream_ptr, 1, &mut out, &mut error_out) };
-        if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
-        } else {
-            Ok(InputFile {
-                   handle: out,
-                   header_ref: Header {
-                       // NOTE: We're casting to *mut here to satisfy the
-                       // field's type, but importantly we only return a
-                       // const & of the Header so it retains const semantics.
-                       handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
-                       owned: false,
-                       _phantom: PhantomData,
-                   },
-                   istream: istream_ptr,
-                   _phantom_1: PhantomData,
-                   _phantom_2: PhantomData,
-               })
-        }
-    }
-}
-
-impl<'a, T: 'a> Drop for InputFile<'a, T> {
+impl<'a> Drop for InputFile<'a> {
     fn drop(&mut self) {
         unsafe { CEXR_InputFile_delete(self.handle) };
         unsafe { CEXR_IStream_delete(self.istream) };
