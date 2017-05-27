@@ -1,3 +1,16 @@
+//! FrameBuffers point to and describe image data in memory to be used for
+//! input and output.
+//!
+//! FrameBuffers do not contain any image buffers themselves, they only point to
+//! them elsewhere in memory.  FrameBuffers are passed to other parts of the API
+//! that need to read from or write to image data in memory.
+//!
+//! `FrameBuffer` is used for read-only pixel data, and `FrameBufferMut`
+//! is used for read/write pixel data.
+//!
+//! `FrameBufferMut` dereferences to `&FrameBuffer` so it can be passed
+//! anywhere a `&FrameBuffer` can.
+
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::mem;
@@ -13,12 +26,7 @@ use error::*;
 use Header;
 
 
-/// Points to and describes in-memory image data for reading and writing.
-///
-/// `FrameBuffer` does not store any image data itself, but instead points to
-/// and describes image data elsewhere in memory. Those descriptions are then
-/// used by the input and output file types to know where in memory to read
-/// from and write to when writing and reading files.
+/// Points to and describes in-memory image data for reading.
 pub struct FrameBuffer<'a> {
     handle: *mut CEXR_FrameBuffer,
     dimensions: (usize, usize),
@@ -28,9 +36,6 @@ pub struct FrameBuffer<'a> {
 
 impl<'a> FrameBuffer<'a> {
     /// Creates an empty frame buffer with the given dimensions in pixels.
-    ///
-    /// `FrameBuffer` does not store any data, therefore its size in memory is
-    /// independent of the dimensions specified here.
     pub fn new(width: usize, height: usize) -> Self {
         FrameBuffer {
             handle: unsafe { CEXR_FrameBuffer_new() },
@@ -45,20 +50,14 @@ impl<'a> FrameBuffer<'a> {
         self.dimensions
     }
 
-    /// Insert a single channel.
+    /// Insert a single channel into the FrameBuffer.
     ///
-    /// The channel will be given the name `name` and when reading from a file
-    /// will be filled in with the value `fill` if there isn't any pixel data
-    /// for that channel in the file.
+    /// The channel will be given the name `name`.
     ///
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_channel<T: PixelData>(&mut self,
-                                        name: &str,
-                                        fill: f64,
-                                        data: &'a [T])
-                                        -> &mut Self {
+    pub fn insert_channel<T: PixelData>(&mut self, name: &str, data: &'a [T]) -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -72,7 +71,7 @@ impl<'a> FrameBuffer<'a> {
                             data.as_ptr() as *const c_char,
                             (mem::size_of::<T>(), width * mem::size_of::<T>()),
                             (1, 1),
-                            fill,
+                            0.0,
                             (false, false))
         };
         self
@@ -81,17 +80,13 @@ impl<'a> FrameBuffer<'a> {
     /// Insert multiple channels from a slice of structs or tuples.
     ///
     /// The number of channels to be inserted is determined by the
-    /// implementation of the `PixelStruct` trait on `T`.  `channels` should
-    /// contain that number of elements, and each element is a tuple of the
-    /// channel's name and default fill value.
+    /// implementation of the `PixelStruct` trait on `T`.  `names` should
+    /// contain the names of each of those channels.
     ///
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_channels<T: PixelStruct>(&mut self,
-                                           channels: &[(&str, f64)],
-                                           data: &'a [T])
-                                           -> &mut Self {
+    pub fn insert_channels<T: PixelStruct>(&mut self, names: &[&str], data: &'a [T]) -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -99,14 +94,14 @@ impl<'a> FrameBuffer<'a> {
                    self.dimensions.1);
         }
         let width = self.dimensions.0;
-        for (&(name, fill), (ty, offset)) in channels.iter().zip(T::channels()) {
+        for (name, (ty, offset)) in names.iter().zip(T::channels()) {
             unsafe {
                 self.insert_raw(name,
                                 ty,
                                 (data.as_ptr() as *const c_char).offset(offset as isize),
                                 (mem::size_of::<T>(), width * mem::size_of::<T>()),
                                 (1, 1),
-                                fill,
+                                0.0,
                                 (false, false))
             };
         }
@@ -182,15 +177,26 @@ impl<'a> Drop for FrameBuffer<'a> {
 
 // ----------------------------------------------------------------
 
+/// Points to and describes in-memory image data for both reading and writing.
 pub struct FrameBufferMut<'a> {
     frame_buffer: FrameBuffer<'a>,
 }
 
 impl<'a> FrameBufferMut<'a> {
+    /// Creates an empty frame buffer with the given dimensions in pixels.
     pub fn new(width: usize, height: usize) -> Self {
         FrameBufferMut { frame_buffer: FrameBuffer::new(width, height) }
     }
 
+    /// Insert a single channel.
+    ///
+    /// The channel will be given the name `name`, and will use the value
+    /// `fill` for all pixels if a file is read that doesn't have a channel
+    /// with that name.
+    ///
+    /// `data` is the memory for the channel and should contain precisely
+    /// width * height elements, where width and height are the dimensions
+    /// of the `FrameBuffer`.
     pub fn insert_channel<T: PixelData>(&mut self,
                                         name: &str,
                                         fill: f64,
@@ -215,8 +221,19 @@ impl<'a> FrameBufferMut<'a> {
         self
     }
 
+    /// Insert multiple channels from a slice of structs or tuples.
+    ///
+    /// The number of channels to be inserted is determined by the
+    /// implementation of the `PixelStruct` trait on `T`.  `names_and_fills`
+    /// should contains the names and default fill values of each of those
+    /// channels.  The default fill values will be used to fill in a channel
+    /// that doesn't exist in an input file that's being read.
+    ///
+    /// `data` is the memory for the channel and should contain precisely
+    /// width * height elements, where width and height are the dimensions
+    /// of the `FrameBuffer`.
     pub fn insert_channels<T: PixelStruct>(&mut self,
-                                           channels: &[(&str, f64)],
+                                           names_and_fills: &[(&str, f64)],
                                            data: &'a mut [T])
                                            -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
@@ -226,7 +243,7 @@ impl<'a> FrameBufferMut<'a> {
                    self.dimensions.1);
         }
         let width = self.dimensions.0;
-        for (&(name, fill), (ty, offset)) in channels.iter().zip(T::channels()) {
+        for (&(name, fill), (ty, offset)) in names_and_fills.iter().zip(T::channels()) {
             unsafe {
                 self.insert_raw(name,
                                 ty,
@@ -240,6 +257,14 @@ impl<'a> FrameBufferMut<'a> {
         self
     }
 
+    /// The raw method for inserting a new channel.
+    ///
+    /// This is very unsafe: the other methods should be preferred unless you
+    /// have a special use-case.
+    ///
+    /// This method corresponds directly to constructing and then inserting a
+    /// "Slice" in the C++ OpenEXR library.  Please see its documentation for
+    /// details.
     pub unsafe fn insert_raw(&mut self,
                              name: &str,
                              type_: PixelType,

@@ -13,7 +13,13 @@ Convenient and safe API's will be provided for most functionality.  However,
 to provide the full flexibility of the underlying C++ library, there may be
 a few unsafe API's as well that expose more nitty-gritty.
 
-## Using
+## Documentation
+
+The documentation for the latest release on crates.io will eventually be [here](https://docs.rs/crate/openexr/), but due to missing dependencies is not currently building.  This will hopefully be resolved in the near future.
+
+The documentation for the latest master can be found [here](https://cessen.github.io/openexr-rs).
+
+## Building
 
 You will need builds of OpenEXR and zlib available.  You can specify the
 prefixes the libraries are installed to with the ILMBASE_DIR, OPENEXR_DIR, and

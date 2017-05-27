@@ -21,7 +21,7 @@
 //! use openexr::{FrameBuffer, Header, ScanlineOutputFile, PixelType};
 //!
 //! // Pixel data for a 256x256 floating point RGB image.
-//! let mut pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
+//! let pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
 //!
 //! // Create a file to write to.  The `Header` determines the properties of the
 //! // file, like resolution and what channels it has.
@@ -103,9 +103,9 @@ extern crate openexr_sys;
 
 mod cexr_type_aliases;
 mod error;
-mod frame_buffer;
-mod input;
-mod output;
+pub mod frame_buffer;
+pub mod input;
+pub mod output;
 mod stream_io;
 
 use std::ffi::{CStr, CString};
@@ -115,7 +115,7 @@ use openexr_sys::*;
 
 pub use cexr_type_aliases::*;
 pub use error::*;
-pub use frame_buffer::*;
+pub use frame_buffer::{FrameBuffer, FrameBufferMut};
 pub use input::*;
 pub use output::*;
 
