@@ -156,8 +156,16 @@ typedef struct CEXR_OStream CEXR_OStream;
 typedef struct CEXR_ChannelListIter CEXR_ChannelListIter;
 
 
+int CEXR_IStream_from_reader(
+    void *reader,
+    int (*read_ptr)(void *, char *, int, int *err_out),
+    int (*seekp_ptr)(void *, uint64_t, int *err_out),
+    CEXR_IStream **out,
+    const char **err_out
+);
 CEXR_IStream *CEXR_IStream_from_memory(const char *filename, char *data, size_t size);
 void CEXR_IStream_delete(CEXR_IStream *stream);
+
 int CEXR_OStream_from_writer(
     void *writer,
     int (*write_ptr)(void *, const char *, int, int *err_out),

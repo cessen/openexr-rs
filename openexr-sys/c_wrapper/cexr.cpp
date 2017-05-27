@@ -13,6 +13,7 @@
 #include "Iex.h"
 
 #include "memory_istream.hpp"
+#include "rust_istream.hpp"
 #include "rust_ostream.hpp"
 
 using namespace IMATH_NAMESPACE;
@@ -20,6 +21,23 @@ using namespace Imf;
 
 static_assert(sizeof(CEXR_V2i) == sizeof(V2i), "V2i size is correct");
 static_assert(sizeof(CEXR_Box2i) == sizeof(Box2i), "Box2i size is correct");
+
+int CEXR_IStream_from_reader(
+    void *reader,
+    int (*read_ptr)(void *, char *, int, int *err_out),
+    int (*seekp_ptr)(void *, uint64_t, int *err_out),
+    CEXR_IStream **out,
+    const char **err_out
+) {
+    try {
+        *out = reinterpret_cast<CEXR_IStream *>(new RustIStream(reader, read_ptr, seekp_ptr));
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
+}
 
 CEXR_IStream *CEXR_IStream_from_memory(const char *filename, char *data, size_t size) {
     return reinterpret_cast<CEXR_IStream *>(new MemoryIStream(filename, data, size));

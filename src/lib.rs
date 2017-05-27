@@ -52,11 +52,13 @@
 //! Reading an RGB file.
 //!
 //! ```no_run
+//! use std::fs::File;
 //! use std::path::Path;
 //! use openexr::{FrameBuffer, InputFile, PixelType};
 //!
 //! // Open the EXR file.
-//! let input_file = InputFile::new(Path::new("input_file.exr")).unwrap();
+//! let mut file = File::open(Path::new("input_file.exr")).unwrap();
+//! let input_file = InputFile::new(&mut file).unwrap();
 //!
 //! // Get the image dimensions, so we know how large of a buffer to make.
 //! let window = input_file.header().data_window();
