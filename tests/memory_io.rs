@@ -50,7 +50,7 @@ fn memory_io() {
         // Read in the pixel data.
         {
             let mut fb = FrameBufferMut::new(width as usize, height as usize);
-            fb.insert_channels_mut(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+            fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 
             exr_file.read_pixels(&mut fb).unwrap();
         }

@@ -82,10 +82,10 @@
 //! // New scope because `FrameBuffer` mutably borrows `pixel_data`, so we need
 //! // it to go out of scope before we can access our `pixel_data` again.
 //! {
-//!     // Create `FrameBufferMut`.  Same drill as for output, except with the
+//!     // Create `FrameBufferMut`.  Same drill as for output, except the
 //!     // mut version.
 //!     let mut fb = FrameBufferMut::new(width as usize, height as usize);
-//!     fb.insert_channels_mut(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+//!     fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 //!
 //!     // Read in pixel data.
 //!     input_file.read_pixels(&mut fb).unwrap();

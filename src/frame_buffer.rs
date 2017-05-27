@@ -191,11 +191,11 @@ impl<'a> FrameBufferMut<'a> {
         FrameBufferMut { frame_buffer: FrameBuffer::new(width, height) }
     }
 
-    pub fn insert_channel_mut<T: PixelData>(&mut self,
-                                            name: &str,
-                                            fill: f64,
-                                            data: &'a mut [T])
-                                            -> &mut Self {
+    pub fn insert_channel<T: PixelData>(&mut self,
+                                        name: &str,
+                                        fill: f64,
+                                        data: &'a mut [T])
+                                        -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -204,21 +204,21 @@ impl<'a> FrameBufferMut<'a> {
         }
         let width = self.dimensions.0;
         unsafe {
-            self.insert_raw_mut(name,
-                                T::pixel_type(),
-                                data.as_mut_ptr() as *mut c_char,
-                                (mem::size_of::<T>(), width * mem::size_of::<T>()),
-                                (1, 1),
-                                fill,
-                                (false, false))
+            self.insert_raw(name,
+                            T::pixel_type(),
+                            data.as_mut_ptr() as *mut c_char,
+                            (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                            (1, 1),
+                            fill,
+                            (false, false))
         };
         self
     }
 
-    pub fn insert_channels_mut<T: PixelStruct>(&mut self,
-                                               channels: &[(&str, f64)],
-                                               data: &'a mut [T])
-                                               -> &mut Self {
+    pub fn insert_channels<T: PixelStruct>(&mut self,
+                                           channels: &[(&str, f64)],
+                                           data: &'a mut [T])
+                                           -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
@@ -228,27 +228,27 @@ impl<'a> FrameBufferMut<'a> {
         let width = self.dimensions.0;
         for (&(name, fill), (ty, offset)) in channels.iter().zip(T::channels()) {
             unsafe {
-                self.insert_raw_mut(name,
-                                    ty,
-                                    (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
-                                    (mem::size_of::<T>(), width * mem::size_of::<T>()),
-                                    (1, 1),
-                                    fill,
-                                    (false, false))
+                self.insert_raw(name,
+                                ty,
+                                (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
+                                (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                                (1, 1),
+                                fill,
+                                (false, false))
             };
         }
         self
     }
 
-    pub unsafe fn insert_raw_mut(&mut self,
-                                 name: &str,
-                                 type_: PixelType,
-                                 base: *mut c_char,
-                                 stride: (usize, usize),
-                                 sampling: (c_int, c_int),
-                                 fill_value: f64,
-                                 tile_coords: (bool, bool))
-                                 -> &mut Self {
+    pub unsafe fn insert_raw(&mut self,
+                             name: &str,
+                             type_: PixelType,
+                             base: *mut c_char,
+                             stride: (usize, usize),
+                             sampling: (c_int, c_int),
+                             fill_value: f64,
+                             tile_coords: (bool, bool))
+                             -> &mut Self {
         let c_name = CString::new(name).unwrap();
         CEXR_FrameBuffer_insert(self.handle,
                                 c_name.as_ptr(),
