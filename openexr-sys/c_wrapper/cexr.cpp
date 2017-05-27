@@ -13,6 +13,7 @@
 #include "Iex.h"
 
 #include "memory_istream.hpp"
+#include "rust_ostream.hpp"
 
 using namespace IMATH_NAMESPACE;
 using namespace Imf;
@@ -26,6 +27,27 @@ CEXR_IStream *CEXR_IStream_from_memory(const char *filename, char *data, size_t 
 
 void CEXR_IStream_delete(CEXR_IStream *stream) {
     delete reinterpret_cast<IStream *>(stream);
+}
+
+int CEXR_OStream_from_writer(
+    void *writer,
+    int (*write_ptr)(void *, const char *, int, int *err_out),
+    int (*seekp_ptr)(void *, uint64_t, int *err_out),
+    CEXR_OStream **out,
+    const char **err_out
+) {
+    try {
+        *out = reinterpret_cast<CEXR_OStream *>(new RustOStream(writer, write_ptr, seekp_ptr));
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
+}
+
+void CEXR_OStream_delete(CEXR_OStream *stream) {
+    delete reinterpret_cast<OStream *>(stream);
 }
 
 
@@ -167,7 +189,7 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *fb,
 //----------------------------------------------------
 // InputFile
 
-int CEXR_InputFile_from_file(const char *path, int threads, CEXR_InputFile **out, const char **err_out) {
+int CEXR_InputFile_from_file_path(const char *path, int threads, CEXR_InputFile **out, const char **err_out) {
     try {
         *out = reinterpret_cast<CEXR_InputFile *>(new InputFile(path, threads));
     } catch(const std::exception &e) {
@@ -222,9 +244,9 @@ int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanlin
 //----------------------------------------------------
 // OutputFile
 
-int CEXR_OutputFile_from_file(const char *path, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out) {
+int CEXR_OutputFile_from_stream(CEXR_OStream *stream, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out) {
     try {
-        *out = reinterpret_cast<CEXR_OutputFile *>(new OutputFile(path, *reinterpret_cast<const Header *>(header), threads));
+        *out = reinterpret_cast<CEXR_OutputFile *>(new OutputFile(*reinterpret_cast<OStream *>(stream), *reinterpret_cast<const Header *>(header), threads));
     } catch(const std::exception &e) {
         *err_out = e.what();
         return 1;

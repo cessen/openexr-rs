@@ -2,6 +2,7 @@
 #define CEXR_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -151,11 +152,20 @@ typedef struct CEXR_OutputFile CEXR_OutputFile;
 typedef struct CEXR_Header CEXR_Header;
 typedef struct CEXR_FrameBuffer CEXR_FrameBuffer;
 typedef struct CEXR_IStream CEXR_IStream;
+typedef struct CEXR_OStream CEXR_OStream;
 typedef struct CEXR_ChannelListIter CEXR_ChannelListIter;
 
 
 CEXR_IStream *CEXR_IStream_from_memory(const char *filename, char *data, size_t size);
 void CEXR_IStream_delete(CEXR_IStream *stream);
+int CEXR_OStream_from_writer(
+    void *writer,
+    int (*write_ptr)(void *, const char *, int, int *err_out),
+    int (*seekp_ptr)(void *, uint64_t, int *err_out),
+    CEXR_OStream **out,
+    const char **err_out
+);
+void CEXR_OStream_delete(CEXR_OStream *stream);
 
 bool CEXR_ChannelListIter_next(CEXR_ChannelListIter *iter, const char **name, CEXR_Channel *channel);
 void CEXR_ChannelListIter_delete(CEXR_ChannelListIter *iter);
@@ -196,14 +206,14 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *framebuffer,
                              int xTileCoords,
                              int yTileCoords);
 
-int CEXR_InputFile_from_file(const char *path, int threads, CEXR_InputFile **out, const char **err_out);
+int CEXR_InputFile_from_file_path(const char *path, int threads, CEXR_InputFile **out, const char **err_out);
 int CEXR_InputFile_from_stream(CEXR_IStream *stream, int threads, CEXR_InputFile **out, const char **err_out);
 void CEXR_InputFile_delete(CEXR_InputFile *file);
 const CEXR_Header *CEXR_InputFile_header(CEXR_InputFile *file);
 int CEXR_InputFile_set_framebuffer(CEXR_InputFile *file, CEXR_FrameBuffer *framebuffer, const char **err_out);
 int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanline_2, const char **err_out);
 
-int CEXR_OutputFile_from_file(const char *path, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out);
+int CEXR_OutputFile_from_stream(CEXR_OStream *stream, const CEXR_Header *header, int threads, CEXR_OutputFile **out, const char **err_out);
 void CEXR_OutputFile_delete(CEXR_OutputFile *file);
 const CEXR_Header *CEXR_OutputFile_header(CEXR_OutputFile *file);
 int CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffer *framebuffer, const char **err_out);
