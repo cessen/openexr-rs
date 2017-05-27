@@ -46,7 +46,7 @@ pub struct InputFile<'a> {
 }
 
 impl<'a> InputFile<'a> {
-    pub fn new<'b, T: 'b>(reader: &'b mut T) -> Result<InputFile<'b>>
+    pub fn new<T: 'a>(reader: &mut T) -> Result<InputFile>
         where T: Read + Seek
     {
         let istream_ptr = {
@@ -95,7 +95,7 @@ impl<'a> InputFile<'a> {
         }
     }
 
-    pub fn from_slice<'b>(slice: &'b [u8]) -> Result<InputFile<'b>> {
+    pub fn from_slice(slice: &[u8]) -> Result<InputFile> {
         let istream_ptr = unsafe {
             CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
                                      slice.as_ptr() as *mut u8 as *mut c_char,

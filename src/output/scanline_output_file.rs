@@ -24,8 +24,8 @@ pub struct ScanlineOutputFile<'a> {
 }
 
 impl<'a> ScanlineOutputFile<'a> {
-    pub fn new<'b, T: 'b>(writer: &'b mut T, header: &Header) -> Result<ScanlineOutputFile<'b>>
-        where T: 'b + Write + Seek
+    pub fn new<T: 'a>(writer: &'a mut T, header: &Header) -> Result<ScanlineOutputFile<'a>>
+        where T: Write + Seek
     {
         let ostream_ptr = {
             let write_ptr = write_stream::<T>;
