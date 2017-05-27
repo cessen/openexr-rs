@@ -258,6 +258,33 @@ pub struct CEXR_ChannelListIter {
     _unused: [u8; 0],
 }
 extern "C" {
+    pub fn CEXR_IStream_from_reader(reader: *mut ::std::os::raw::c_void,
+                                    read_ptr:
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::std::os::raw::c_void,
+                                                                                   arg2:
+                                                                                       *mut ::std::os::raw::c_char,
+                                                                                   arg3:
+                                                                                       ::std::os::raw::c_int,
+                                                                                   err_out:
+                                                                                       *mut ::std::os::raw::c_int)
+                                                                  ->
+                                                                      ::std::os::raw::c_int>,
+                                    seekp_ptr:
+                                        ::std::option::Option<unsafe extern "C" fn(arg1:
+                                                                                       *mut ::std::os::raw::c_void,
+                                                                                   arg2:
+                                                                                       u64,
+                                                                                   err_out:
+                                                                                       *mut ::std::os::raw::c_int)
+                                                                  ->
+                                                                      ::std::os::raw::c_int>,
+                                    out: *mut *mut CEXR_IStream,
+                                    err_out:
+                                        *mut *const ::std::os::raw::c_char)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn CEXR_IStream_from_memory(filename: *const ::std::os::raw::c_char,
                                     data: *mut ::std::os::raw::c_char,
                                     size: usize) -> *mut CEXR_IStream;

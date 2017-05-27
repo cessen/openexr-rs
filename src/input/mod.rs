@@ -1,6 +1,6 @@
-use std::ffi::{CString, CStr};
+use std::ffi::CStr;
+use std::io::{Read, Seek};
 use std::marker::PhantomData;
-use std::path::Path;
 use std::ptr;
 
 use libc::c_char;
@@ -10,43 +10,70 @@ use openexr_sys::*;
 use error::*;
 use frame_buffer::FrameBuffer;
 use Header;
+use stream_io::{read_stream, seek_stream};
 
 /// Common input interface for all types of OpenEXR files
 ///
 /// # Examples
 /// ```rust,no_run
 /// # use openexr::{InputFile, FrameBuffer};
+/// # use std::fs::File;
 /// # use std::path::Path;
 /// # let path = "/path/to/file.exr";
 /// # let path = Path::new(&path);
-/// let file = InputFile::new(path).unwrap();
-/// let window = file.header().data_window();
+/// let mut file = File::open(path).unwrap();
+/// let input_file = InputFile::new(&mut file).unwrap();
+/// let window = input_file.header().data_window();
 /// let width = window.max.x - window.min.x + 1;
 /// let height = window.max.y - window.min.y + 1;
 ///
 /// let mut pixel_data: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; (width*height) as usize];
 /// let mut fb = FrameBuffer::new(width as usize, height as usize);
 /// fb.insert_pixels(&[("R", 0.0), ("G", 0.0), ("B", 0.0), ("A", 0.0)], &mut pixel_data);
-/// file.read_pixels(&mut fb).unwrap();
+/// input_file.read_pixels(&mut fb).unwrap();
 /// ```
 #[allow(dead_code)]
 pub struct InputFile<'a> {
     handle: *mut CEXR_InputFile,
     header_ref: Header,
-    istream: Option<IStream<'a>>,
-    _phantom: PhantomData<CEXR_InputFile>,
+    istream: *mut CEXR_IStream,
+    _phantom_1: PhantomData<CEXR_InputFile>,
+    _phantom_2: PhantomData<&'a mut ()>, // Represents the borrowed reader
+
+    // NOTE: Because we don't know what type the reader might be, it's important
+    // that this struct remains neither Sync nor Send.  Please don't implement
+    // them!
 }
 
 impl<'a> InputFile<'a> {
-    pub fn new(path: &Path) -> Result<InputFile<'static>> {
-        let c_path = CString::new(path.to_str()
-                                      .expect("non-unicode path handling is unimplemented")
-                                      .as_bytes())
-                .unwrap();
+    pub fn new<T: 'a>(reader: &mut T) -> Result<InputFile>
+        where T: Read + Seek
+    {
+        let istream_ptr = {
+            let read_ptr = read_stream::<T>;
+            let seekp_ptr = seek_stream::<T>;
+
+            let mut error_out = ptr::null();
+            let mut out = ptr::null_mut();
+            let error = unsafe {
+                CEXR_IStream_from_reader(reader as *mut T as *mut _,
+                                         Some(read_ptr),
+                                         Some(seekp_ptr),
+                                         &mut out,
+                                         &mut error_out)
+            };
+
+            if error != 0 {
+                let msg = unsafe { CStr::from_ptr(error_out) };
+                return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+            } else {
+                out
+            }
+        };
+
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
-        let error =
-            unsafe { CEXR_InputFile_from_file_path(c_path.as_ptr(), 1, &mut out, &mut error_out) };
+        let error = unsafe { CEXR_InputFile_from_stream(istream_ptr, 1, &mut out, &mut error_out) };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
@@ -61,18 +88,23 @@ impl<'a> InputFile<'a> {
                        owned: false,
                        _phantom: PhantomData,
                    },
-                   istream: None,
-                   _phantom: PhantomData,
+                   istream: istream_ptr,
+                   _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }
 
-    pub fn from_slice(slice: &'a [u8]) -> Result<InputFile<'a>> {
-        let istream = IStream::from_slice(slice);
+    pub fn from_slice(slice: &[u8]) -> Result<InputFile> {
+        let istream_ptr = unsafe {
+            CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
+                                     slice.as_ptr() as *mut u8 as *mut c_char,
+                                     slice.len())
+        };
+
         let mut error_out = ptr::null();
         let mut out = ptr::null_mut();
-        let error =
-            unsafe { CEXR_InputFile_from_stream(istream.handle, 1, &mut out, &mut error_out) };
+        let error = unsafe { CEXR_InputFile_from_stream(istream_ptr, 1, &mut out, &mut error_out) };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
@@ -87,8 +119,9 @@ impl<'a> InputFile<'a> {
                        owned: false,
                        _phantom: PhantomData,
                    },
-                   istream: Some(istream),
-                   _phantom: PhantomData,
+                   istream: istream_ptr,
+                   _phantom_1: PhantomData,
+                   _phantom_2: PhantomData,
                })
         }
     }
@@ -132,29 +165,6 @@ impl<'a> InputFile<'a> {
 impl<'a> Drop for InputFile<'a> {
     fn drop(&mut self) {
         unsafe { CEXR_InputFile_delete(self.handle) };
-    }
-}
-
-struct IStream<'a> {
-    handle: *mut CEXR_IStream,
-    _phantom: PhantomData<&'a ()>,
-}
-
-impl<'a> IStream<'a> {
-    fn from_slice(slice: &'a [u8]) -> IStream<'a> {
-        IStream {
-            handle: unsafe {
-                CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
-                                         slice.as_ptr() as *mut u8 as *mut c_char,
-                                         slice.len())
-            },
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl<'a> Drop for IStream<'a> {
-    fn drop(&mut self) {
-        unsafe { CEXR_IStream_delete(self.handle) };
+        unsafe { CEXR_IStream_delete(self.istream) };
     }
 }

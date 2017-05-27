@@ -1,14 +1,16 @@
 extern crate openexr;
 
 use std::env;
+use std::fs::File;
 use std::path::Path;
 
 use openexr::{FrameBuffer, InputFile, PixelType};
 
 fn main() {
     // Open the EXR file and get its dimensions.
-    let exr_file = InputFile::new(Path::new(&env::args_os().nth(1).expect("argument required")))
+    let mut file = File::open(Path::new(&env::args_os().nth(1).expect("argument required")))
         .unwrap();
+    let exr_file = InputFile::new(&mut file).unwrap();
     let window = exr_file.header().data_window();
     let width = window.max.x - window.min.x + 1;
     let height = window.max.y - window.min.y + 1;
