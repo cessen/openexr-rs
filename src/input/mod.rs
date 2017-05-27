@@ -8,7 +8,7 @@ use libc::c_char;
 use openexr_sys::*;
 
 use error::*;
-use frame_buffer::FrameBuffer;
+use frame_buffer::FrameBufferMut;
 use Header;
 use stream_io::{read_stream, seek_stream};
 
@@ -16,7 +16,7 @@ use stream_io::{read_stream, seek_stream};
 ///
 /// # Examples
 /// ```rust,no_run
-/// # use openexr::{InputFile, FrameBuffer};
+/// # use openexr::{InputFile, FrameBufferMut};
 /// # use std::fs::File;
 /// # use std::path::Path;
 /// # let path = "/path/to/file.exr";
@@ -28,8 +28,8 @@ use stream_io::{read_stream, seek_stream};
 /// let height = window.max.y - window.min.y + 1;
 ///
 /// let mut pixel_data: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; (width*height) as usize];
-/// let mut fb = FrameBuffer::new(width as usize, height as usize);
-/// fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0), ("A", 0.0)], &mut pixel_data);
+/// let mut fb = FrameBufferMut::new(width as usize, height as usize);
+/// fb.insert_channels_mut(&[("R", 0.0), ("G", 0.0), ("B", 0.0), ("A", 0.0)], &mut pixel_data);
 /// input_file.read_pixels(&mut fb).unwrap();
 /// ```
 #[allow(dead_code)]
@@ -126,7 +126,7 @@ impl<'a> InputFile<'a> {
         }
     }
 
-    pub fn read_pixels(&self, framebuffer: &mut FrameBuffer) -> Result<()> {
+    pub fn read_pixels(&self, framebuffer: &mut FrameBufferMut) -> Result<()> {
         let w = self.header().data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions().0 - 1 ||
            (w.max.y - w.min.y) as usize != framebuffer.dimensions().1 - 1 {

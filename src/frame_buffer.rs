@@ -1,6 +1,7 @@
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::mem;
+use std::ops::Deref;
 
 use half::f16;
 use libc::{c_char, c_int};
@@ -56,7 +57,7 @@ impl<'a> FrameBuffer<'a> {
     pub fn insert_channel<T: PixelData>(&mut self,
                                         name: &str,
                                         fill: f64,
-                                        data: &'a mut [T])
+                                        data: &'a [T])
                                         -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
@@ -68,7 +69,7 @@ impl<'a> FrameBuffer<'a> {
         unsafe {
             self.insert_raw(name,
                             T::pixel_type(),
-                            data.as_mut_ptr() as *mut c_char,
+                            data.as_ptr() as *const c_char,
                             (mem::size_of::<T>(), width * mem::size_of::<T>()),
                             (1, 1),
                             fill,
@@ -89,7 +90,7 @@ impl<'a> FrameBuffer<'a> {
     /// of the `FrameBuffer`.
     pub fn insert_channels<T: PixelStruct>(&mut self,
                                            channels: &[(&str, f64)],
-                                           data: &'a mut [T])
+                                           data: &'a [T])
                                            -> &mut Self {
         if data.len() != self.dimensions.0 * self.dimensions.1 {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
@@ -102,7 +103,7 @@ impl<'a> FrameBuffer<'a> {
             unsafe {
                 self.insert_raw(name,
                                 ty,
-                                (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
+                                (data.as_ptr() as *const c_char).offset(offset as isize),
                                 (mem::size_of::<T>(), width * mem::size_of::<T>()),
                                 (1, 1),
                                 fill,
@@ -123,7 +124,7 @@ impl<'a> FrameBuffer<'a> {
     pub unsafe fn insert_raw(&mut self,
                              name: &str,
                              type_: PixelType,
-                             base: *mut c_char,
+                             base: *const c_char,
                              stride: (usize, usize),
                              sampling: (c_int, c_int),
                              fill_value: f64,
@@ -133,7 +134,7 @@ impl<'a> FrameBuffer<'a> {
         CEXR_FrameBuffer_insert(self.handle,
                                 c_name.as_ptr(),
                                 type_,
-                                base,
+                                base as *mut _,
                                 stride.0,
                                 stride.1,
                                 sampling.0,
@@ -144,19 +145,13 @@ impl<'a> FrameBuffer<'a> {
         self
     }
 
-    // These shouldn't be used outside of this crate, but due to
+    // This shouldn't be used outside of this crate, but due to
     // https://github.com/rust-lang/rfcs/pull/1422 not being stable
     // yet (should land in Rust 1.18), just hide from public
     // documentation for now.
-    // TODO: once Rust 1.18 comes out, remove these functions and
-    // just use direct field access via `pub(crate)`.
+    // TODO: once Rust 1.18 comes out, change from pub to pub(crate)`.
     #[doc(hidden)]
     pub fn handle(&self) -> *const CEXR_FrameBuffer {
-        self.handle
-    }
-
-    #[doc(hidden)]
-    pub fn handle_mut(&mut self) -> *mut CEXR_FrameBuffer {
         self.handle
     }
 
@@ -185,6 +180,109 @@ impl<'a> Drop for FrameBuffer<'a> {
     }
 }
 
+// ----------------------------------------------------------------
+
+pub struct FrameBufferMut<'a> {
+    frame_buffer: FrameBuffer<'a>,
+}
+
+impl<'a> FrameBufferMut<'a> {
+    pub fn new(width: usize, height: usize) -> Self {
+        FrameBufferMut { frame_buffer: FrameBuffer::new(width, height) }
+    }
+
+    pub fn insert_channel_mut<T: PixelData>(&mut self,
+                                            name: &str,
+                                            fill: f64,
+                                            data: &'a mut [T])
+                                            -> &mut Self {
+        if data.len() != self.dimensions.0 * self.dimensions.1 {
+            panic!("data size of {} elements cannot back {}x{} framebuffer",
+                   data.len(),
+                   self.dimensions.0,
+                   self.dimensions.1);
+        }
+        let width = self.dimensions.0;
+        unsafe {
+            self.insert_raw_mut(name,
+                                T::pixel_type(),
+                                data.as_mut_ptr() as *mut c_char,
+                                (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                                (1, 1),
+                                fill,
+                                (false, false))
+        };
+        self
+    }
+
+    pub fn insert_channels_mut<T: PixelStruct>(&mut self,
+                                               channels: &[(&str, f64)],
+                                               data: &'a mut [T])
+                                               -> &mut Self {
+        if data.len() != self.dimensions.0 * self.dimensions.1 {
+            panic!("data size of {} elements cannot back {}x{} framebuffer",
+                   data.len(),
+                   self.dimensions.0,
+                   self.dimensions.1);
+        }
+        let width = self.dimensions.0;
+        for (&(name, fill), (ty, offset)) in channels.iter().zip(T::channels()) {
+            unsafe {
+                self.insert_raw_mut(name,
+                                    ty,
+                                    (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
+                                    (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                                    (1, 1),
+                                    fill,
+                                    (false, false))
+            };
+        }
+        self
+    }
+
+    pub unsafe fn insert_raw_mut(&mut self,
+                                 name: &str,
+                                 type_: PixelType,
+                                 base: *mut c_char,
+                                 stride: (usize, usize),
+                                 sampling: (c_int, c_int),
+                                 fill_value: f64,
+                                 tile_coords: (bool, bool))
+                                 -> &mut Self {
+        let c_name = CString::new(name).unwrap();
+        CEXR_FrameBuffer_insert(self.handle,
+                                c_name.as_ptr(),
+                                type_,
+                                base,
+                                stride.0,
+                                stride.1,
+                                sampling.0,
+                                sampling.1,
+                                fill_value,
+                                tile_coords.0 as c_int,
+                                tile_coords.1 as c_int);
+        self
+    }
+
+    // This shouldn't be used outside of this crate, but due to
+    // https://github.com/rust-lang/rfcs/pull/1422 not being stable
+    // yet (should land in Rust 1.18), just hide from public
+    // documentation for now.
+    // TODO: once Rust 1.18 comes out, change from pub to pub(crate)`.
+    #[doc(hidden)]
+    pub fn handle_mut(&mut self) -> *mut CEXR_FrameBuffer {
+        self.handle
+    }
+}
+
+impl<'a> Deref for FrameBufferMut<'a> {
+    type Target = FrameBuffer<'a>;
+    fn deref(&self) -> &Self::Target {
+        &self.frame_buffer
+    }
+}
+
+// ----------------------------------------------------------------
 
 /// Types that are bitwise- and semantically-identical to one of the
 /// `PixelType` variants.
