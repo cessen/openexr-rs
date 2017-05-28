@@ -150,8 +150,8 @@ impl<'a> InputFile<'a> {
         }
     }
 
-    
-    /// Reads image data into the memory specified by the given FrameBufferMut.
+
+    /// Reads image data into the given FrameBufferMut.
     pub fn read_pixels(&mut self, framebuffer: &mut FrameBufferMut) -> Result<()> {
         // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
         // &mut to be safe.  Even though it is not conceptually modifying the

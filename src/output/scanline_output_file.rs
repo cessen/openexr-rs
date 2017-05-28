@@ -57,7 +57,7 @@ impl<'a> ScanlineOutputFile<'a> {
     /// Creates a new `ScanlineOutputFile` from any `Write + Seek` type
     /// (typically a `std::fs::File`).
     ///
-    /// Note: this seeks to byte 0 before reading.
+    /// Note: this seeks to byte 0 before writing.
     pub fn new<T: 'a>(writer: &'a mut T, header: &Header) -> Result<ScanlineOutputFile<'a>>
         where T: Write + Seek
     {
@@ -111,7 +111,7 @@ impl<'a> ScanlineOutputFile<'a> {
         }
     }
 
-    /// Writes image data from the memory specified by the given FrameBuffer.
+    /// Writes image data from the given FrameBuffer.
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
         framebuffer.validate_header_for_output(self.header())?;
 
