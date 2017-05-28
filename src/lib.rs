@@ -66,12 +66,13 @@
 //!
 //! // Open the EXR file.
 //! let mut file = std::fs::File::open("input_file.exr").unwrap();
-//! let input_file = InputFile::new(&mut file).unwrap();
+//! let mut input_file = InputFile::new(&mut file).unwrap();
 //!
 //! // Get the image dimensions, so we know how large of a buffer to make.
-//! let window = input_file.header().data_window();
-//! let width = window.max.x - window.min.x + 1;
-//! let height = window.max.y - window.min.y + 1;
+//! let (width, height) = {
+//!     let window = input_file.header().data_window();
+//!     (window.max.x - window.min.x + 1, window.max.y - window.min.y + 1)
+//! };
 //!
 //! // Buffer to read pixel data into.
 //! let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); (width*height) as usize];

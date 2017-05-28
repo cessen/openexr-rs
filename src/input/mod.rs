@@ -34,10 +34,11 @@ use stream_io::{read_stream, seek_stream};
 /// #
 /// // Open file and get its resolution.
 /// let mut file = std::fs::File::open("input_file.exr").unwrap();
-/// let input_file = InputFile::new(&mut file).unwrap();
-/// let window = input_file.header().data_window();
-/// let width = window.max.x - window.min.x + 1;
-/// let height = window.max.y - window.min.y + 1;
+/// let mut input_file = InputFile::new(&mut file).unwrap();
+/// let (width, height) = {
+///     let window = input_file.header().data_window();
+///     (window.max.x - window.min.x + 1, window.max.y - window.min.y + 1)
+/// };
 ///
 /// // Allocate a buffer for the image data and read it in.
 /// let mut pixel_data: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; (width*height) as usize];
@@ -149,8 +150,14 @@ impl<'a> InputFile<'a> {
         }
     }
 
+    
     /// Reads image data into the memory specified by the given FrameBufferMut.
-    pub fn read_pixels(&self, framebuffer: &mut FrameBufferMut) -> Result<()> {
+    pub fn read_pixels(&mut self, framebuffer: &mut FrameBufferMut) -> Result<()> {
+        // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
+        // &mut to be safe.  Even though it is not conceptually modifying the
+        // thing (typically a file) that it's reading from, it still has a
+        // cursor getting incremented etc. during reads, so the reference needs
+        // to be unique to avoid unsafe aliasing.
         let w = self.header().data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions().0 - 1 ||
            (w.max.y - w.min.y) as usize != framebuffer.dimensions().1 - 1 {

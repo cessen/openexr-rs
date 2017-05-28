@@ -31,10 +31,11 @@ fn memory_io() {
     {
         let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 256];
 
-        let exr_file = InputFile::from_slice(in_memory_buffer.get_ref()).unwrap();
-        let window = exr_file.header().data_window();
-        let width = window.max.x - window.min.x + 1;
-        let height = window.max.y - window.min.y + 1;
+        let mut exr_file = InputFile::from_slice(in_memory_buffer.get_ref()).unwrap();
+        let (width, height) = {
+            let window = exr_file.header().data_window();
+            (window.max.x - window.min.x + 1, window.max.y - window.min.y + 1)
+        };
 
         // Make sure the image properties are the same.
         assert!(width == 256);
