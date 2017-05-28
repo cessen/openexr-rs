@@ -1,3 +1,5 @@
+//! Input file types.
+
 use std::ffi::CStr;
 use std::io::{Read, Seek};
 use std::marker::PhantomData;
