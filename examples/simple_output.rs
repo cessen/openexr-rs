@@ -23,7 +23,7 @@ fn main() {
     let fb = {
         // Create the frame buffer
         let mut fb = FrameBuffer::new(256, 256);
-        fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &pixel_data);
+        fb.insert_channels(&["R", "G", "B"], &pixel_data);
         fb
     };
 

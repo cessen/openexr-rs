@@ -42,7 +42,7 @@
 //! // The `0.0`'s are fallback values for each channel in case of missing
 //! // pixel data when reading from a file.  In this example they aren't used.
 //! let mut fb = FrameBuffer::new(256, 256);
-//! fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &pixel_data);
+//! fb.insert_channels(&["R", "G", "B"], &pixel_data);
 //!
 //! // Write pixel data to the file.  We pass our framebuffer to it so it knows
 //! // what pixel data to write.
@@ -115,7 +115,7 @@ use openexr_sys::*;
 
 pub use cexr_type_aliases::*;
 pub use error::*;
-pub use frame_buffer::{FrameBuffer, FrameBufferMut};
+pub use frame_buffer::*;
 pub use input::*;
 pub use output::*;
 
