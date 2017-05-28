@@ -10,6 +10,21 @@
 //!
 //! `FrameBufferMut` dereferences to `&FrameBuffer` so it can be passed
 //! anywhere a `&FrameBuffer` can.
+//!
+//! ## Examples
+//!
+//! Building a frame buffer that points at an array of RGB values:
+//!
+//! ```
+//! # use openexr::FrameBuffer;
+//! // Pixel data: RGB values for a 256x256 image.
+//! let pixel_data = vec![(0.5, 1.0, 0.5); 256 * 256];
+//!
+//! // Create a framebuffer that points at the pixel data and describes the
+//! // tuple elements as being RGB channels.
+//! let mut fb = FrameBuffer::new(256, 256);
+//! fb.insert_channels(&["R", "G", "B"], &pixel_data);
+//! ```
 
 use std::ffi::CString;
 use std::marker::PhantomData;
@@ -153,6 +168,13 @@ impl<'a> FrameBuffer<'a> {
     // TODO: this should probably be part of Header.  It's only here
     // right now to allow access to both struct's internals, but it won't
     // have to be here for that once `pub(crate)` lands in Rust 1.18.
+    //
+    // This shouldn't be used outside of this crate, but due to
+    // https://github.com/rust-lang/rfcs/pull/1422 not being stable
+    // yet (should land in Rust 1.18), just hide from public
+    // documentation for now.
+    // TODO: once Rust 1.18 comes out, change from pub to pub(crate)`.
+    #[doc(hidden)]
     pub fn validate_header_for_output(&self, header: &Header) -> Result<()> {
         let w = header.data_window();
         if (w.max.x - w.min.x) as usize != self.dimensions().0 - 1 ||
@@ -309,16 +331,15 @@ impl<'a> Deref for FrameBufferMut<'a> {
 
 // ----------------------------------------------------------------
 
-/// Types that are bitwise- and semantically-identical to one of the
-/// `PixelType` variants.
+/// Types that can be inserted into a `FrameBuffer` as a channel.
 ///
 /// Implementing this trait on a type allows the type to be used directly by the
 /// library to write data out to and read data in from EXR files.
 ///
-/// NOTE: unless you really know what you're doing, you probably shouldn't
-/// implement this for anything. It's already been implemented for the
-/// relevant built-in Rust types.  The only exception might be implementing it
-/// for alternative implementations of half floats.
+/// NOTE: this should only be implemented for types that are bitwise- and
+/// semantically-identical to one of the `PixelType` variants.  It has already
+/// been implemented for the applicable built-in Rust types, as well as `f16`
+/// from the Half crate.
 pub unsafe trait PixelData {
     fn pixel_type() -> PixelType;
 }
@@ -341,8 +362,10 @@ unsafe impl PixelData for f32 {
     }
 }
 
-/// Types that contain components that are bitwise- and semantically-identical
-/// to the `PixelType` variants.
+/// Types that can be inserted into a `FrameBuffer` as a set of channels.
+///
+/// This should only be implemented for types that that contain components that
+/// are bitwise- and semantically-identical to the `PixelType` variants.
 ///
 /// The intended use of this is to allow e.g. a tuple or struct of RGB values
 /// to be used directly by the library to write data out to and read data in

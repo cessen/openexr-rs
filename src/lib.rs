@@ -1,31 +1,46 @@
 //! Rust bindings for the [OpenEXR](http://openexr.com) C++ library.
 //!
-//! OpenEXR is a bitmap image file format that can store high dynamic images
-//! along with other arbitrary per-pixel data. It is used heavily in the VFX
-//! and 3D animation industries.
+//! OpenEXR is a bitmap image file format that can store high dynamic range
+//! (HDR) images along with other arbitrary per-pixel data. It is used heavily
+//! in the VFX and 3D animation industries.
 //!
-//! Although this wrapper differs a little in its API compared to the C++
-//! library, it tried not to differ wildly.  Therefore the
-//! [C++ OpenEXR documentation]
+//! Although this wrapper's API differs a little from the C++ library, it tries
+//! not to differ wildly.  Therefore the [C++ OpenEXR documentation]
 //! (https://github.com/openexr/openexr/tree/develop/OpenEXR/doc) is still
 //! useful as an introduction and rough reference.  Moreover, the file format
 //! itself is also documented there.
 //!
+//! ## Overview
+//!
+//! There are three primary parts to this crate:
+//!
+//! * The various [input](input/index.html) and [output](output/index.html)
+//!   types.  These are used for reading and writing OpenEXR files.  They
+//!   utilize the Header and FrameBuffer(Mut) types, listed below.
+//!
+//! * [`Header`](struct.Header.html): this is used for querying and specifying
+//!   the properties of an image file, for reading and writing respectively.
+//!
+//! * [`FrameBuffer`](frame_buffer/struct.FrameBuffer.html) and
+//!   [`FrameBufferMut`](frame_buffer/struct.FrameBufferMut.html):
+//!   these are intermediaries that tell the OpenEXR API's how to interpret
+//!   your in-memory image data, for reading and writing.  Rather than passing
+//!   your image data to the API's directly, you construct FrameBuffers that
+//!   that point at and describe it, and then you pass those FrameBuffers.
+//!
 //! # Examples
 //!
-//! Writing a scanline RGB file.
+//! Writing a scanline floating point RGB file.
 //!
 //! ```no_run
-//! use std::fs::File;
-//! use std::path::Path;
-//! use openexr::{FrameBuffer, Header, ScanlineOutputFile, PixelType};
-//!
+//! # use openexr::{FrameBuffer, Header, ScanlineOutputFile, PixelType};
+//! #
 //! // Pixel data for a 256x256 floating point RGB image.
 //! let pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
 //!
 //! // Create a file to write to.  The `Header` determines the properties of the
 //! // file, like resolution and what channels it has.
-//! let mut file = File::create("output_file.exr").unwrap();
+//! let mut file = std::fs::File::create("output_file.exr").unwrap();
 //! let mut output_file = ScanlineOutputFile::new(
 //!     &mut file,
 //!     Header::new()
@@ -34,30 +49,22 @@
 //!         .add_channel("G", PixelType::FLOAT)
 //!         .add_channel("B", PixelType::FLOAT)).unwrap();
 //!
-//! // The `FrameBuffer` points to and describes pixel data in memory. In this
-//! // case, it points to `pixel_data` and says it has three channels: 'R', 'G',
-//! // and 'B'.  The data type of the channels is inferred from `pixel_data`'s
-//! // type.
-//! //
-//! // The `0.0`'s are fallback values for each channel in case of missing
-//! // pixel data when reading from a file.  In this example they aren't used.
+//! // Create a `FrameBuffer` that points at our pixel data and describes it as
+//! // RGB data.
 //! let mut fb = FrameBuffer::new(256, 256);
 //! fb.insert_channels(&["R", "G", "B"], &pixel_data);
 //!
-//! // Write pixel data to the file.  We pass our framebuffer to it so it knows
-//! // what pixel data to write.
+//! // Write pixel data to the file.
 //! output_file.write_pixels(&fb).unwrap();
 //! ```
 //!
-//! Reading an RGB file.
+//! Reading a floating point RGB file.
 //!
 //! ```no_run
-//! use std::fs::File;
-//! use std::path::Path;
-//! use openexr::{FrameBufferMut, InputFile, PixelType};
+//! # use openexr::{FrameBufferMut, InputFile, PixelType};
 //!
 //! // Open the EXR file.
-//! let mut file = File::open(Path::new("input_file.exr")).unwrap();
+//! let mut file = std::fs::File::open("input_file.exr").unwrap();
 //! let input_file = InputFile::new(&mut file).unwrap();
 //!
 //! // Get the image dimensions, so we know how large of a buffer to make.
@@ -65,37 +72,24 @@
 //! let width = window.max.x - window.min.x + 1;
 //! let height = window.max.y - window.min.y + 1;
 //!
-//! // Make sure the channels we want exist in the file and are of the type we
-//! // expect.  If you statically know the properties of the file you're
-//! // loading, this isn't necessary.
-//! for channel_name in ["R", "G", "B"].iter() {
-//!     let channel = input_file
-//!         .header()
-//!         .get_channel(channel_name)
-//!         .expect(&format!("Didn't find channel {}.", channel_name));
-//!     assert!(channel.pixel_type == PixelType::FLOAT);
-//! }
-//!
-//! // Space to read pixel data into.
+//! // Buffer to read pixel data into.
 //! let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); (width*height) as usize];
 //!
 //! // New scope because `FrameBuffer` mutably borrows `pixel_data`, so we need
 //! // it to go out of scope before we can access our `pixel_data` again.
 //! {
-//!     // Create `FrameBufferMut`.  Same drill as for output, except the
-//!     // mut version.
+//!     // Create `FrameBufferMut` that points at our pixel data and describes
+//!     // it as RGB data.
 //!     let mut fb = FrameBufferMut::new(width as usize, height as usize);
 //!     fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 //!
-//!     // Read in pixel data.
+//!     // Read pixel data from the file.
 //!     input_file.read_pixels(&mut fb).unwrap();
 //! }
-//!
-//! // The image data is now loaded into `pixel_data`.
 //! ```
 
 
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 
 extern crate half;
 extern crate libc;
@@ -122,12 +116,12 @@ pub use output::*;
 // TODO: move Header to its own module once we can use
 // `pub(crate)` on struct fields (should be in Rust 1.18).
 
-/// File header of an OpenEXR file.
+/// Representation of an OpenEXR file header.
 ///
-/// This represents the header of an OpenEXR file.  It contains attributes, channel
-/// descriptions, image resolution information, etc.  It is used both for fetching
-/// information about a loaded EXR file and for defining the header of a file to be
-/// written.
+/// The file header describes the properties of the image, such as image
+/// resolution, the channels it contains, custom attributes, etc.  It is used
+/// both for fetching information about a loaded EXR file and for defining the
+/// properties of a file to be written.
 ///
 /// # Examples
 ///
