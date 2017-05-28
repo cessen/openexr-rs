@@ -11,7 +11,7 @@ extern "C" {
 
 // Transparent types
 /**
- * An 2d integer vector.
+ * A 2d integer vector.
  *
  * Used in various parts of OpenEXR's APIs.
  */
@@ -20,7 +20,7 @@ typedef struct CEXR_V2i {
 } CEXR_V2i;
 
 /**
- * An 2d floating point vector.
+ * A 2d floating point vector.
  *
  * Used in various parts of OpenEXR's APIs.
  */
@@ -29,7 +29,7 @@ typedef struct CEXR_V2f {
 } CEXR_V2f;
 
 /**
- * An 2d integer bounding box.
+ * A 2d integer bounding box.
  *
  * Used in various parts of OpenEXR's APIs.
  */

@@ -14,21 +14,32 @@ use frame_buffer::FrameBufferMut;
 use Header;
 use stream_io::{read_stream, seek_stream};
 
-/// Common input interface for all types of OpenEXR files
+/// Reads any kind of OpenEXR file.
+///
+/// `InputFile` is a bit unique in that it doesn't care what kind of OpenEXR
+/// file is being read.  Regardless of the type being read, it presents an API
+/// as if it were a basic scanline OpenEXR file.
+///
+/// Note that this means special features like tiles, mipmaps, and deep image
+/// data will not be available even if they are present in the file.  To gain
+/// access to those features you need to use the other input file types (not
+/// yet implemented, sorry!).
 ///
 /// # Examples
-/// ```rust,no_run
+///
+/// Load image data from a floating point RGB image file named "input_file.exr".
+///
+/// ```no_run
 /// # use openexr::{InputFile, FrameBufferMut};
-/// # use std::fs::File;
-/// # use std::path::Path;
-/// # let path = "/path/to/file.exr";
-/// # let path = Path::new(&path);
-/// let mut file = File::open(path).unwrap();
+/// #
+/// // Open file and get its resolution.
+/// let mut file = std::fs::File::open("input_file.exr").unwrap();
 /// let input_file = InputFile::new(&mut file).unwrap();
 /// let window = input_file.header().data_window();
 /// let width = window.max.x - window.min.x + 1;
 /// let height = window.max.y - window.min.y + 1;
 ///
+/// // Allocate a buffer for the image data and read it in.
 /// let mut pixel_data: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; (width*height) as usize];
 /// let mut fb = FrameBufferMut::new(width as usize, height as usize);
 /// fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0), ("A", 0.0)], &mut pixel_data);
@@ -48,6 +59,10 @@ pub struct InputFile<'a> {
 }
 
 impl<'a> InputFile<'a> {
+    /// Creates a new `InputFile` from any `Read + Seek` type (typically a
+    /// `std::fs::File`).
+    ///
+    /// Note: this seeks to byte 0 before reading.
     pub fn new<T: 'a>(reader: &mut T) -> Result<InputFile>
         where T: Read + Seek
     {
@@ -97,6 +112,12 @@ impl<'a> InputFile<'a> {
         }
     }
 
+    /// Creates a new `InputFile` from a slice of bytes, reading from memory.
+    ///
+    /// Note: although you can do essentially the same thing by passing a
+    /// `std::io::Cursor<&[u8]>` to `new()`, using this method is more
+    /// efficient because it allows the underlying APIs to avoid writing
+    /// intermediate data to buffers.
     pub fn from_slice(slice: &[u8]) -> Result<InputFile> {
         let istream_ptr = unsafe {
             CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
@@ -128,6 +149,7 @@ impl<'a> InputFile<'a> {
         }
     }
 
+    /// Reads image data into the memory specified by the given FrameBufferMut.
     pub fn read_pixels(&self, framebuffer: &mut FrameBufferMut) -> Result<()> {
         let w = self.header().data_window();
         if (w.max.x - w.min.x) as usize != framebuffer.dimensions().0 - 1 ||
@@ -159,6 +181,7 @@ impl<'a> InputFile<'a> {
         }
     }
 
+    /// Access to the file's header.
     pub fn header(&self) -> &Header {
         &self.header_ref
     }

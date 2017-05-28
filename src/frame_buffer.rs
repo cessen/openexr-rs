@@ -341,6 +341,7 @@ impl<'a> Deref for FrameBufferMut<'a> {
 /// been implemented for the applicable built-in Rust types, as well as `f16`
 /// from the Half crate.
 pub unsafe trait PixelData {
+    /// Returns which `PixelType` the implementing type corresponds to.
     fn pixel_type() -> PixelType;
 }
 
@@ -403,13 +404,14 @@ pub unsafe trait PixelStruct {
     fn channel(i: usize) -> (PixelType, usize);
 
     /// Returns an iterator over the set of channels
-    fn channels() -> PixelStructChannels {
+    fn channels() -> PixelStructChannelIter {
         (0..Self::channel_count()).map(Self::channel)
     }
 }
 
-pub type PixelStructChannels = ::std::iter::Map<::std::ops::Range<usize>,
-                                                fn(usize) -> (PixelType, usize)>;
+/// An iterator over the types and offsets of the channels in a `PixelStruct`.
+pub type PixelStructChannelIter = ::std::iter::Map<::std::ops::Range<usize>,
+                                                   fn(usize) -> (PixelType, usize)>;
 
 unsafe impl<T: PixelData> PixelStruct for T {
     fn channel_count() -> usize {

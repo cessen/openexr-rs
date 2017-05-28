@@ -10,7 +10,37 @@ use frame_buffer::FrameBuffer;
 use Header;
 use stream_io::{write_stream, seek_stream};
 
-
+/// Writes scanline OpenEXR files.
+///
+/// This is the simplest kind of OpenEXR file.  Image data is stored in
+/// scanline order with no special features like mipmaps or deep image data.
+/// Unless you have a need for such special features, this is probably what
+/// you want to use.
+///
+/// # Examples
+///
+/// Write a floating point RGB image to a file named "output_file.exr".
+///
+/// ```no_run
+/// # use openexr::{ScanlineOutputFile, Header, FrameBuffer, PixelType};
+/// #
+/// // Create file with the desired resolution and channels.
+/// let mut file = std::fs::File::create("output_file.exr").unwrap();
+/// let mut output_file = ScanlineOutputFile::new(
+///     &mut file,
+///     Header::new()
+///         .set_resolution(256, 256)
+///         .add_channel("R", PixelType::FLOAT)
+///         .add_channel("G", PixelType::FLOAT)
+///         .add_channel("B", PixelType::FLOAT))
+///     .unwrap();
+///
+/// // Create the image data and write it to the file.
+/// let pixel_data = vec![(0.5f32, 1.0f32, 0.5f32); 256 * 256];
+/// let mut fb = FrameBuffer::new(256, 256);
+/// fb.insert_channels(&["R", "G", "B"], &pixel_data);
+/// output_file.write_pixels(&fb);
+/// ```
 pub struct ScanlineOutputFile<'a> {
     handle: *mut CEXR_OutputFile,
     header_ref: Header,
@@ -24,6 +54,10 @@ pub struct ScanlineOutputFile<'a> {
 }
 
 impl<'a> ScanlineOutputFile<'a> {
+    /// Creates a new `ScanlineOutputFile` from any `Write + Seek` type
+    /// (typically a `std::fs::File`).
+    ///
+    /// Note: this seeks to byte 0 before reading.
     pub fn new<T: 'a>(writer: &'a mut T, header: &Header) -> Result<ScanlineOutputFile<'a>>
         where T: Write + Seek
     {
@@ -77,6 +111,7 @@ impl<'a> ScanlineOutputFile<'a> {
         }
     }
 
+    /// Writes image data from the memory specified by the given FrameBuffer.
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
         framebuffer.validate_header_for_output(self.header())?;
 
@@ -103,6 +138,7 @@ impl<'a> ScanlineOutputFile<'a> {
         }
     }
 
+    /// Access to the file's header.
     pub fn header(&self) -> &Header {
         &self.header_ref
     }

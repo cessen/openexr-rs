@@ -10,7 +10,7 @@
 //! useful as an introduction and rough reference.  Moreover, the file format
 //! itself is also documented there.
 //!
-//! ## Overview
+//! # Overview
 //!
 //! There are three primary parts to this crate:
 //!
@@ -19,14 +19,15 @@
 //!   utilize the Header and FrameBuffer(Mut) types, listed below.
 //!
 //! * [`Header`](struct.Header.html): this is used for querying and specifying
-//!   the properties of an image file, for reading and writing respectively.
+//!   the properties of an OpenEXR file (such as resolution, channels, etc.), for
+//!   reading and writing respectively.
 //!
 //! * [`FrameBuffer`](frame_buffer/struct.FrameBuffer.html) and
 //!   [`FrameBufferMut`](frame_buffer/struct.FrameBufferMut.html):
-//!   these are intermediaries that tell the OpenEXR API's how to interpret
-//!   your in-memory image data, for reading and writing.  Rather than passing
-//!   your image data to the API's directly, you construct FrameBuffers that
-//!   that point at and describe it, and then you pass those FrameBuffers.
+//!   these are intermediaries that tell the OpenEXR APIs how to interpret
+//!   your in-memory image data.  Rather than passing your image data to the
+//!   API's directly, you construct FrameBuffers that that point at and describe
+//!   it, and then you pass those FrameBuffers.
 //!
 //! # Examples
 //!
@@ -116,7 +117,7 @@ pub use output::*;
 // TODO: move Header to its own module once we can use
 // `pub(crate)` on struct fields (should be in Rust 1.18).
 
-/// Representation of an OpenEXR file header.
+/// Represents an OpenEXR file header.
 ///
 /// The file header describes the properties of the image, such as image
 /// resolution, the channels it contains, custom attributes, etc.  It is used
@@ -325,6 +326,10 @@ impl Drop for Header {
     }
 }
 
+
+/// An iterator over the channels in a `Header`.
+///
+/// Yields a tuple of the name and description of each channel.
 pub struct ChannelIter<'a> {
     iterator: *mut CEXR_ChannelListIter,
     _phantom_1: PhantomData<CEXR_ChannelListIter>,
