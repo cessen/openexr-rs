@@ -121,14 +121,15 @@ void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CE
 int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out, const char **err_out) {
     auto h = reinterpret_cast<const Header*>(header);
 
-    try {
-        *out = reinterpret_cast<const CEXR_Channel *>(&(h->channels()[name]));
-    } catch(const std::exception &e) {
-        *err_out = e.what();
+    auto channel_ptr = reinterpret_cast<const CEXR_Channel *>(h->channels().findChannel(name));
+
+    if (channel_ptr != 0) {
+        *out = channel_ptr;
+        return 0;
+    } else {
+        *err_out = "no channel found with that name";
         return 1;
     }
-
-    return 0;
 }
 
 CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header) {
@@ -206,20 +207,20 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *fb,
 int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const char name[], CEXR_Channel *out, const char **err_out) {
     auto fb = reinterpret_cast<const FrameBuffer*>(frame_buffer);
 
-    try {
-        auto slice = (*fb)[name];
+    auto slice_ptr = fb->findSlice(name);
+
+    if (slice_ptr != 0) {
         *out = CEXR_Channel {
-            *reinterpret_cast<CEXR_PixelType *>(&slice.type),
-            slice.xSampling,
-            slice.ySampling,
-            false // Bogus value in a sense, but this is only used internally anyway
+            *reinterpret_cast<const CEXR_PixelType *>(&(slice_ptr->type)),
+            slice_ptr->xSampling,
+            slice_ptr->ySampling,
+            false // Bogus value, but this function is only used internally anyway
         };
-    } catch(const std::exception &e) {
-        *err_out = e.what();
+        return 0;
+    } else {
+        *err_out = "no channel found with that name";
         return 1;
     }
-
-    return 0;
 }
 
 // Creates a copy of the framebuffer, but with all base pointers offset by

@@ -169,7 +169,9 @@ impl<'a> FrameBuffer<'a> {
         self.handle
     }
 
-    fn get_channel(&self, name: &str) -> Option<Channel> {
+    // This function abuses the Channel type to return information
+    // about a FrameBuffer Slice.  For internal use only.
+    fn _get_channel(&self, name: &str) -> Option<Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
         let mut error_out = std::ptr::null();
         let mut channel = unsafe { mem::uninitialized() };
@@ -198,12 +200,11 @@ impl<'a> FrameBuffer<'a> {
     pub fn validate_channels_for_output(&self, header: &Header) -> Result<()> {
         for chan in header.channels() {
             let (name, h_channel) = chan?;
-            if let Some(fb_channel) = self.get_channel(name) {
+            if let Some(fb_channel) = self._get_channel(name) {
                 FrameBuffer::validate_channel(name, &h_channel, &fb_channel)?;
             } else {
-                return Err(Error::Generic(format!("FrameBuffer is missing some \
-                    channels that are in Header (needed for output): \
-                    FrameBuffer is missing channel '{}'",
+                return Err(Error::Generic(format!("FrameBuffer is missing \
+                    channel '{}' expected by Header",
                                                   name)));
             }
         }
@@ -214,13 +215,14 @@ impl<'a> FrameBuffer<'a> {
     pub fn validate_channels_for_input(&self, header: &Header) -> Result<()> {
         for chan in header.channels() {
             let (name, h_channel) = chan?;
-            if let Some(fb_channel) = self.get_channel(name) {
+            if let Some(fb_channel) = self._get_channel(name) {
                 FrameBuffer::validate_channel(name, &h_channel, &fb_channel)?;
             }
         }
         Ok(())
     }
 
+    // Factored out shared code from the validate_channels_* methods above.
     fn validate_channel(name: &str, h_chan: &Channel, fb_chan: &Channel) -> Result<()> {
         if fb_chan.pixel_type != h_chan.pixel_type {
             return Err(Error::Generic(format!("Header and FrameBuffer channel \

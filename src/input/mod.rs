@@ -161,9 +161,8 @@ impl<'a> InputFile<'a> {
         // to be unique to avoid unsafe aliasing.
 
         // Validation
-        if self.header().data_dimensions().0 != framebuffer.dimensions().0 ||
-           self.header().data_dimensions().1 != framebuffer.dimensions().1 {
-            return Err(Error::Generic(format!("framebuffer size {}x{} does not match\
+        if self.header().data_dimensions() != framebuffer.dimensions() {
+            return Err(Error::Generic(format!("framebuffer size {}x{} does not match \
                                               image dimensions {}x{}",
                                               framebuffer.dimensions().0,
                                               framebuffer.dimensions().1,

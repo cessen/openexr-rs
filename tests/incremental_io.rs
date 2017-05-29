@@ -86,7 +86,6 @@ fn incremental_io() {
             assert_eq!(*pixel, (1.0, 0.0, 0.0));
         }
 
-        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
         exr_file
             .read_pixels_partial(64,
                                  FrameBufferMut::new(256, 64)
@@ -97,7 +96,6 @@ fn incremental_io() {
             assert_eq!(*pixel, (0.0, 1.0, 0.0));
         }
 
-        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
         exr_file
             .read_pixels_partial(128,
                                  FrameBufferMut::new(256, 64)
@@ -108,7 +106,6 @@ fn incremental_io() {
             assert_eq!(*pixel, (0.0, 0.0, 1.0));
         }
 
-        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
         exr_file
             .read_pixels_partial(192,
                                  FrameBufferMut::new(256, 64)
