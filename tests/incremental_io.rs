@@ -58,7 +58,6 @@ fn incremental_io() {
 
     // Read file from memory, and verify its contents
     {
-        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 256];
 
         let mut exr_file = InputFile::from_slice(in_memory_buffer.get_ref()).unwrap();
         let (width, height) = exr_file.header().data_dimensions();
@@ -74,25 +73,49 @@ fn incremental_io() {
             assert!(channel.pixel_type == PixelType::FLOAT);
         }
 
-        // Read in the pixel data.
-        {
-            let mut fb = FrameBufferMut::new(width, height);
-            fb.insert_channels(&[("R", 0.1), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
-
-            exr_file.read_pixels(&mut fb).unwrap();
-        }
-
-        // Verify the data is what we expect
-        for pixel in &pixel_data[0..16384] {
+        // Read in the pixel data in four chunks, verifying that each has
+        // the data we expect.
+        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
+        exr_file
+            .read_pixels_partial(0,
+                                 FrameBufferMut::new(256, 64)
+                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
+                                                      &mut pixel_data))
+            .unwrap();
+        for pixel in &pixel_data {
             assert_eq!(*pixel, (1.0, 0.0, 0.0));
         }
-        for pixel in &pixel_data[16384..32768] {
+
+        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
+        exr_file
+            .read_pixels_partial(64,
+                                 FrameBufferMut::new(256, 64)
+                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
+                                                      &mut pixel_data))
+            .unwrap();
+        for pixel in &pixel_data {
             assert_eq!(*pixel, (0.0, 1.0, 0.0));
         }
-        for pixel in &pixel_data[32768..49152] {
+
+        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
+        exr_file
+            .read_pixels_partial(128,
+                                 FrameBufferMut::new(256, 64)
+                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
+                                                      &mut pixel_data))
+            .unwrap();
+        for pixel in &pixel_data {
             assert_eq!(*pixel, (0.0, 0.0, 1.0));
         }
-        for pixel in &pixel_data[49152..65536] {
+
+        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
+        exr_file
+            .read_pixels_partial(192,
+                                 FrameBufferMut::new(256, 64)
+                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
+                                                      &mut pixel_data))
+            .unwrap();
+        for pixel in &pixel_data {
             assert_eq!(*pixel, (1.0, 1.0, 1.0));
         }
     }

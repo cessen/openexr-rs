@@ -149,6 +149,9 @@ impl<'a> InputFile<'a> {
 
 
     /// Reads image data into the given FrameBufferMut.
+    ///
+    /// The passed FrameBufferMut must match the image's resolution exactly, and
+    /// the complete image will be read into the FrameBufferMut.
     pub fn read_pixels(&mut self, framebuffer: &mut FrameBufferMut) -> Result<()> {
         // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
         // &mut to be safe.  Even though it is not conceptually modifying the
@@ -191,6 +194,78 @@ impl<'a> InputFile<'a> {
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
             Ok(())
+        }
+    }
+
+    /// Reads image data into the given FrameBufferMut.
+    ///
+    /// The passed FrameBufferMut may have a different vertical resolution than
+    /// the image, but must have the same horizontal resolution.
+    ///
+    /// This method will read image data into the passed FrameBufferMut starting
+    /// with scanline `n` of the image, and fills the FrameBufferMut until
+    /// either its last scanline or the image's last scanline is reached,
+    /// whichever comes first.
+    ///
+    /// On success returns the number of scanlines read.
+    pub fn read_pixels_partial(&mut self,
+                               n: u32,
+                               framebuffer: &mut FrameBufferMut)
+                               -> Result<(u32)> {
+        // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
+        // &mut to be safe.  Even though it is not conceptually modifying the
+        // thing (typically a file) that it's reading from, it still has a
+        // cursor getting incremented etc. during reads, so the reference needs
+        // to be unique to avoid unsafe aliasing.
+
+        assert!(n < self.header().data_dimensions().1,
+                "Cannot start reading \
+            past last scanline.");
+
+        // Make sure the image and frame buffer have the same width.
+        if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
+            return Err(Error::Generic(format!("framebuffer width {} does not match\
+                                              image width {}",
+                                              framebuffer.dimensions().0,
+                                              self.header().data_dimensions().0)));
+        }
+
+        // Make sure shared channels are of the same type.
+        framebuffer.validate_channels_for_input(self.header())?;
+
+        let scanline_read_count = {
+            let offset_remainder = self.header().data_dimensions().1 - n;
+            if offset_remainder > framebuffer.dimensions().1 {
+                framebuffer.dimensions().1
+            } else {
+                offset_remainder
+            }
+        };
+        let start_scanline = self.header().data_window().min.y + n as i32;
+        let end_scanline = self.header().data_window().min.y + (n + scanline_read_count) as i32 - 1;
+
+        let mut error_out = ptr::null();
+
+        let error = unsafe {
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
+                                                                       n as i32);
+            let err = CEXR_InputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
+            CEXR_FrameBuffer_delete(offset_fb);
+            err
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+        }
+
+        let error = unsafe {
+            CEXR_InputFile_read_pixels(self.handle, start_scanline, end_scanline, &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            Ok((scanline_read_count))
         }
     }
 

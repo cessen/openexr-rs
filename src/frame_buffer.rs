@@ -53,6 +53,9 @@ pub struct FrameBuffer<'a> {
 impl<'a> FrameBuffer<'a> {
     /// Creates an empty frame buffer with the given dimensions in pixels.
     pub fn new(width: u32, height: u32) -> Self {
+        assert!(width > 0 && height > 0,
+                "FrameBuffers must be non-zero size in \
+            both dimensions.");
         FrameBuffer {
             handle: unsafe { CEXR_FrameBuffer_new() },
             dimensions: (width, height),
