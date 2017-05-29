@@ -197,23 +197,14 @@ impl<'a> FrameBuffer<'a> {
     #[doc(hidden)]
     pub fn validate_channels_for_output(&self, header: &Header) -> Result<()> {
         for chan in header.channels() {
-            let (name, description) = chan?;
-            if let Some(channel) = self.get_channel(name) {
-                if channel.pixel_type != description.pixel_type {
-                    return Err(Error::Generic("Header and FrameBuffer channel \
-                        types don't match."
-                                                      .to_string()));
-                }
-                if channel.x_sampling != description.x_sampling ||
-                   channel.y_sampling != description.y_sampling {
-                    return Err(Error::Generic("Header and FrameBuffer channel \
-                        subsampling don't match."
-                                                      .to_string()));
-                }
+            let (name, h_channel) = chan?;
+            if let Some(fb_channel) = self.get_channel(name) {
+                FrameBuffer::validate_channel(name, &h_channel, &fb_channel)?;
             } else {
-                return Err(Error::Generic("Header and FrameBuffer don't share \
-                    all channels, which is needed for output."
-                                                  .to_string()));
+                return Err(Error::Generic(format!("FrameBuffer is missing some \
+                    channels that are in Header (needed for output): \
+                    FrameBuffer is missing channel '{}'",
+                                                  name)));
             }
         }
         Ok(())
@@ -222,21 +213,34 @@ impl<'a> FrameBuffer<'a> {
     #[doc(hidden)]
     pub fn validate_channels_for_input(&self, header: &Header) -> Result<()> {
         for chan in header.channels() {
-            let (name, description) = chan?;
-            if let Some(channel) = self.get_channel(name) {
-                if channel.pixel_type != description.pixel_type {
-                    return Err(Error::Generic("Header and FrameBuffer channel \
-                        types don't match."
-                                                      .to_string()));
-                }
-                if channel.x_sampling != description.x_sampling ||
-                   channel.y_sampling != description.y_sampling {
-                    return Err(Error::Generic("Header and FrameBuffer channel \
-                        subsampling don't match."
-                                                      .to_string()));
-                }
+            let (name, h_channel) = chan?;
+            if let Some(fb_channel) = self.get_channel(name) {
+                FrameBuffer::validate_channel(name, &h_channel, &fb_channel)?;
             }
         }
+        Ok(())
+    }
+
+    fn validate_channel(name: &str, h_chan: &Channel, fb_chan: &Channel) -> Result<()> {
+        if fb_chan.pixel_type != h_chan.pixel_type {
+            return Err(Error::Generic(format!("Header and FrameBuffer channel \
+                types don't match: '{}' is {:?} in Header and {:?} in \
+                FrameBuffer",
+                                              name,
+                                              h_chan.pixel_type,
+                                              fb_chan.pixel_type)));
+        }
+        if fb_chan.x_sampling != h_chan.x_sampling || fb_chan.y_sampling != h_chan.y_sampling {
+            return Err(Error::Generic(format!("Header and FrameBuffer channel \
+                subsampling don't match: channel '{}' is {}x{} in Header and \
+                {}x{} in FrameBuffer",
+                                              name,
+                                              h_chan.x_sampling,
+                                              h_chan.y_sampling,
+                                              fb_chan.x_sampling,
+                                              fb_chan.y_sampling)));
+        }
+
         Ok(())
     }
 }
