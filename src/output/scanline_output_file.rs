@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::ffi::CStr;
 use std::io::{Write, Seek};
 use std::marker::PhantomData;
@@ -118,14 +119,13 @@ impl<'a> ScanlineOutputFile<'a> {
     /// The passed FrameBuffer must match the image's resolution exactly, and
     /// the complete image will be written.
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
-        // Make sure we haven't already written any scanlines.
+        // Validation
         if self.scanlines_written != 0 {
             return Err(Error::Generic(format!("{} scanlines have already been \
                 written, cannot do a full image write",
                                               self.scanlines_written)));
         }
 
-        // Make sure the image and frame buffer have the same dimensions.
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 ||
            self.header().data_dimensions().1 != framebuffer.dimensions().1 {
             return Err(Error::Generic(format!("framebuffer size {}x{} does not match\
@@ -136,9 +136,9 @@ impl<'a> ScanlineOutputFile<'a> {
                                               self.header().data_dimensions().1)));
         }
 
-        // Make sure the image and frame buffer share all the same channels.
         framebuffer.validate_channels_for_output(self.header())?;
 
+        // Set up the framebuffer with the image
         let mut error_out = ptr::null();
 
         let error = unsafe {
@@ -149,6 +149,7 @@ impl<'a> ScanlineOutputFile<'a> {
             return Err(Error::Generic(msg.to_string_lossy().into_owned()));
         }
 
+        // Write out the image data
         let error = unsafe {
             CEXR_OutputFile_write_pixels(self.handle,
                                          framebuffer.dimensions().1 as i32,
@@ -178,14 +179,13 @@ impl<'a> ScanlineOutputFile<'a> {
     ///
     /// On success returns the number of scanlines written.
     pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<(u32)> {
-        // Make sure all scanlines haven't been written yet.
+        // Validation
         if self.scanlines_written == self.header().data_dimensions().1 {
             return Err(Error::Generic("All scanlines have already been \
                 written, cannot do another incremental write"
                                               .to_string()));
         }
 
-        // Make sure the image and frame buffer have the same width.
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
             return Err(Error::Generic(format!("framebuffer width {} does not match\
                                               image width {}",
@@ -193,17 +193,11 @@ impl<'a> ScanlineOutputFile<'a> {
                                               self.header().data_dimensions().0)));
         }
 
-        // Make sure the image and frame buffer share all the same channels.
         framebuffer.validate_channels_for_output(self.header())?;
 
-        let scanline_write_count = {
-            let remaining = self.header().data_dimensions().1 - self.scanlines_written;
-            if remaining > framebuffer.dimensions().1 {
-                framebuffer.dimensions().1
-            } else {
-                remaining
-            }
-        };
+        // Set up the framebuffer with the image
+        let scanline_write_count = min(self.header().data_dimensions().1 - self.scanlines_written,
+                                       framebuffer.dimensions().1);
 
         let mut error_out = ptr::null();
 
@@ -219,6 +213,7 @@ impl<'a> ScanlineOutputFile<'a> {
             return Err(Error::Generic(msg.to_string_lossy().into_owned()));
         }
 
+        // Write out the image data
         let error = unsafe {
             CEXR_OutputFile_write_pixels(self.handle, scanline_write_count as i32, &mut error_out)
         };

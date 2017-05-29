@@ -1,5 +1,6 @@
 //! Input file types.
 
+use std::cmp::min;
 use std::ffi::CStr;
 use std::io::{Read, Seek};
 use std::marker::PhantomData;
@@ -159,7 +160,7 @@ impl<'a> InputFile<'a> {
         // cursor getting incremented etc. during reads, so the reference needs
         // to be unique to avoid unsafe aliasing.
 
-        // Make sure the image and frame buffer have the same dimensions.
+        // Validation
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 ||
            self.header().data_dimensions().1 != framebuffer.dimensions().1 {
             return Err(Error::Generic(format!("framebuffer size {}x{} does not match\
@@ -170,9 +171,9 @@ impl<'a> InputFile<'a> {
                                               self.header().data_dimensions().1)));
         }
 
-        // Make sure shared channels are of the same type.
         framebuffer.validate_channels_for_input(self.header())?;
 
+        // Set up the framebuffer with the image
         let mut error_out = ptr::null();
 
         let error = unsafe {
@@ -183,6 +184,7 @@ impl<'a> InputFile<'a> {
             return Err(Error::Generic(msg.to_string_lossy().into_owned()));
         }
 
+        // Read the image data
         let error = unsafe {
             CEXR_InputFile_read_pixels(self.handle,
                                        self.header().data_window().min.y,
@@ -218,11 +220,11 @@ impl<'a> InputFile<'a> {
         // cursor getting incremented etc. during reads, so the reference needs
         // to be unique to avoid unsafe aliasing.
 
+        // Validation
         assert!(n < self.header().data_dimensions().1,
                 "Cannot start reading \
             past last scanline.");
 
-        // Make sure the image and frame buffer have the same width.
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
             return Err(Error::Generic(format!("framebuffer width {} does not match\
                                               image width {}",
@@ -230,17 +232,11 @@ impl<'a> InputFile<'a> {
                                               self.header().data_dimensions().0)));
         }
 
-        // Make sure shared channels are of the same type.
         framebuffer.validate_channels_for_input(self.header())?;
 
-        let scanline_read_count = {
-            let offset_remainder = self.header().data_dimensions().1 - n;
-            if offset_remainder > framebuffer.dimensions().1 {
-                framebuffer.dimensions().1
-            } else {
-                offset_remainder
-            }
-        };
+        // Set up the framebuffer with the image
+        let scanline_read_count = min(self.header().data_dimensions().1 - n,
+                                      framebuffer.dimensions().1);
         let start_scanline = self.header().data_window().min.y + n as i32;
         let end_scanline = self.header().data_window().min.y + (n + scanline_read_count) as i32 - 1;
 
@@ -257,6 +253,7 @@ impl<'a> InputFile<'a> {
             return Err(Error::Generic(msg.to_string_lossy().into_owned()));
         }
 
+        // Read the image data
         let error = unsafe {
             CEXR_InputFile_read_pixels(self.handle, start_scanline, end_scanline, &mut error_out)
         };
