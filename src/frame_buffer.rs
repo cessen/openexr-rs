@@ -44,14 +44,14 @@ use Header;
 /// Points to and describes in-memory image data for reading.
 pub struct FrameBuffer<'a> {
     handle: *mut CEXR_FrameBuffer,
-    dimensions: (usize, usize),
+    dimensions: (u32, u32),
     _phantom_1: PhantomData<CEXR_FrameBuffer>,
     _phantom_2: PhantomData<&'a mut [u8]>,
 }
 
 impl<'a> FrameBuffer<'a> {
     /// Creates an empty frame buffer with the given dimensions in pixels.
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         FrameBuffer {
             handle: unsafe { CEXR_FrameBuffer_new() },
             dimensions: (width, height),
@@ -61,7 +61,7 @@ impl<'a> FrameBuffer<'a> {
     }
 
     /// Return the dimensions of the frame buffer.
-    pub fn dimensions(&self) -> (usize, usize) {
+    pub fn dimensions(&self) -> (u32, u32) {
         self.dimensions
     }
 
@@ -73,7 +73,7 @@ impl<'a> FrameBuffer<'a> {
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
     pub fn insert_channel<T: PixelData>(&mut self, name: &str, data: &'a [T]) -> &mut Self {
-        if data.len() != self.dimensions.0 * self.dimensions.1 {
+        if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
                    self.dimensions.0,
@@ -84,7 +84,7 @@ impl<'a> FrameBuffer<'a> {
             self.insert_raw(name,
                             T::pixel_type(),
                             data.as_ptr() as *const c_char,
-                            (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                            (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                             (1, 1),
                             0.0,
                             (false, false))
@@ -102,7 +102,7 @@ impl<'a> FrameBuffer<'a> {
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
     pub fn insert_channels<T: PixelStruct>(&mut self, names: &[&str], data: &'a [T]) -> &mut Self {
-        if data.len() != self.dimensions.0 * self.dimensions.1 {
+        if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
                    self.dimensions.0,
@@ -114,7 +114,7 @@ impl<'a> FrameBuffer<'a> {
                 self.insert_raw(name,
                                 ty,
                                 (data.as_ptr() as *const c_char).offset(offset as isize),
-                                (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                                (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                                 (1, 1),
                                 0.0,
                                 (false, false))
@@ -177,8 +177,8 @@ impl<'a> FrameBuffer<'a> {
     #[doc(hidden)]
     pub fn validate_header_for_output(&self, header: &Header) -> Result<()> {
         let w = header.data_window();
-        if (w.max.x - w.min.x) as usize != self.dimensions().0 - 1 ||
-           (w.max.y - w.min.y) as usize != self.dimensions().1 - 1 {
+        if (w.max.x - w.min.x) as u32 != self.dimensions().0 - 1 ||
+           (w.max.y - w.min.y) as u32 != self.dimensions().1 - 1 {
             return Err(Error::Generic(format!("framebuffer size {}x{} does not \
                 match output file dimensions {}x{}",
                                               self.dimensions().0,
@@ -206,7 +206,7 @@ pub struct FrameBufferMut<'a> {
 
 impl<'a> FrameBufferMut<'a> {
     /// Creates an empty frame buffer with the given dimensions in pixels.
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         FrameBufferMut { frame_buffer: FrameBuffer::new(width, height) }
     }
 
@@ -224,7 +224,7 @@ impl<'a> FrameBufferMut<'a> {
                                         fill: f64,
                                         data: &'a mut [T])
                                         -> &mut Self {
-        if data.len() != self.dimensions.0 * self.dimensions.1 {
+        if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
                    self.dimensions.0,
@@ -235,7 +235,7 @@ impl<'a> FrameBufferMut<'a> {
             self.insert_raw(name,
                             T::pixel_type(),
                             data.as_mut_ptr() as *mut c_char,
-                            (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                            (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                             (1, 1),
                             fill,
                             (false, false))
@@ -258,7 +258,7 @@ impl<'a> FrameBufferMut<'a> {
                                            names_and_fills: &[(&str, f64)],
                                            data: &'a mut [T])
                                            -> &mut Self {
-        if data.len() != self.dimensions.0 * self.dimensions.1 {
+        if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
             panic!("data size of {} elements cannot back {}x{} framebuffer",
                    data.len(),
                    self.dimensions.0,
@@ -270,7 +270,7 @@ impl<'a> FrameBufferMut<'a> {
                 self.insert_raw(name,
                                 ty,
                                 (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
-                                (mem::size_of::<T>(), width * mem::size_of::<T>()),
+                                (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                                 (1, 1),
                                 fill,
                                 (false, false))

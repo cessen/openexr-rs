@@ -156,8 +156,8 @@ impl<'a> InputFile<'a> {
         // cursor getting incremented etc. during reads, so the reference needs
         // to be unique to avoid unsafe aliasing.
         let w = self.header().data_window();
-        if (w.max.x - w.min.x) as usize != framebuffer.dimensions().0 - 1 ||
-           (w.max.y - w.min.y) as usize != framebuffer.dimensions().1 - 1 {
+        if (w.max.x - w.min.x) as u32 != framebuffer.dimensions().0 - 1 ||
+           (w.max.y - w.min.y) as u32 != framebuffer.dimensions().1 - 1 {
             panic!("framebuffer size {}x{} does not match input file dimensions {}x{}",
                    framebuffer.dimensions().0,
                    framebuffer.dimensions().1,
