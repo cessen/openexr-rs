@@ -112,8 +112,23 @@ impl<'a> ScanlineOutputFile<'a> {
     }
 
     /// Writes image data from the given FrameBuffer.
+    ///
+    /// The passed FrameBuffer must match the image's resolution exactly, and
+    /// the complete image will be written.
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
-        framebuffer.validate_header_for_output(self.header())?;
+        // Make sure the image and frame buffer have the same dimensions.
+        if self.header().data_dimensions().0 != framebuffer.dimensions().0 ||
+           self.header().data_dimensions().1 != framebuffer.dimensions().1 {
+            return Err(Error::Generic(format!("framebuffer size {}x{} does not match\
+                                              image dimensions {}x{}",
+                                              framebuffer.dimensions().0,
+                                              framebuffer.dimensions().1,
+                                              self.header().data_dimensions().0,
+                                              self.header().data_dimensions().1)));
+        }
+
+        // Make sure the image and frame buffer share all the same channels.
+        framebuffer.validate_channels_for_output(self.header())?;
 
         let mut error_out = ptr::null();
 

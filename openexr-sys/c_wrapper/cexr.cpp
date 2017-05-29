@@ -203,6 +203,25 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *fb,
     reinterpret_cast<FrameBuffer *>(fb)->insert(name, Slice(static_cast<Imf::PixelType>(type), base, xStride, yStride, xSampling, ySampling, fillValue, xTileCoords, yTileCoords));
 }
 
+int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const char name[], CEXR_Channel *out, const char **err_out) {
+    auto fb = reinterpret_cast<const FrameBuffer*>(frame_buffer);
+
+    try {
+        auto slice = (*fb)[name];
+        *out = CEXR_Channel {
+            *reinterpret_cast<CEXR_PixelType *>(&slice.type),
+            slice.xSampling,
+            slice.ySampling,
+            false // Bogus value in a sense, but this is only used internally anyway
+        };
+    } catch(const std::exception &e) {
+        *err_out = e.what();
+        return 1;
+    }
+
+    return 0;
+}
+
 
 //----------------------------------------------------
 // InputFile

@@ -155,15 +155,20 @@ impl<'a> InputFile<'a> {
         // thing (typically a file) that it's reading from, it still has a
         // cursor getting incremented etc. during reads, so the reference needs
         // to be unique to avoid unsafe aliasing.
-        let w = self.header().data_window();
-        if (w.max.x - w.min.x) as u32 != framebuffer.dimensions().0 - 1 ||
-           (w.max.y - w.min.y) as u32 != framebuffer.dimensions().1 - 1 {
-            panic!("framebuffer size {}x{} does not match input file dimensions {}x{}",
-                   framebuffer.dimensions().0,
-                   framebuffer.dimensions().1,
-                   w.max.x - w.min.x,
-                   w.max.y - w.min.y)
+
+        // Make sure the image and frame buffer have the same dimensions.
+        if self.header().data_dimensions().0 != framebuffer.dimensions().0 ||
+           self.header().data_dimensions().1 != framebuffer.dimensions().1 {
+            return Err(Error::Generic(format!("framebuffer size {}x{} does not match\
+                                              image dimensions {}x{}",
+                                              framebuffer.dimensions().0,
+                                              framebuffer.dimensions().1,
+                                              self.header().data_dimensions().0,
+                                              self.header().data_dimensions().1)));
         }
+
+        // Make sure shared channels are of the same type.
+        framebuffer.validate_channels_for_input(self.header())?;
 
         let mut error_out = ptr::null();
 
@@ -175,8 +180,12 @@ impl<'a> InputFile<'a> {
             return Err(Error::Generic(msg.to_string_lossy().into_owned()));
         }
 
-        let error =
-            unsafe { CEXR_InputFile_read_pixels(self.handle, w.min.y, w.max.y, &mut error_out) };
+        let error = unsafe {
+            CEXR_InputFile_read_pixels(self.handle,
+                                       self.header().data_window().min.y,
+                                       self.header().data_window().max.y,
+                                       &mut error_out)
+        };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))

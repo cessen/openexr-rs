@@ -413,6 +413,14 @@ extern "C" {
                                    yTileCoords: ::std::os::raw::c_int);
 }
 extern "C" {
+    pub fn CEXR_FrameBuffer_get_channel(frame_buffer: *const CEXR_FrameBuffer,
+                                        name: *const ::std::os::raw::c_char,
+                                        out: *mut CEXR_Channel,
+                                        err_out:
+                                            *mut *const ::std::os::raw::c_char)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn CEXR_InputFile_from_file_path(path: *const ::std::os::raw::c_char,
                                          threads: ::std::os::raw::c_int,
                                          out: *mut *mut CEXR_InputFile,

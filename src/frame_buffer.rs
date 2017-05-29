@@ -26,6 +26,7 @@
 //! fb.insert_channels(&["R", "G", "B"], &pixel_data);
 //! ```
 
+use std;
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::mem;
@@ -165,28 +166,74 @@ impl<'a> FrameBuffer<'a> {
         self.handle
     }
 
-    // TODO: this should probably be part of Header.  It's only here
-    // right now to allow access to both struct's internals, but it won't
+    fn get_channel(&self, name: &str) -> Option<Channel> {
+        let c_name = CString::new(name.as_bytes()).unwrap();
+        let mut error_out = std::ptr::null();
+        let mut channel = unsafe { mem::uninitialized() };
+        if unsafe {
+               CEXR_FrameBuffer_get_channel(self.handle,
+                                            c_name.as_ptr(),
+                                            &mut channel,
+                                            &mut error_out)
+           } == 0 {
+            Some(channel)
+        } else {
+            None
+        }
+    }
+
+    // TODO: these should probably be part of Header.  They're only here
+    // right now to allow access to both struct's internals, but they won't
     // have to be here for that once `pub(crate)` lands in Rust 1.18.
     //
-    // This shouldn't be used outside of this crate, but due to
+    // These shouldn't be used outside of this crate, but due to
     // https://github.com/rust-lang/rfcs/pull/1422 not being stable
     // yet (should land in Rust 1.18), just hide from public
     // documentation for now.
     // TODO: once Rust 1.18 comes out, change from pub to pub(crate)`.
     #[doc(hidden)]
-    pub fn validate_header_for_output(&self, header: &Header) -> Result<()> {
-        let w = header.data_window();
-        if (w.max.x - w.min.x) as u32 != self.dimensions().0 - 1 ||
-           (w.max.y - w.min.y) as u32 != self.dimensions().1 - 1 {
-            return Err(Error::Generic(format!("framebuffer size {}x{} does not \
-                match output file dimensions {}x{}",
-                                              self.dimensions().0,
-                                              self.dimensions().1,
-                                              w.max.x - w.min.x,
-                                              w.max.y - w.min.y)));
+    pub fn validate_channels_for_output(&self, header: &Header) -> Result<()> {
+        for chan in header.channels() {
+            let (name, description) = chan?;
+            if let Some(channel) = self.get_channel(name) {
+                if channel.pixel_type != description.pixel_type {
+                    return Err(Error::Generic("Header and FrameBuffer channel \
+                        types don't match."
+                                                      .to_string()));
+                }
+                if channel.x_sampling != description.x_sampling ||
+                   channel.y_sampling != description.y_sampling {
+                    return Err(Error::Generic("Header and FrameBuffer channel \
+                        subsampling don't match."
+                                                      .to_string()));
+                }
+            } else {
+                return Err(Error::Generic("Header and FrameBuffer don't share \
+                    all channels, which is needed for output."
+                                                  .to_string()));
+            }
         }
+        Ok(())
+    }
 
+    #[doc(hidden)]
+    pub fn validate_channels_for_input(&self, header: &Header) -> Result<()> {
+        for chan in header.channels() {
+            let (name, description) = chan?;
+            if let Some(channel) = self.get_channel(name) {
+                if channel.pixel_type != description.pixel_type {
+                    return Err(Error::Generic("Header and FrameBuffer channel \
+                        types don't match."
+                                                      .to_string()));
+                }
+                if channel.x_sampling != description.x_sampling ||
+                   channel.y_sampling != description.y_sampling {
+                    return Err(Error::Generic("Header and FrameBuffer channel \
+                        subsampling don't match."
+                                                      .to_string()));
+                }
+            }
+        }
         Ok(())
     }
 }
