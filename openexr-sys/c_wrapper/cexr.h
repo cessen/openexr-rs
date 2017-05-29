@@ -214,6 +214,7 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *framebuffer,
                              int xTileCoords,
                              int yTileCoords);
 int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const char name[], CEXR_Channel *out, const char **err_out);
+CEXR_FrameBuffer *CEXR_FrameBuffer_copy_and_offset_scanlines(const CEXR_FrameBuffer *frame_buffer, int offset);
 
 int CEXR_InputFile_from_file_path(const char *path, int threads, CEXR_InputFile **out, const char **err_out);
 int CEXR_InputFile_from_stream(CEXR_IStream *stream, int threads, CEXR_InputFile **out, const char **err_out);

@@ -208,7 +208,12 @@ impl<'a> ScanlineOutputFile<'a> {
         let mut error_out = ptr::null();
 
         let error = unsafe {
-            CEXR_OutputFile_set_framebuffer(self.handle, framebuffer.handle(), &mut error_out)
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
+                                                                       self.scanlines_written as
+                                                                       i32);
+            let err = CEXR_OutputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
+            CEXR_FrameBuffer_delete(offset_fb);
+            err
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };

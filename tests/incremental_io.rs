@@ -56,35 +56,44 @@ fn incremental_io() {
             .unwrap();
     }
 
-    // // Read file from memory, and verify its contents
-    // {
-    //     let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 256];
+    // Read file from memory, and verify its contents
+    {
+        let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 256];
 
-    //     let mut exr_file = InputFile::from_slice(in_memory_buffer.get_ref()).unwrap();
-    //     let (width, height) = exr_file.header().data_dimensions();
+        let mut exr_file = InputFile::from_slice(in_memory_buffer.get_ref()).unwrap();
+        let (width, height) = exr_file.header().data_dimensions();
 
-    //     // Make sure the image properties are the same.
-    //     assert!(width == 256);
-    //     assert!(height == 256);
-    //     for channel_name in ["R", "G", "B"].iter() {
-    //         let channel = exr_file
-    //             .header()
-    //             .get_channel(channel_name)
-    //             .expect(&format!("Didn't find channel {}.", channel_name));
-    //         assert!(channel.pixel_type == PixelType::FLOAT);
-    //     }
+        // Make sure the image properties are the same.
+        assert!(width == 256);
+        assert!(height == 256);
+        for channel_name in ["R", "G", "B"].iter() {
+            let channel = exr_file
+                .header()
+                .get_channel(channel_name)
+                .expect(&format!("Didn't find channel {}.", channel_name));
+            assert!(channel.pixel_type == PixelType::FLOAT);
+        }
 
-    //     // Read in the pixel data.
-    //     {
-    //         let mut fb = FrameBufferMut::new(width, height);
-    //         fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
+        // Read in the pixel data.
+        {
+            let mut fb = FrameBufferMut::new(width, height);
+            fb.insert_channels(&[("R", 0.1), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 
-    //         exr_file.read_pixels(&mut fb).unwrap();
-    //     }
+            exr_file.read_pixels(&mut fb).unwrap();
+        }
 
-    //     // Verify the data is what we expect
-    //     for pixel in pixel_data {
-    //         assert_eq!(pixel, (0.82, 1.78, 0.21));
-    //     }
-    // }
+        // Verify the data is what we expect
+        for pixel in &pixel_data[0..16384] {
+            assert_eq!(*pixel, (1.0, 0.0, 0.0));
+        }
+        for pixel in &pixel_data[16384..32768] {
+            assert_eq!(*pixel, (0.0, 1.0, 0.0));
+        }
+        for pixel in &pixel_data[32768..49152] {
+            assert_eq!(*pixel, (0.0, 0.0, 1.0));
+        }
+        for pixel in &pixel_data[49152..65536] {
+            assert_eq!(*pixel, (1.0, 1.0, 1.0));
+        }
+    }
 }

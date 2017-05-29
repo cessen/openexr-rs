@@ -4,6 +4,7 @@
 #include <cstddef>
 #include "ImathVec.h"
 #include "ImathBox.h"
+#include "ImathFun.h"
 #include "ImfPixelType.h"
 #include "ImfChannelList.h"
 #include "ImfHeader.h"
@@ -220,6 +221,32 @@ int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const cha
     }
 
     return 0;
+}
+
+// Creates a copy of the framebuffer, but with all base pointers offset by
+// `offset` scanlines.
+//
+// For example, if you specify an offset of 3, then if you access scanline 3
+// of the new framebuffer it will be the same as accessing scanline 0 of the
+// old one.
+CEXR_FrameBuffer *CEXR_FrameBuffer_copy_and_offset_scanlines(const CEXR_FrameBuffer *frame_buffer, int offset) {
+    auto fb = reinterpret_cast<const FrameBuffer *>(frame_buffer);
+
+    auto new_fb = new FrameBuffer();
+
+    // Copy all of the slices to the new frame buffer while offsetting their
+    // base pointers appropriately.
+    for (auto itr = fb->begin(); itr != fb->end(); itr++) {
+        Slice slice = itr.slice();
+
+        auto base = (int64_t)slice.base;
+        base -= (int64_t)slice.yStride * (int64_t)IMATH_NAMESPACE::divp(offset, slice.ySampling);
+        slice.base = (char *)base;
+
+        new_fb->insert(itr.name(), slice);
+    }
+
+    return reinterpret_cast<CEXR_FrameBuffer *>(new_fb);
 }
 
 

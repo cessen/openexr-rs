@@ -421,6 +421,13 @@ extern "C" {
      -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn CEXR_FrameBuffer_copy_and_offset_scanlines(frame_buffer:
+                                                          *const CEXR_FrameBuffer,
+                                                      offset:
+                                                          ::std::os::raw::c_int)
+     -> *mut CEXR_FrameBuffer;
+}
+extern "C" {
     pub fn CEXR_InputFile_from_file_path(path: *const ::std::os::raw::c_char,
                                          threads: ::std::os::raw::c_int,
                                          out: *mut *mut CEXR_InputFile,
