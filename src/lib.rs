@@ -79,7 +79,7 @@
 //! {
 //!     // Create `FrameBufferMut` that points at our pixel data and describes
 //!     // it as RGB data.
-//!     let mut fb = FrameBufferMut::new(width as usize, height as usize);
+//!     let mut fb = FrameBufferMut::new(width, height);
 //!     fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 //!
 //!     // Read pixel data from the file.

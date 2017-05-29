@@ -39,7 +39,7 @@ use stream_io::{read_stream, seek_stream};
 ///
 /// // Allocate a buffer for the image data and read it in.
 /// let mut pixel_data: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; (width*height) as usize];
-/// let mut fb = FrameBufferMut::new(width as usize, height as usize);
+/// let mut fb = FrameBufferMut::new(width, height);
 /// fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0), ("A", 0.0)], &mut pixel_data);
 /// input_file.read_pixels(&mut fb).unwrap();
 /// ```
