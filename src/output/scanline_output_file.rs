@@ -175,7 +175,9 @@ impl<'a> ScanlineOutputFile<'a> {
     /// FrameBuffer has more scanlines than remain in the image, then the
     /// only the remaining number of scanlines will be written from the
     /// FrameBuffer, and the image will be complete.
-    pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
+    ///
+    /// On success returns the number of scanlines written.
+    pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<(u32)> {
         // Make sure all scanlines haven't been written yet.
         if self.scanlines_written == self.header().data_dimensions().1 {
             return Err(Error::Generic("All scanlines have already been \
@@ -221,7 +223,7 @@ impl<'a> ScanlineOutputFile<'a> {
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
             self.scanlines_written += scanline_write_count;
-            Ok(())
+            Ok((scanline_write_count))
         }
     }
 
