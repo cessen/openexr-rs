@@ -209,8 +209,7 @@ impl<'a> ScanlineOutputFile<'a> {
 
         let error = unsafe {
             let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
-                                                                       self.scanlines_written as
-                                                                       i32);
+                                                                       self.scanlines_written);
             let err = CEXR_OutputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
             CEXR_FrameBuffer_delete(offset_fb);
             err

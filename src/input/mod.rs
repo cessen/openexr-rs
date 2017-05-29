@@ -247,8 +247,7 @@ impl<'a> InputFile<'a> {
         let mut error_out = ptr::null();
 
         let error = unsafe {
-            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
-                                                                       n as i32);
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(), n);
             let err = CEXR_InputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
             CEXR_FrameBuffer_delete(offset_fb);
             err
