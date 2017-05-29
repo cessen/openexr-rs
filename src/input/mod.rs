@@ -35,10 +35,7 @@ use stream_io::{read_stream, seek_stream};
 /// // Open file and get its resolution.
 /// let mut file = std::fs::File::open("input_file.exr").unwrap();
 /// let mut input_file = InputFile::new(&mut file).unwrap();
-/// let (width, height) = {
-///     let window = input_file.header().data_window();
-///     (window.max.x - window.min.x + 1, window.max.y - window.min.y + 1)
-/// };
+/// let (width, height) = input_file.header().data_dimensions();
 ///
 /// // Allocate a buffer for the image data and read it in.
 /// let mut pixel_data: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; (width*height) as usize];

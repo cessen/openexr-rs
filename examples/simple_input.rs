@@ -11,10 +11,7 @@ fn main() {
     let mut file = File::open(Path::new(&env::args_os().nth(1).expect("argument required")))
         .unwrap();
     let mut exr_file = InputFile::new(&mut file).unwrap();
-    let (width, height) = {
-        let window = exr_file.header().data_window();
-        (window.max.x - window.min.x + 1, window.max.y - window.min.y + 1)
-    };
+    let (width, height) = exr_file.header().data_dimensions();
 
     // Make sure the channels we want exist in the file
     for channel_name in ["R", "G", "B"].iter() {

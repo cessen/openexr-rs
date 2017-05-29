@@ -69,10 +69,7 @@
 //! let mut input_file = InputFile::new(&mut file).unwrap();
 //!
 //! // Get the image dimensions, so we know how large of a buffer to make.
-//! let (width, height) = {
-//!     let window = input_file.header().data_window();
-//!     (window.max.x - window.min.x + 1, window.max.y - window.min.y + 1)
-//! };
+//! let (width, height) = input_file.header().data_dimensions();
 //!
 //! // Buffer to read pixel data into.
 //! let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); (width*height) as usize];
@@ -203,6 +200,8 @@ impl Header {
     ///
     /// For simple use-cases, it's better to use `set_resolution()` instead.
     pub fn set_display_window(&mut self, window: Box2i) -> &mut Self {
+        assert!(window.min.x < window.max.x);
+        assert!(window.min.y < window.max.y);
         unsafe {
             CEXR_Header_set_display_window(self.handle, window);
         }
@@ -213,6 +212,8 @@ impl Header {
     ///
     /// For simple use-cases, it's better to use `set_resolution()` instead.
     pub fn set_data_window(&mut self, window: Box2i) -> &mut Self {
+        assert!(window.min.x < window.max.x);
+        assert!(window.min.y < window.max.y);
         unsafe {
             CEXR_Header_set_data_window(self.handle, window);
         }
@@ -283,6 +284,12 @@ impl Header {
         let cname = CString::new(name.as_bytes()).unwrap();
         unsafe { CEXR_Header_insert_channel(self.handle, cname.as_ptr(), channel) };
         self
+    }
+
+    /// Convenience method for the dimensions of the data window.
+    pub fn data_dimensions(&self) -> (u32, u32) {
+        let window = self.data_window();
+        ((window.max.x - window.min.x + 1) as u32, (window.max.y - window.min.y + 1) as u32)
     }
 
     /// Access to the data window.
