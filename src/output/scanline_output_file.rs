@@ -39,12 +39,13 @@ use stream_io::{write_stream, seek_stream};
 /// let pixel_data = vec![(0.5f32, 1.0f32, 0.5f32); 256 * 256];
 /// let mut fb = FrameBuffer::new(256, 256);
 /// fb.insert_channels(&["R", "G", "B"], &pixel_data);
-/// output_file.write_pixels(&fb);
+/// output_file.write_pixels(&fb).unwrap();
 /// ```
 pub struct ScanlineOutputFile<'a> {
     handle: *mut CEXR_OutputFile,
     header_ref: Header,
     ostream: *mut CEXR_OStream,
+    scanlines_written: u32,
     _phantom_1: PhantomData<CEXR_OutputFile>,
     _phantom_2: PhantomData<&'a mut ()>, // Represents the borrowed writer
 
@@ -105,6 +106,7 @@ impl<'a> ScanlineOutputFile<'a> {
                        _phantom: PhantomData,
                    },
                    ostream: ostream_ptr,
+                   scanlines_written: 0,
                    _phantom_1: PhantomData,
                    _phantom_2: PhantomData,
                })
@@ -116,6 +118,13 @@ impl<'a> ScanlineOutputFile<'a> {
     /// The passed FrameBuffer must match the image's resolution exactly, and
     /// the complete image will be written.
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
+        // Make sure we haven't already written any scanlines.
+        if self.scanlines_written != 0 {
+            return Err(Error::Generic(format!("{} scanlines have already been \
+                written, cannot do a full image write",
+                                              self.scanlines_written)));
+        }
+
         // Make sure the image and frame buffer have the same dimensions.
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 ||
            self.header().data_dimensions().1 != framebuffer.dimensions().1 {
@@ -149,6 +158,69 @@ impl<'a> ScanlineOutputFile<'a> {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
+            self.scanlines_written = self.header().data_dimensions().1;
+            Ok(())
+        }
+    }
+
+    /// Writes image data from the given FrameBuffer.
+    ///
+    /// The passed FrameBuffer may have a different vertical resolution than the
+    /// image, but must have the same horizontal resolution.  Multiple calls to
+    /// this method in sequence will incrementally write subsequent vertical
+    /// chunks of the image.
+    ///
+    /// If the FrameBuffer has fewer scanlines than the remaining scanlines in
+    /// the image, then only that many scanlines will be written.  If the
+    /// FrameBuffer has more scanlines than remain in the image, then the
+    /// only the remaining number of scanlines will be written from the
+    /// FrameBuffer, and the image will be complete.
+    pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
+        // Make sure all scanlines haven't been written yet.
+        if self.scanlines_written == self.header().data_dimensions().1 {
+            return Err(Error::Generic("All scanlines have already been \
+                written, cannot do another incremental write"
+                                              .to_string()));
+        }
+
+        // Make sure the image and frame buffer have the same width.
+        if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
+            return Err(Error::Generic(format!("framebuffer width {} does not match\
+                                              image width {}",
+                                              framebuffer.dimensions().0,
+                                              self.header().data_dimensions().0)));
+        }
+
+        // Make sure the image and frame buffer share all the same channels.
+        framebuffer.validate_channels_for_output(self.header())?;
+
+        let scanline_write_count = {
+            let remaining = self.header().data_dimensions().1 - self.scanlines_written;
+            if remaining > framebuffer.dimensions().1 {
+                framebuffer.dimensions().1
+            } else {
+                remaining
+            }
+        };
+
+        let mut error_out = ptr::null();
+
+        let error = unsafe {
+            CEXR_OutputFile_set_framebuffer(self.handle, framebuffer.handle(), &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+        }
+
+        let error = unsafe {
+            CEXR_OutputFile_write_pixels(self.handle, scanline_write_count as i32, &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            self.scanlines_written += scanline_write_count;
             Ok(())
         }
     }

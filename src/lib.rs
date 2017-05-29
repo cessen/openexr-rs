@@ -62,7 +62,7 @@
 //! Reading a floating point RGB file.
 //!
 //! ```no_run
-//! # use openexr::{FrameBufferMut, InputFile, PixelType};
+//! # use openexr::{FrameBufferMut, InputFile};
 //!
 //! // Open the EXR file.
 //! let mut file = std::fs::File::open("input_file.exr").unwrap();
