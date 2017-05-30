@@ -118,7 +118,7 @@ void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CE
     h->channels().insert(name, *reinterpret_cast<const Channel *>(&channel));
 }
 
-int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out, const char **err_out) {
+int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out) {
     auto h = reinterpret_cast<const Header*>(header);
 
     auto channel_ptr = reinterpret_cast<const CEXR_Channel *>(h->channels().findChannel(name));
@@ -127,7 +127,6 @@ int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const 
         *out = channel_ptr;
         return 0;
     } else {
-        *err_out = "no channel found with that name";
         return 1;
     }
 }
@@ -204,7 +203,7 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *fb,
     reinterpret_cast<FrameBuffer *>(fb)->insert(name, Slice(static_cast<Imf::PixelType>(type), base, xStride, yStride, xSampling, ySampling, fillValue, xTileCoords, yTileCoords));
 }
 
-int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const char name[], CEXR_Channel *out, const char **err_out) {
+int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const char name[], CEXR_Channel *out) {
     auto fb = reinterpret_cast<const FrameBuffer*>(frame_buffer);
 
     auto slice_ptr = fb->findSlice(name);
@@ -218,7 +217,6 @@ int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const cha
         };
         return 0;
     } else {
-        *err_out = "no channel found with that name";
         return 1;
     }
 }

@@ -349,9 +349,7 @@ extern "C" {
 extern "C" {
     pub fn CEXR_Header_get_channel(header: *const CEXR_Header,
                                    name: *const ::std::os::raw::c_char,
-                                   out: *mut *const CEXR_Channel,
-                                   err_out:
-                                       *mut *const ::std::os::raw::c_char)
+                                   out: *mut *const CEXR_Channel)
      -> ::std::os::raw::c_int;
 }
 extern "C" {
@@ -415,9 +413,7 @@ extern "C" {
 extern "C" {
     pub fn CEXR_FrameBuffer_get_channel(frame_buffer: *const CEXR_FrameBuffer,
                                         name: *const ::std::os::raw::c_char,
-                                        out: *mut CEXR_Channel,
-                                        err_out:
-                                            *mut *const ::std::os::raw::c_char)
+                                        out: *mut CEXR_Channel)
      -> ::std::os::raw::c_int;
 }
 extern "C" {

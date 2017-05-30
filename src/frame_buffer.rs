@@ -26,7 +26,6 @@
 //! fb.insert_channels(&["R", "G", "B"], &pixel_data);
 //! ```
 
-use std;
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::mem;
@@ -173,14 +172,9 @@ impl<'a> FrameBuffer<'a> {
     // about a FrameBuffer Slice.  For internal use only.
     fn _get_channel(&self, name: &str) -> Option<Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
-        let mut error_out = std::ptr::null();
         let mut channel = unsafe { mem::uninitialized() };
-        if unsafe {
-               CEXR_FrameBuffer_get_channel(self.handle,
-                                            c_name.as_ptr(),
-                                            &mut channel,
-                                            &mut error_out)
-           } == 0 {
+        if unsafe { CEXR_FrameBuffer_get_channel(self.handle, c_name.as_ptr(), &mut channel) } ==
+           0 {
             Some(channel)
         } else {
             None
