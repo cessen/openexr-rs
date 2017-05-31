@@ -32,10 +32,7 @@ fn memory_io() {
         let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 256];
 
         let mut exr_file = InputFile::from_slice(in_memory_buffer.get_ref()).unwrap();
-        let (width, height) = {
-            let window = exr_file.header().data_window();
-            (window.max.x - window.min.x + 1, window.max.y - window.min.y + 1)
-        };
+        let (width, height) = exr_file.header().data_dimensions();
 
         // Make sure the image properties are the same.
         assert!(width == 256);
@@ -50,7 +47,7 @@ fn memory_io() {
 
         // Read in the pixel data.
         {
-            let mut fb = FrameBufferMut::new(width as usize, height as usize);
+            let mut fb = FrameBufferMut::new(width, height);
             fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 
             exr_file.read_pixels(&mut fb).unwrap();

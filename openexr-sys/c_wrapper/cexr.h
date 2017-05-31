@@ -187,7 +187,7 @@ CEXR_Header *CEXR_Header_new(const CEXR_Box2i *displayWindow,
                              CEXR_Compression compression);
 void CEXR_Header_delete(CEXR_Header *header);
 void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel);
-int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out, const char **err_out);
+int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out);
 CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_display_window(const CEXR_Header *header);
 const CEXR_Box2i *CEXR_Header_data_window(const CEXR_Header *header);
@@ -213,6 +213,8 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *framebuffer,
                              double fillValue,
                              int xTileCoords,
                              int yTileCoords);
+int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const char name[], CEXR_Channel *out);
+CEXR_FrameBuffer *CEXR_FrameBuffer_copy_and_offset_scanlines(const CEXR_FrameBuffer *frame_buffer, unsigned int offset);
 
 int CEXR_InputFile_from_file_path(const char *path, int threads, CEXR_InputFile **out, const char **err_out);
 int CEXR_InputFile_from_stream(CEXR_IStream *stream, int threads, CEXR_InputFile **out, const char **err_out);

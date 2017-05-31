@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::ffi::CStr;
 use std::io::{Write, Seek};
 use std::marker::PhantomData;
@@ -14,8 +15,8 @@ use stream_io::{write_stream, seek_stream};
 ///
 /// This is the simplest kind of OpenEXR file.  Image data is stored in
 /// scanline order with no special features like mipmaps or deep image data.
-/// Unless you have a need for such special features, this is probably what
-/// you want to use.
+/// Unless you need special features like that, this is probably what you want
+/// to use.
 ///
 /// # Examples
 ///
@@ -39,12 +40,13 @@ use stream_io::{write_stream, seek_stream};
 /// let pixel_data = vec![(0.5f32, 1.0f32, 0.5f32); 256 * 256];
 /// let mut fb = FrameBuffer::new(256, 256);
 /// fb.insert_channels(&["R", "G", "B"], &pixel_data);
-/// output_file.write_pixels(&fb);
+/// output_file.write_pixels(&fb).unwrap();
 /// ```
 pub struct ScanlineOutputFile<'a> {
     handle: *mut CEXR_OutputFile,
     header_ref: Header,
     ostream: *mut CEXR_OStream,
+    scanlines_written: u32,
     _phantom_1: PhantomData<CEXR_OutputFile>,
     _phantom_2: PhantomData<&'a mut ()>, // Represents the borrowed writer
 
@@ -55,7 +57,7 @@ pub struct ScanlineOutputFile<'a> {
 
 impl<'a> ScanlineOutputFile<'a> {
     /// Creates a new `ScanlineOutputFile` from any `Write + Seek` type
-    /// (typically a `std::fs::File`).
+    /// (typically a `std::fs::File`) and `header`.
     ///
     /// Note: this seeks to byte 0 before writing.
     pub fn new<T: 'a>(writer: &'a mut T, header: &Header) -> Result<ScanlineOutputFile<'a>>
@@ -105,16 +107,46 @@ impl<'a> ScanlineOutputFile<'a> {
                        _phantom: PhantomData,
                    },
                    ostream: ostream_ptr,
+                   scanlines_written: 0,
                    _phantom_1: PhantomData,
                    _phantom_2: PhantomData,
                })
         }
     }
 
-    /// Writes image data from the given FrameBuffer.
+    /// Writes the entire image at once from `framebuffer`.
+    ///
+    /// # Errors
+    ///
+    /// This function expects `framebuffer` to have the same resolution as the
+    /// output file, as well as the same channels (with matching types and
+    /// subsampling).
+    ///
+    /// It will also return an error if:
+    ///
+    /// * Part or all of the image data has already been written by a previous
+    ///   call to either this or `write_pixels_incremental`.
+    /// * There is an I/O error.
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
-        framebuffer.validate_header_for_output(self.header())?;
+        // Validation
+        if self.scanlines_written != 0 {
+            return Err(Error::Generic(format!("{} scanlines have already been \
+                written, cannot do a full image write",
+                                              self.scanlines_written)));
+        }
 
+        if self.header().data_dimensions() != framebuffer.dimensions() {
+            return Err(Error::Generic(format!("framebuffer size {}x{} does not match \
+                                              image dimensions {}x{}",
+                                              framebuffer.dimensions().0,
+                                              framebuffer.dimensions().1,
+                                              self.header().data_dimensions().0,
+                                              self.header().data_dimensions().1)));
+        }
+
+        framebuffer.validate_channels_for_output(self.header())?;
+
+        // Set up the framebuffer with the image
         let mut error_out = ptr::null();
 
         let error = unsafe {
@@ -125,6 +157,7 @@ impl<'a> ScanlineOutputFile<'a> {
             return Err(Error::Generic(msg.to_string_lossy().into_owned()));
         }
 
+        // Write out the image data
         let error = unsafe {
             CEXR_OutputFile_write_pixels(self.handle,
                                          framebuffer.dimensions().1 as i32,
@@ -134,7 +167,84 @@ impl<'a> ScanlineOutputFile<'a> {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
+            self.scanlines_written = self.header().data_dimensions().1;
             Ok(())
+        }
+    }
+
+    /// Writes the image incrementally over multiple calls.
+    ///
+    /// `framebuffer` may have a different vertical resolution than the image,
+    /// but it must have the same horizontal resolution.  Multiple calls will
+    /// incrementally write chunks of scanlines in the order given until the
+    /// image is complete.
+    ///
+    /// For example, to write a 2000-pixel-tall image, you could call this
+    /// function four times with 500-pixel-tall FrameBuffers.
+    ///
+    /// If `framebuffer` has more scanlines than remain in the image, only the
+    /// remaining scanlines will be written.
+    ///
+    /// Note: all scanlines must be written for the resulting OpenEXR file to
+    /// be complete and correct.
+    ///
+    /// On success returns the number of scanlines written.
+    ///
+    /// # Errors
+    ///
+    /// This function expects `framebuffer` to have the same _horizontal_
+    /// resolution as the output file, as well as the same channels (with
+    /// matching types and subsampling).
+    ///
+    /// It will also return an error if:
+    ///
+    /// * All scanlines of the image have already been written.
+    /// * There is an I/O error.
+    pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<(u32)> {
+        // Validation
+        if self.scanlines_written == self.header().data_dimensions().1 {
+            return Err(Error::Generic("All scanlines have already been \
+                written, cannot do another incremental write"
+                                              .to_string()));
+        }
+
+        if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
+            return Err(Error::Generic(format!("framebuffer width {} does not match\
+                                              image width {}",
+                                              framebuffer.dimensions().0,
+                                              self.header().data_dimensions().0)));
+        }
+
+        framebuffer.validate_channels_for_output(self.header())?;
+
+        // Set up the framebuffer with the image
+        let scanline_write_count = min(self.header().data_dimensions().1 - self.scanlines_written,
+                                       framebuffer.dimensions().1);
+
+        let mut error_out = ptr::null();
+
+        let error = unsafe {
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
+                                                                       self.scanlines_written);
+            let err = CEXR_OutputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
+            CEXR_FrameBuffer_delete(offset_fb);
+            err
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+        }
+
+        // Write out the image data
+        let error = unsafe {
+            CEXR_OutputFile_write_pixels(self.handle, scanline_write_count as i32, &mut error_out)
+        };
+        if error != 0 {
+            let msg = unsafe { CStr::from_ptr(error_out) };
+            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+        } else {
+            self.scanlines_written += scanline_write_count;
+            Ok((scanline_write_count))
         }
     }
 

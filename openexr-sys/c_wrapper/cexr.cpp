@@ -118,17 +118,17 @@ void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CE
     h->channels().insert(name, *reinterpret_cast<const Channel *>(&channel));
 }
 
-int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out, const char **err_out) {
+int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out) {
     auto h = reinterpret_cast<const Header*>(header);
 
-    try {
-        *out = reinterpret_cast<const CEXR_Channel *>(&(h->channels()[name]));
-    } catch(const std::exception &e) {
-        *err_out = e.what();
+    auto channel_ptr = reinterpret_cast<const CEXR_Channel *>(h->channels().findChannel(name));
+
+    if (channel_ptr != 0) {
+        *out = channel_ptr;
+        return 0;
+    } else {
         return 1;
     }
-
-    return 0;
 }
 
 CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header) {
@@ -201,6 +201,50 @@ void CEXR_FrameBuffer_insert(CEXR_FrameBuffer *fb,
                              int xTileCoords,
                              int yTileCoords) {
     reinterpret_cast<FrameBuffer *>(fb)->insert(name, Slice(static_cast<Imf::PixelType>(type), base, xStride, yStride, xSampling, ySampling, fillValue, xTileCoords, yTileCoords));
+}
+
+int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const char name[], CEXR_Channel *out) {
+    auto fb = reinterpret_cast<const FrameBuffer*>(frame_buffer);
+
+    auto slice_ptr = fb->findSlice(name);
+
+    if (slice_ptr != 0) {
+        *out = CEXR_Channel {
+            *reinterpret_cast<const CEXR_PixelType *>(&(slice_ptr->type)),
+            slice_ptr->xSampling,
+            slice_ptr->ySampling,
+            false // Bogus value, but this function is only used internally anyway
+        };
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+// Creates a copy of the framebuffer, but with all base pointers offset by
+// `offset` scanlines.
+//
+// For example, if you specify an offset of 3, then if you access scanline 3
+// of the new framebuffer it will be the same as accessing scanline 0 of the
+// old one.
+CEXR_FrameBuffer *CEXR_FrameBuffer_copy_and_offset_scanlines(const CEXR_FrameBuffer *frame_buffer, unsigned int offset) {
+    auto fb = reinterpret_cast<const FrameBuffer *>(frame_buffer);
+
+    auto new_fb = new FrameBuffer();
+
+    // Copy all of the slices to the new frame buffer while offsetting their
+    // base pointers appropriately.
+    for (auto itr = fb->begin(); itr != fb->end(); itr++) {
+        Slice slice = itr.slice();
+
+        auto tmp = (size_t)slice.base;
+        tmp -= slice.yStride * (offset / slice.ySampling);
+        slice.base = (char *)tmp;
+
+        new_fb->insert(itr.name(), slice);
+    }
+
+    return reinterpret_cast<CEXR_FrameBuffer *>(new_fb);
 }
 
 
