@@ -15,8 +15,8 @@ use stream_io::{write_stream, seek_stream};
 ///
 /// This is the simplest kind of OpenEXR file.  Image data is stored in
 /// scanline order with no special features like mipmaps or deep image data.
-/// Unless you have a need for such special features, this is probably what
-/// you want to use.
+/// Unless you need special features like that, this is probably what you want
+/// to use.
 ///
 /// # Examples
 ///
@@ -57,7 +57,7 @@ pub struct ScanlineOutputFile<'a> {
 
 impl<'a> ScanlineOutputFile<'a> {
     /// Creates a new `ScanlineOutputFile` from any `Write + Seek` type
-    /// (typically a `std::fs::File`).
+    /// (typically a `std::fs::File`) and `header`.
     ///
     /// Note: this seeks to byte 0 before writing.
     pub fn new<T: 'a>(writer: &'a mut T, header: &Header) -> Result<ScanlineOutputFile<'a>>
@@ -114,10 +114,19 @@ impl<'a> ScanlineOutputFile<'a> {
         }
     }
 
-    /// Writes image data from the given FrameBuffer.
+    /// Writes the entire image at once from `framebuffer`.
     ///
-    /// The passed FrameBuffer must match the image's resolution exactly, and
-    /// the complete image will be written.
+    /// # Errors
+    ///
+    /// This function expects `framebuffer` to have the same resolution as the
+    /// output file, as well as the same channels (with matching types and
+    /// subsampling).
+    ///
+    /// It will also return an error if:
+    ///
+    /// * Part or all of the image data has already been written by a previous
+    ///   call to either this or `write_pixels_incremental`.
+    /// * There is an I/O error.
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
         // Validation
         if self.scanlines_written != 0 {
@@ -163,20 +172,34 @@ impl<'a> ScanlineOutputFile<'a> {
         }
     }
 
-    /// Writes image data from the given FrameBuffer.
+    /// Writes the image incrementally over multiple calls.
     ///
-    /// The passed FrameBuffer may have a different vertical resolution than the
-    /// image, but must have the same horizontal resolution.  Multiple calls to
-    /// this method in sequence will incrementally write subsequent vertical
-    /// chunks of the image.
+    /// `framebuffer` may have a different vertical resolution than the image,
+    /// but it must have the same horizontal resolution.  Multiple calls will
+    /// incrementally write chunks of scanlines in the order given until the
+    /// image is complete.
     ///
-    /// If the FrameBuffer has fewer scanlines than the remaining scanlines in
-    /// the image, then only that many scanlines will be written.  If the
-    /// FrameBuffer has more scanlines than remain in the image, then the
-    /// only the remaining number of scanlines will be written from the
-    /// FrameBuffer, and the image will be complete.
+    /// For example, to write a 2000-pixel-tall image, you could call this
+    /// function four times with 500-pixel-tall FrameBuffers.
+    ///
+    /// If `framebuffer` has more scanlines than remain in the image, only the
+    /// remaining scanlines will be written.
+    ///
+    /// Note: all scanlines must be written for the resulting OpenEXR file to
+    /// be complete and correct.
     ///
     /// On success returns the number of scanlines written.
+    ///
+    /// # Errors
+    ///
+    /// This function expects `framebuffer` to have the same _horizontal_
+    /// resolution as the output file, as well as the same channels (with
+    /// matching types and subsampling).
+    ///
+    /// It will also return an error if:
+    ///
+    /// * All scanlines of the image have already been written.
+    /// * There is an I/O error.
     pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<(u32)> {
         // Validation
         if self.scanlines_written == self.header().data_dimensions().1 {

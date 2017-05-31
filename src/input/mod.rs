@@ -21,10 +21,10 @@ use stream_io::{read_stream, seek_stream};
 /// file is being read.  Regardless of the type being read, it presents an API
 /// as if it were a basic scanline OpenEXR file.
 ///
-/// Note that this means special features like tiles, mipmaps, and deep image
-/// data will not be available even if they are present in the file.  To gain
-/// access to those features you need to use the other input file types (not
-/// yet implemented, sorry!).
+/// Special features like tiles, mipmaps, and deep image data will not be
+/// available even if they are present in the file.  To gain access to those
+/// features you need to use the other input file types (not yet implemented,
+/// sorry!).
 ///
 /// # Examples
 ///
@@ -115,8 +115,8 @@ impl<'a> InputFile<'a> {
     ///
     /// Note: although you can do essentially the same thing by passing a
     /// `std::io::Cursor<&[u8]>` to `new()`, using this method is more
-    /// efficient because it allows the underlying APIs to avoid writing
-    /// intermediate data to buffers.
+    /// efficient because it allows the underlying APIs to avoid reading data
+    /// into intermediate buffers.
     pub fn from_slice(slice: &[u8]) -> Result<InputFile> {
         let istream_ptr = unsafe {
             CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
@@ -149,10 +149,18 @@ impl<'a> InputFile<'a> {
     }
 
 
-    /// Reads image data into the given FrameBufferMut.
+    /// Reads the entire image into `framebuffer` at once.
     ///
-    /// The passed FrameBufferMut must match the image's resolution exactly, and
-    /// the complete image will be read into the FrameBufferMut.
+    /// Any channels in `framebuffer` that are not present in the file will be
+    /// filled with their default fill value.
+    ///
+    /// # Errors
+    ///
+    /// This function expects `framebuffer` to have the same resolution as the
+    /// file, and for any same-named channels to have matching types and
+    /// subsampling.
+    ///
+    /// It will also return an error if there is an I/O error.
     pub fn read_pixels(&mut self, framebuffer: &mut FrameBufferMut) -> Result<()> {
         // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
         // &mut to be safe.  Even though it is not conceptually modifying the
@@ -198,19 +206,31 @@ impl<'a> InputFile<'a> {
         }
     }
 
-    /// Reads image data into the given FrameBufferMut.
+    /// Reads a contiguous chunk of scanlines into `framebuffer`.
     ///
-    /// The passed FrameBufferMut may have a different vertical resolution than
-    /// the image, but must have the same horizontal resolution.
+    /// `framebuffer` may have a different vertical resolution than the image,
+    /// but must have the same horizontal resolution.  Scanlines are read from
+    /// the image starting at `starting_scanline` and are written to
+    /// `framebuffer` until either its or the image's last scanline is reached.
     ///
-    /// This method will read image data into the passed FrameBufferMut starting
-    /// with scanline `n` of the image, and fills the FrameBufferMut until
-    /// either its last scanline or the image's last scanline is reached,
-    /// whichever comes first.
+    /// For example, to read the last 50 scanlines of a 200-pixel-tall image,
+    /// you would pass a 50-pixel-tall FrameBufferMut and a starting scanline of
+    /// 150.
+    ///
+    /// Any channels in `framebuffer` that are not present in the file will be
+    /// filled with their default fill value.
     ///
     /// On success returns the number of scanlines read.
+    ///
+    /// # Errors
+    ///
+    /// This function expects `framebuffer` to have the same _horizontal_
+    /// resolution as the file, and for any same-named channels to have
+    /// matching types and subsampling.
+    ///
+    /// It will also return an error if there is an I/O error.
     pub fn read_pixels_partial(&mut self,
-                               n: u32,
+                               starting_scanline: u32,
                                framebuffer: &mut FrameBufferMut)
                                -> Result<(u32)> {
         // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
@@ -220,9 +240,8 @@ impl<'a> InputFile<'a> {
         // to be unique to avoid unsafe aliasing.
 
         // Validation
-        assert!(n < self.header().data_dimensions().1,
-                "Cannot start reading \
-            past last scanline.");
+        assert!(starting_scanline < self.header().data_dimensions().1,
+                "Cannot start reading past last scanline.");
 
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
             return Err(Error::Generic(format!("framebuffer width {} does not match\
@@ -234,15 +253,18 @@ impl<'a> InputFile<'a> {
         framebuffer.validate_channels_for_input(self.header())?;
 
         // Set up the framebuffer with the image
-        let scanline_read_count = min(self.header().data_dimensions().1 - n,
+        let scanline_read_count = min(self.header().data_dimensions().1 - starting_scanline,
                                       framebuffer.dimensions().1);
-        let start_scanline = self.header().data_window().min.y + n as i32;
-        let end_scanline = self.header().data_window().min.y + (n + scanline_read_count) as i32 - 1;
+        let start_scanline = self.header().data_window().min.y + starting_scanline as i32;
+        let end_scanline = self.header().data_window().min.y +
+                           (starting_scanline + scanline_read_count) as i32 -
+                           1;
 
         let mut error_out = ptr::null();
 
         let error = unsafe {
-            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(), n);
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
+                                                                       starting_scanline);
             let err = CEXR_InputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
             CEXR_FrameBuffer_delete(offset_fb);
             err
