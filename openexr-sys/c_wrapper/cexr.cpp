@@ -118,17 +118,10 @@ void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CE
     h->channels().insert(name, *reinterpret_cast<const Channel *>(&channel));
 }
 
-int CEXR_Header_get_channel(const CEXR_Header *header, const char name[], const CEXR_Channel **out) {
+const CEXR_Channel *CEXR_Header_get_channel(const CEXR_Header *header, const char name[]) {
     auto h = reinterpret_cast<const Header*>(header);
 
-    auto channel_ptr = reinterpret_cast<const CEXR_Channel *>(h->channels().findChannel(name));
-
-    if (channel_ptr != 0) {
-        *out = channel_ptr;
-        return 0;
-    } else {
-        return 1;
-    }
+    return reinterpret_cast<const CEXR_Channel *>(h->channels().findChannel(name));
 }
 
 CEXR_ChannelListIter *CEXR_Header_channel_list_iter(const CEXR_Header *header) {

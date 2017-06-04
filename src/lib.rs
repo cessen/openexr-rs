@@ -314,8 +314,8 @@ impl Header {
     /// Access channels by name.
     pub fn get_channel<'a>(&'a self, name: &str) -> Option<&'a Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
-        let mut out = std::ptr::null();
-        if unsafe { CEXR_Header_get_channel(self.handle, c_name.as_ptr(), &mut out) } == 0 {
+        let out = unsafe { CEXR_Header_get_channel(self.handle, c_name.as_ptr()) };
+        if out != std::ptr::null() {
             Some(unsafe { &(*out) })
         } else {
             None
