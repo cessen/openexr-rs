@@ -178,7 +178,7 @@ impl<'a> InputFile<'a> {
                                               self.header().data_dimensions().1)));
         }
 
-        framebuffer.validate_channels_for_input(self.header())?;
+        self.header().validate_framebuffer_for_input(framebuffer)?;
 
         // Set up the framebuffer with the image
         let mut error_out = ptr::null();
@@ -250,7 +250,7 @@ impl<'a> InputFile<'a> {
                                               self.header().data_dimensions().0)));
         }
 
-        framebuffer.validate_channels_for_input(self.header())?;
+        self.header().validate_framebuffer_for_input(framebuffer)?;
 
         // Set up the framebuffer with the image
         let scanline_read_count = min(self.header().data_dimensions().1 - starting_scanline,
@@ -263,7 +263,7 @@ impl<'a> InputFile<'a> {
         let mut error_out = ptr::null();
 
         let error = unsafe {
-            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle_mut(),
                                                                        starting_scanline);
             let err = CEXR_InputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
             CEXR_FrameBuffer_delete(offset_fb);

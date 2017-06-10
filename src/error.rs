@@ -1,3 +1,5 @@
+//! Result and Error types.
+
 use std;
 
 /// Error type for this crate.

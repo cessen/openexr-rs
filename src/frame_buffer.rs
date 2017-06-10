@@ -37,8 +37,6 @@ use libc::{c_char, c_int};
 use openexr_sys::*;
 
 use cexr_type_aliases::*;
-use error::*;
-use Header;
 
 
 /// Points to and describes in-memory image data for reading.
@@ -158,19 +156,14 @@ impl<'a> FrameBuffer<'a> {
         self
     }
 
-    // This shouldn't be used outside of this crate, but due to
-    // https://github.com/rust-lang/rfcs/pull/1422 not being stable
-    // yet (should land in Rust 1.18), just hide from public
-    // documentation for now.
-    // TODO: once Rust 1.18 comes out, change from pub to pub(crate)`.
     #[doc(hidden)]
-    pub fn handle(&self) -> *const CEXR_FrameBuffer {
+    pub(crate) fn handle(&self) -> *const CEXR_FrameBuffer {
         self.handle
     }
 
     // This function abuses the Channel type to return information
     // about a FrameBuffer Slice.  For internal use only.
-    fn _get_channel(&self, name: &str) -> Option<Channel> {
+    pub(crate) fn _get_channel(&self, name: &str) -> Option<Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
         let mut channel = unsafe { mem::uninitialized() };
         if unsafe { CEXR_FrameBuffer_get_channel(self.handle, c_name.as_ptr(), &mut channel) } ==
@@ -179,65 +172,6 @@ impl<'a> FrameBuffer<'a> {
         } else {
             None
         }
-    }
-
-    // TODO: these should probably be part of Header.  They're only here
-    // right now to allow access to both struct's internals, but they won't
-    // have to be here for that once `pub(crate)` lands in Rust 1.18.
-    //
-    // These shouldn't be used outside of this crate, but due to
-    // https://github.com/rust-lang/rfcs/pull/1422 not being stable
-    // yet (should land in Rust 1.18), just hide from public
-    // documentation for now.
-    // TODO: once Rust 1.18 comes out, change from pub to pub(crate)`.
-    #[doc(hidden)]
-    pub fn validate_channels_for_output(&self, header: &Header) -> Result<()> {
-        for chan in header.channels() {
-            let (name, h_channel) = chan?;
-            if let Some(fb_channel) = self._get_channel(name) {
-                FrameBuffer::validate_channel(name, &h_channel, &fb_channel)?;
-            } else {
-                return Err(Error::Generic(format!("FrameBuffer is missing \
-                    channel '{}' expected by Header",
-                                                  name)));
-            }
-        }
-        Ok(())
-    }
-
-    #[doc(hidden)]
-    pub fn validate_channels_for_input(&self, header: &Header) -> Result<()> {
-        for chan in header.channels() {
-            let (name, h_channel) = chan?;
-            if let Some(fb_channel) = self._get_channel(name) {
-                FrameBuffer::validate_channel(name, &h_channel, &fb_channel)?;
-            }
-        }
-        Ok(())
-    }
-
-    // Factored out shared code from the validate_channels_* methods above.
-    fn validate_channel(name: &str, h_chan: &Channel, fb_chan: &Channel) -> Result<()> {
-        if fb_chan.pixel_type != h_chan.pixel_type {
-            return Err(Error::Generic(format!("Header and FrameBuffer channel \
-                types don't match: '{}' is {:?} in Header and {:?} in \
-                FrameBuffer",
-                                              name,
-                                              h_chan.pixel_type,
-                                              fb_chan.pixel_type)));
-        }
-        if fb_chan.x_sampling != h_chan.x_sampling || fb_chan.y_sampling != h_chan.y_sampling {
-            return Err(Error::Generic(format!("Header and FrameBuffer channel \
-                subsampling don't match: channel '{}' is {}x{} in Header and \
-                {}x{} in FrameBuffer",
-                                              name,
-                                              h_chan.x_sampling,
-                                              h_chan.y_sampling,
-                                              fb_chan.x_sampling,
-                                              fb_chan.y_sampling)));
-        }
-
-        Ok(())
     }
 }
 
@@ -361,13 +295,7 @@ impl<'a> FrameBufferMut<'a> {
         self
     }
 
-    // This shouldn't be used outside of this crate, but due to
-    // https://github.com/rust-lang/rfcs/pull/1422 not being stable
-    // yet (should land in Rust 1.18), just hide from public
-    // documentation for now.
-    // TODO: once Rust 1.18 comes out, change from pub to pub(crate)`.
-    #[doc(hidden)]
-    pub fn handle_mut(&mut self) -> *mut CEXR_FrameBuffer {
+    pub(crate) fn handle_mut(&mut self) -> *mut CEXR_FrameBuffer {
         self.handle
     }
 }
@@ -425,7 +353,8 @@ unsafe impl PixelData for f32 {
 /// # Examples
 ///
 /// ```
-/// use openexr::{PixelStruct, PixelType};
+/// use openexr::PixelType;
+/// use openexr::frame_buffer::PixelStruct;
 ///
 /// #[repr(C)]
 /// #[derive(Copy, Clone)]

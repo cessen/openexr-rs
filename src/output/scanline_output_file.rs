@@ -144,7 +144,7 @@ impl<'a> ScanlineOutputFile<'a> {
                                               self.header().data_dimensions().1)));
         }
 
-        framebuffer.validate_channels_for_output(self.header())?;
+        self.header().validate_framebuffer_for_output(framebuffer)?;
 
         // Set up the framebuffer with the image
         let mut error_out = ptr::null();
@@ -215,7 +215,7 @@ impl<'a> ScanlineOutputFile<'a> {
                                               self.header().data_dimensions().0)));
         }
 
-        framebuffer.validate_channels_for_output(self.header())?;
+        self.header().validate_framebuffer_for_output(framebuffer)?;
 
         // Set up the framebuffer with the image
         let scanline_write_count = min(self.header().data_dimensions().1 - self.scanlines_written,
