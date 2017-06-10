@@ -106,6 +106,6 @@ pub mod output;
 pub use cexr_type_aliases::{PixelType, Box2i};
 pub use error::{Result, Error};
 pub use frame_buffer::{FrameBuffer, FrameBufferMut};
-pub use header::Header;
+pub use header::{Header, Envmap};
 pub use input::InputFile;
 pub use output::ScanlineOutputFile;

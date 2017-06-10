@@ -9,6 +9,7 @@ use openexr_sys::*;
 use cexr_type_aliases::*;
 use error::{Result, Error};
 use frame_buffer::{FrameBuffer, FrameBufferMut};
+use libc::c_int;
 
 pub use cexr_type_aliases::{Channel, Compression, LineOrder};
 
@@ -220,6 +221,29 @@ impl Header {
         }
     }
 
+    /// Determine whether this header describes an environment map, and if so, what type
+    pub fn envmap(&self) -> Option<Envmap> {
+        if unsafe { CEXR_Header_has_envmap(self.handle) } {
+            match unsafe { CEXR_Header_envmap(self.handle) } {
+                0 => Some(Envmap::LatLong),
+                1 => Some(Envmap::Cube),
+                _ => None
+            }
+        } else {
+            None
+        }
+    }
+
+    /// Declare whether this header represents an environment map
+    pub fn set_envmap(&mut self, envmap: Option<Envmap>) -> &mut Self {
+        if let Some(x) = envmap {
+            unsafe { CEXR_Header_set_envmap(self.handle, x as c_int) }
+        } else {
+            unsafe { CEXR_Header_unset_envmap(self.handle) }
+        }
+        self
+    }
+
     pub(crate) fn validate_framebuffer_for_output(&self, framebuffer: &FrameBuffer) -> Result<()> {
         for chan in self.channels() {
             let (name, h_channel) = chan?;
@@ -314,4 +338,12 @@ impl<'a> Iterator for ChannelIter<'a> {
             None
         }
     }
+}
+
+/// Types of environment maps
+pub enum Envmap {
+    /// Latitude-longitude projection
+    LatLong = 0,
+    /// Cubemap
+    Cube = 1,
 }

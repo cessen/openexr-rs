@@ -392,6 +392,20 @@ extern "C" {
                                        compression: CEXR_Compression);
 }
 extern "C" {
+    pub fn CEXR_Header_has_envmap(header: *const CEXR_Header) -> bool;
+}
+extern "C" {
+    pub fn CEXR_Header_envmap(header: *const CEXR_Header)
+     -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn CEXR_Header_set_envmap(header: *mut CEXR_Header,
+                                  envmap: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn CEXR_Header_unset_envmap(header: *mut CEXR_Header);
+}
+extern "C" {
     pub fn CEXR_FrameBuffer_new() -> *mut CEXR_FrameBuffer;
 }
 extern "C" {

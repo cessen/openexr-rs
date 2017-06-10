@@ -11,6 +11,7 @@
 #include "ImfOutputFile.h"
 #include "ImfInputFile.h"
 #include "Iex.h"
+#include "ImfStandardAttributes.h"
 
 #include "memory_istream.hpp"
 #include "rust_istream.hpp"
@@ -168,6 +169,22 @@ void CEXR_Header_set_line_order(CEXR_Header *header, CEXR_LineOrder line_order) 
 
 void CEXR_Header_set_compression(CEXR_Header *header, CEXR_Compression compression) {
     *reinterpret_cast<CEXR_Compression *>(&reinterpret_cast<Header *>(header)->compression()) = compression;
+}
+
+bool CEXR_Header_has_envmap(const CEXR_Header *header) {
+    return hasEnvmap(*reinterpret_cast<const Header *>(header));
+}
+
+int CEXR_Header_envmap(const CEXR_Header *header) {
+    return envmap(*reinterpret_cast<const Header *>(header));
+}
+
+void CEXR_Header_set_envmap(CEXR_Header *header, int envmap) {
+    addEnvmap(*reinterpret_cast<Header *>(header), static_cast<Imf::Envmap>(envmap));
+}
+
+void CEXR_Header_unset_envmap(CEXR_Header *header) {
+    reinterpret_cast<Header *>(header)->erase("envmap");
 }
 
 

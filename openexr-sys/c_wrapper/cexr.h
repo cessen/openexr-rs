@@ -198,6 +198,10 @@ void CEXR_Header_set_screen_window_center(CEXR_Header *header, CEXR_V2f center);
 void CEXR_Header_set_screen_window_width(CEXR_Header *header, float width);
 void CEXR_Header_set_line_order(CEXR_Header *header, CEXR_LineOrder line_order);
 void CEXR_Header_set_compression(CEXR_Header *header, CEXR_Compression compression);
+bool CEXR_Header_has_envmap(const CEXR_Header *header);
+int CEXR_Header_envmap(const CEXR_Header *header);
+void CEXR_Header_set_envmap(CEXR_Header *header, int envmap);
+void CEXR_Header_unset_envmap(CEXR_Header *header);
 
 
 CEXR_FrameBuffer *CEXR_FrameBuffer_new();
