@@ -341,6 +341,7 @@ impl<'a> Iterator for ChannelIter<'a> {
 }
 
 /// Types of environment maps
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Envmap {
     /// Latitude-longitude projection
     LatLong = 0,
