@@ -1,6 +1,5 @@
 //! Input file types.
 
-use std::cmp::min;
 use std::ffi::CStr;
 use std::io::{Read, Seek};
 use std::marker::PhantomData;
@@ -211,7 +210,7 @@ impl<'a> InputFile<'a> {
     /// `framebuffer` may have a different vertical resolution than the image,
     /// but must have the same horizontal resolution.  Scanlines are read from
     /// the image starting at `starting_scanline` and are written to
-    /// `framebuffer` until either its or the image's last scanline is reached.
+    /// `framebuffer` until it's filled.
     ///
     /// For example, to read the last 50 scanlines of a 200-pixel-tall image,
     /// you would pass a 50-pixel-tall FrameBufferMut and a starting scanline of
@@ -220,19 +219,22 @@ impl<'a> InputFile<'a> {
     /// Any channels in `framebuffer` that are not present in the file will be
     /// filled with their default fill value.
     ///
-    /// On success returns the number of scanlines read.
-    ///
     /// # Errors
     ///
     /// This function expects `framebuffer` to have the same _horizontal_
     /// resolution as the file, and for any same-named channels to have
     /// matching types and subsampling.
     ///
-    /// It will also return an error if there is an I/O error.
+    /// It will also return an error if:
+    ///
+    /// * There aren't enough scanlines starting at `starting_scanline` to fill
+    ///   `framebuffer`.
+    ///   from `starting_scanline`.
+    /// * There is an I/O error.
     pub fn read_pixels_partial(&mut self,
                                starting_scanline: u32,
                                framebuffer: &mut FrameBufferMut)
-                               -> Result<(u32)> {
+                               -> Result<()> {
         // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
         // &mut to be safe.  Even though it is not conceptually modifying the
         // thing (typically a file) that it's reading from, it still has a
@@ -242,6 +244,15 @@ impl<'a> InputFile<'a> {
         // Validation
         assert!(starting_scanline < self.header().data_dimensions().1,
                 "Cannot start reading past last scanline.");
+
+        if framebuffer.dimensions().1 > (self.header().data_dimensions().1 - starting_scanline) {
+            return Err(Error::Generic(format!("framebuffer contains {} \
+                scanlines, but only {} scanlines are available to read from \
+                the given starting scanline",
+                                              framebuffer.dimensions().1,
+                                              self.header().data_dimensions().1 -
+                                              starting_scanline)));
+        }
 
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
             return Err(Error::Generic(format!("framebuffer width {} does not match\
@@ -253,11 +264,9 @@ impl<'a> InputFile<'a> {
         self.header().validate_framebuffer_for_input(framebuffer)?;
 
         // Set up the framebuffer with the image
-        let scanline_read_count = min(self.header().data_dimensions().1 - starting_scanline,
-                                      framebuffer.dimensions().1);
         let start_scanline = self.header().data_window().min.y + starting_scanline as i32;
         let end_scanline = self.header().data_window().min.y +
-                           (starting_scanline + scanline_read_count) as i32 -
+                           (starting_scanline + framebuffer.dimensions().1) as i32 -
                            1;
 
         let mut error_out = ptr::null();
@@ -282,7 +291,7 @@ impl<'a> InputFile<'a> {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
-            Ok((scanline_read_count))
+            Ok(())
         }
     }
 

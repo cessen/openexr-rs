@@ -1,4 +1,3 @@
-use std::cmp::min;
 use std::ffi::CStr;
 use std::io::{Write, Seek};
 use std::marker::PhantomData;
@@ -182,13 +181,8 @@ impl<'a> ScanlineOutputFile<'a> {
     /// For example, to write a 2000-pixel-tall image, you could call this
     /// function four times with 500-pixel-tall FrameBuffers.
     ///
-    /// If `framebuffer` has more scanlines than remain in the image, only the
-    /// remaining scanlines will be written.
-    ///
     /// Note: all scanlines must be written for the resulting OpenEXR file to
     /// be complete and correct.
-    ///
-    /// On success returns the number of scanlines written.
     ///
     /// # Errors
     ///
@@ -198,9 +192,9 @@ impl<'a> ScanlineOutputFile<'a> {
     ///
     /// It will also return an error if:
     ///
-    /// * All scanlines of the image have already been written.
+    /// * `framebuffer` contains more scanlines than remain to be written.
     /// * There is an I/O error.
-    pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<(u32)> {
+    pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
         // Validation
         if self.scanlines_written == self.header().data_dimensions().1 {
             return Err(Error::Generic("All scanlines have already been \
@@ -208,7 +202,16 @@ impl<'a> ScanlineOutputFile<'a> {
                                               .to_string()));
         }
 
-        if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
+        if framebuffer.dimensions().1 >
+           (self.header().data_dimensions().1 - self.scanlines_written) {
+            return Err(Error::Generic(format!("framebuffer contains {} \
+                scanlines, but only {} scanlines remain to be written",
+                                              framebuffer.dimensions().1,
+                                              self.header().data_dimensions().1 -
+                                              self.scanlines_written)));
+        }
+
+        if framebuffer.dimensions().0 != self.header().data_dimensions().0 {
             return Err(Error::Generic(format!("framebuffer width {} does not match\
                                               image width {}",
                                               framebuffer.dimensions().0,
@@ -218,9 +221,6 @@ impl<'a> ScanlineOutputFile<'a> {
         self.header().validate_framebuffer_for_output(framebuffer)?;
 
         // Set up the framebuffer with the image
-        let scanline_write_count = min(self.header().data_dimensions().1 - self.scanlines_written,
-                                       framebuffer.dimensions().1);
-
         let mut error_out = ptr::null();
 
         let error = unsafe {
@@ -237,14 +237,16 @@ impl<'a> ScanlineOutputFile<'a> {
 
         // Write out the image data
         let error = unsafe {
-            CEXR_OutputFile_write_pixels(self.handle, scanline_write_count as i32, &mut error_out)
+            CEXR_OutputFile_write_pixels(self.handle,
+                                         framebuffer.dimensions().1 as i32,
+                                         &mut error_out)
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
-            self.scanlines_written += scanline_write_count;
-            Ok((scanline_write_count))
+            self.scanlines_written += framebuffer.dimensions().1;
+            Ok(())
         }
     }
 
