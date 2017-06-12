@@ -227,7 +227,7 @@ impl Header {
             match unsafe { CEXR_Header_envmap(self.handle) } {
                 0 => Some(Envmap::LatLong),
                 1 => Some(Envmap::Cube),
-                _ => None
+                _ => None,
             }
         } else {
             None
