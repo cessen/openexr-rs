@@ -183,8 +183,8 @@ void CEXR_Header_set_envmap(CEXR_Header *header, int envmap) {
     addEnvmap(*reinterpret_cast<Header *>(header), static_cast<Imf::Envmap>(envmap));
 }
 
-void CEXR_Header_unset_envmap(CEXR_Header *header) {
-    reinterpret_cast<Header *>(header)->erase("envmap");
+void CEXR_Header_erase_attribute(CEXR_Header *header, const char *attribute) {
+    reinterpret_cast<Header *>(header)->erase(attribute);
 }
 
 

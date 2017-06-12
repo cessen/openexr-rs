@@ -239,7 +239,7 @@ impl Header {
         if let Some(x) = envmap {
             unsafe { CEXR_Header_set_envmap(self.handle, x as c_int) }
         } else {
-            unsafe { CEXR_Header_unset_envmap(self.handle) }
+            unsafe { CEXR_Header_erase_attribute(self.handle, b"envmap\0".as_ptr() as *const _) }
         }
         self
     }

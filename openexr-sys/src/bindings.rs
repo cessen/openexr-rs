@@ -403,7 +403,9 @@ extern "C" {
                                   envmap: ::std::os::raw::c_int);
 }
 extern "C" {
-    pub fn CEXR_Header_unset_envmap(header: *mut CEXR_Header);
+    pub fn CEXR_Header_erase_attribute(header: *mut CEXR_Header,
+                                       attribute:
+                                           *const ::std::os::raw::c_char);
 }
 extern "C" {
     pub fn CEXR_FrameBuffer_new() -> *mut CEXR_FrameBuffer;

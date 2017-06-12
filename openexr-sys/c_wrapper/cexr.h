@@ -201,7 +201,7 @@ void CEXR_Header_set_compression(CEXR_Header *header, CEXR_Compression compressi
 bool CEXR_Header_has_envmap(const CEXR_Header *header);
 int CEXR_Header_envmap(const CEXR_Header *header);
 void CEXR_Header_set_envmap(CEXR_Header *header, int envmap);
-void CEXR_Header_unset_envmap(CEXR_Header *header);
+void CEXR_Header_erase_attribute(CEXR_Header *header, const char *attribute);
 
 
 CEXR_FrameBuffer *CEXR_FrameBuffer_new();
