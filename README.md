@@ -35,22 +35,18 @@ including reading from memory.
 
 ## TODO
 
-- [x] Wrap basic scanline output.
-- [x] Wrap basic scanline input.
-- [x] Figure out a good way to support Half floats.
-- [ ] Make simple convenience functions for basic RGB/RGBA input and output.
-- [ ] Wrap basic tiled output.
-- [ ] Wrap basic tiled input.
+- [x] Wrap scanline output.
+- [x] Wrap generic input.
+- [x] Support for Half floats.
+- [x] Handle exceptions at the API boundary (safety!).
+- [ ] Wrap custom attributes.
+- [ ] Wrap tiled output.
+- [ ] Wrap tiled input.
 - [ ] Handle different tiled modes (e.g. MIP maps and RIP maps).
 - [ ] Wrap deep data input/output.
 - [ ] Wrap multi-part file input/output.
-- [ ] Wrap custom attributes.
-- [ ] Handle exceptions at the API boundary (safety!).
-- [ ] Take stock after this is all done and figure a out better API for
+- [ ] Make simple convenience functions for basic RGB/RGBA input and output.
       everything.
-- [ ] For the sake of opaque pointers to the C++ classes, there is a lot of
-      seemingly unnecessary heap allocation.  Can we move more of this to the
-      stack?
 - [ ] Make build system more robust to various platforms and configurations.
 
 ## License
