@@ -76,7 +76,7 @@ fn main() {
     }
 
     // Build C wrapper for OpenEXR
-    let mut gcc = gcc::Config::new();
+    let mut gcc = gcc::Build::new();
     gcc.cpp(true).include("c_wrapper");
     #[cfg(target_env = "msvc")]
     gcc.flag("/std:c++14");

@@ -16,7 +16,7 @@ fn main() {
         .unwrap();
 
     let mut exr_file = ScanlineOutputFile::new(&mut file,
-                                               &Header::new()
+                                               Header::new()
                                                     .set_resolution(256, 256)
                                                     .add_channel("R", PixelType::HALF)
                                                     .add_channel("G", PixelType::HALF)

@@ -26,7 +26,7 @@
 //!   [`FrameBufferMut`](frame_buffer/struct.FrameBufferMut.html):
 //!   these are intermediaries that tell the OpenEXR APIs how to interpret
 //!   your in-memory image data.  Rather than passing your image data to the
-//!   APIs directly, you construct a FrameBuffer that that points at and
+//!   APIs directly, you construct a `FrameBuffer` that that points at and
 //!   describes it, and then you pass that FrameBuffer.
 //!
 //! # Examples

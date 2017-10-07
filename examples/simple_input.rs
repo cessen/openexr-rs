@@ -14,12 +14,12 @@ fn main() {
     let (width, height) = exr_file.header().data_dimensions();
 
     // Make sure the channels we want exist in the file
-    for channel_name in ["R", "G", "B"].iter() {
+    for channel_name in &["R", "G", "B"] {
         let channel = exr_file
             .header()
             .get_channel(channel_name)
             .expect(&format!("Didn't find channel {}.", channel_name));
-        assert!(channel.pixel_type == PixelType::FLOAT);
+        assert_eq!(channel.pixel_type, PixelType::FLOAT);
     }
 
     // Create our pixel data buffer and load the data from the file

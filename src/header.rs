@@ -55,7 +55,7 @@ impl Header {
             let screen_window_width = 1.0;
             let line_order = LineOrder::INCREASING_Y;
             let compression = Compression::PIZ_COMPRESSION;
-            let header = unsafe {
+            unsafe {
                 CEXR_Header_new(&display_window,
                                 &data_window,
                                 pixel_aspect_ratio,
@@ -63,8 +63,7 @@ impl Header {
                                 screen_window_width,
                                 line_order,
                                 compression)
-            };
-            header
+            }
         };
 
         Self {
@@ -202,7 +201,7 @@ impl Header {
     }
 
     /// Returns an iterator over the channels in the header.
-    pub fn channels<'a>(&'a self) -> ChannelIter<'a> {
+    pub fn channels(&self) -> ChannelIter {
         ChannelIter {
             iterator: unsafe { CEXR_Header_channel_list_iter(self.handle) },
             _phantom_1: PhantomData,
@@ -214,7 +213,7 @@ impl Header {
     pub fn get_channel<'a>(&'a self, name: &str) -> Option<&'a Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
         let out = unsafe { CEXR_Header_get_channel(self.handle, c_name.as_ptr()) };
-        if out != std::ptr::null() {
+        if !out.is_null() {
             Some(unsafe { &(*out) })
         } else {
             None
@@ -292,6 +291,12 @@ impl Header {
         }
 
         Ok(())
+    }
+}
+
+impl Default for Header {
+    fn default() -> Header {
+        Header::new()
     }
 }
 
