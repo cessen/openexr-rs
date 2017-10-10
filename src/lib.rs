@@ -89,6 +89,8 @@
 
 
 #![warn(missing_docs)]
+#![cfg_attr(feature = "unstable", feature(plugin))]
+#![cfg_attr(feature = "unstable", plugin(clippy))]
 
 extern crate half;
 extern crate libc;
