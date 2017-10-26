@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <system_error>
+#include "ImfInt64.h"
 
 using namespace IMATH_NAMESPACE;
 
@@ -20,11 +21,11 @@ void RustOStream::write(const char c[], int n) {
     }
 }
 
-std::uint64_t RustOStream::tellp() {
+Imath::Int64 RustOStream::tellp() {
     return cursor_pos;
 }
 
-void RustOStream::seekp(std::uint64_t pos) {
+void RustOStream::seekp(Imath::Int64 pos) {
     int err = 0;
     int res = seekp_ptr(writer, pos, &err);
     if (res == 0) {

@@ -12,6 +12,7 @@
 #include "ImfInputFile.h"
 #include "Iex.h"
 #include "ImfStandardAttributes.h"
+#include "ImfInt64.h"
 
 #include "memory_istream.hpp"
 #include "rust_istream.hpp"
@@ -26,7 +27,7 @@ static_assert(sizeof(CEXR_Box2i) == sizeof(Box2i), "Box2i size is correct");
 int CEXR_IStream_from_reader(
     void *reader,
     int (*read_ptr)(void *, char *, int, int *err_out),
-    int (*seekp_ptr)(void *, uint64_t, int *err_out),
+    int (*seekp_ptr)(void *, Imath::Int64, int *err_out),
     CEXR_IStream **out,
     const char **err_out
 ) {
@@ -51,7 +52,7 @@ void CEXR_IStream_delete(CEXR_IStream *stream) {
 int CEXR_OStream_from_writer(
     void *writer,
     int (*write_ptr)(void *, const char *, int, int *err_out),
-    int (*seekp_ptr)(void *, uint64_t, int *err_out),
+    int (*seekp_ptr)(void *, Imath::Int64, int *err_out),
     CEXR_OStream **out,
     const char **err_out
 ) {

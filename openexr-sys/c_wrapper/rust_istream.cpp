@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <system_error>
+#include "ImfInt64.h"
 
 using namespace IMATH_NAMESPACE;
 
@@ -20,11 +21,11 @@ bool RustIStream::read(char c[/*n*/], int n) {
     }
 }
 
-std::uint64_t RustIStream::tellg() {
+Imath::Int64 RustIStream::tellg() {
     return cursor_pos;
 }
 
-void RustIStream::seekg(std::uint64_t pos) {
+void RustIStream::seekg(Imath::Int64 pos) {
     int err = 0;
     int res = seekg_ptr(reader, pos, &err);
     if (res == 0) {
