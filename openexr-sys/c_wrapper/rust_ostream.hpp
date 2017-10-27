@@ -2,7 +2,6 @@
 #define CEXR_RUST_OSTREAM_H_
 
 #include "ImfIO.h"
-#include "ImfInt64.h"
 
 #include <cstdint>
 

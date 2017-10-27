@@ -2,7 +2,6 @@
 
 #include <stdexcept>
 #include <system_error>
-#include "ImfInt64.h"
 
 using namespace IMATH_NAMESPACE;
 

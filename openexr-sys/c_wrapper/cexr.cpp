@@ -12,7 +12,6 @@
 #include "ImfInputFile.h"
 #include "Iex.h"
 #include "ImfStandardAttributes.h"
-#include "ImfInt64.h"
 
 #include "memory_istream.hpp"
 #include "rust_istream.hpp"
