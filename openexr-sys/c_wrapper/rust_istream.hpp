@@ -11,7 +11,7 @@ public:
     RustIStream(
         void *reader,
         int (*read_ptr)(void *, char *, int, int *err_out),
-        int (*seekg_ptr)(void *, Imath::Int64, int *err_out)
+        int (*seekg_ptr)(void *, std::uint64_t, int *err_out)
     )
         : IStream{"Rust reader"},
         reader{reader},
@@ -30,7 +30,7 @@ private:
     void *reader;
     int (*read_ptr)(void *, char *, int, int *err_out);
     Imath::Int64 (*tellp_ptr)(void *);
-    int (*seekg_ptr)(void *, Imath::Int64, int *err_out);
+    int (*seekg_ptr)(void *, std::uint64_t, int *err_out);
     Imath::Int64 cursor_pos;
 };
 

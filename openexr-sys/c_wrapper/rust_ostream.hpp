@@ -10,7 +10,7 @@ public:
     RustOStream(
         void *writer,
         int (*write_ptr)(void *, const char *, int, int *err_out),
-        int (*seekp_ptr)(void *, Imath::Int64, int *err_out)
+        int (*seekp_ptr)(void *, std::uint64_t, int *err_out)
     )
         : OStream{"Rust StreamWriter"},
         writer{writer},
@@ -29,7 +29,7 @@ private:
     void *writer;
     int (*write_ptr)(void *, const char *, int, int *err_out);
     Imath::Int64 (*tellp_ptr)(void *);
-    int (*seekp_ptr)(void *, Imath::Int64, int *err_out);
+    int (*seekp_ptr)(void *, std::uint64_t, int *err_out);
     Imath::Int64 cursor_pos;
 };
 
