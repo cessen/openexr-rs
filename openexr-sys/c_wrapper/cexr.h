@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "ImfInt64.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -160,7 +159,7 @@ typedef struct CEXR_ChannelListIter CEXR_ChannelListIter;
 int CEXR_IStream_from_reader(
     void *reader,
     int (*read_ptr)(void *, char *, int, int *err_out),
-    int (*seekp_ptr)(void *, Imath::Int64, int *err_out),
+    int (*seekp_ptr)(void *, uint64_t, int *err_out),
     CEXR_IStream **out,
     const char **err_out
 );
@@ -170,7 +169,7 @@ void CEXR_IStream_delete(CEXR_IStream *stream);
 int CEXR_OStream_from_writer(
     void *writer,
     int (*write_ptr)(void *, const char *, int, int *err_out),
-    int (*seekp_ptr)(void *, Imath::Int64, int *err_out),
+    int (*seekp_ptr)(void *, uint64_t, int *err_out),
     CEXR_OStream **out,
     const char **err_out
 );
