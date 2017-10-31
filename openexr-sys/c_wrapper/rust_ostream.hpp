@@ -22,15 +22,15 @@ public:
     }
 
     virtual void write (const char c[/*n*/], int n);
-    virtual std::uint64_t tellp ();
-    virtual void seekp (std::uint64_t pos);
+    virtual Imath::Int64 tellp ();
+    virtual void seekp (Imath::Int64 pos);
 
 private:
     void *writer;
     int (*write_ptr)(void *, const char *, int, int *err_out);
-    std::uint64_t (*tellp_ptr)(void *);
+    Imath::Int64 (*tellp_ptr)(void *);
     int (*seekp_ptr)(void *, std::uint64_t, int *err_out);
-    std::uint64_t cursor_pos;
+    Imath::Int64 cursor_pos;
 };
 
 #endif
