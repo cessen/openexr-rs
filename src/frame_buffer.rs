@@ -403,7 +403,7 @@ unsafe impl<T: PixelData> PixelStruct for T {
 
 macro_rules! offset_of {
     ($ty:ty, $field:tt) => {
-        unsafe { &(*(ptr::null() as *const $ty)).$field as *const _ as usize }
+        unsafe { &(*(0 as *const $ty)).$field as *const _ as usize }
     }
 }
 
