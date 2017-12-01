@@ -14,7 +14,7 @@ fn memory_io() {
         let pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
 
         let mut exr_file = ScanlineOutputFile::new(&mut in_memory_buffer,
-                                                   &Header::new()
+                                                   Header::new()
                                                         .set_resolution(256, 256)
                                                         .add_channel("R", PixelType::FLOAT)
                                                         .add_channel("G", PixelType::FLOAT)
@@ -24,7 +24,7 @@ fn memory_io() {
         let mut fb = FrameBuffer::new(256, 256);
         fb.insert_channels(&["R", "G", "B"], &pixel_data);
 
-        exr_file.write_pixels(&mut fb).unwrap();
+        exr_file.write_pixels(&fb).unwrap();
     }
 
     // Read file from memory, and verify its contents
@@ -35,14 +35,14 @@ fn memory_io() {
         let (width, height) = exr_file.header().data_dimensions();
 
         // Make sure the image properties are the same.
-        assert!(width == 256);
-        assert!(height == 256);
-        for channel_name in ["R", "G", "B"].iter() {
+        assert_eq!(width, 256);
+        assert_eq!(height, 256);
+        for channel_name in &["R", "G", "B"] {
             let channel = exr_file
                 .header()
                 .get_channel(channel_name)
                 .expect(&format!("Didn't find channel {}.", channel_name));
-            assert!(channel.pixel_type == PixelType::FLOAT);
+            assert_eq!(channel.pixel_type, PixelType::FLOAT);
         }
 
         // Read in the pixel data.

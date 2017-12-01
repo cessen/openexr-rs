@@ -13,14 +13,14 @@ pub unsafe extern "C" fn read_stream<T: Read>(read: *mut c_void,
                                               -> c_int {
     let bytes = slice::from_raw_parts_mut(c as *mut u8, n as usize);
     match (*(read as *mut T)).read_exact(bytes) {
-        Ok(_) => return 0,
+        Ok(_) => 0,
         Err(e) => {
             if let Some(err) = e.raw_os_error() {
                 *err_out = err as c_int;
-                return 1;
+                1
             } else {
                 *err_out = 0;
-                return 2;
+                2
             }
         }
     }
@@ -37,14 +37,14 @@ pub unsafe extern "C" fn write_stream<T: Write>(writer: *mut c_void,
                                                 -> c_int {
     let bytes = slice::from_raw_parts(c as *const u8, n as usize);
     match (*(writer as *mut T)).write_all(bytes) {
-        Ok(_) => return 0,
+        Ok(_) => 0,
         Err(e) => {
             if let Some(err) = e.raw_os_error() {
                 *err_out = err as c_int;
-                return 1;
+                1
             } else {
                 *err_out = 0;
-                return 2;
+                2
             }
         }
     }
@@ -59,14 +59,14 @@ pub unsafe extern "C" fn seek_stream<T: Seek>(seeker: *mut c_void,
                                               err_out: *mut c_int)
                                               -> c_int {
     match (*(seeker as *mut T)).seek(SeekFrom::Start(pos)) {
-        Ok(_) => return 0,
+        Ok(_) => 0,
         Err(e) => {
             if let Some(err) = e.raw_os_error() {
                 *err_out = err as c_int;
-                return 1;
+                1
             } else {
                 *err_out = 0;
-                return 2;
+                2
             }
         }
     }

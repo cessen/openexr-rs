@@ -28,7 +28,7 @@ fn incremental_io() {
                                           .insert_channels(&["R", "G", "B"], &pixel_data))
             .unwrap();
 
-        for pixel in pixel_data.iter_mut() {
+        for pixel in &mut pixel_data {
             *pixel = (0.0, 1.0, 0.0);
         }
 
@@ -37,7 +37,7 @@ fn incremental_io() {
                                           .insert_channels(&["R", "G", "B"], &pixel_data))
             .unwrap();
 
-        for pixel in pixel_data.iter_mut() {
+        for pixel in &mut pixel_data {
             *pixel = (0.0, 0.0, 1.0);
         }
 
@@ -46,7 +46,7 @@ fn incremental_io() {
                                           .insert_channels(&["R", "G", "B"], &pixel_data))
             .unwrap();
 
-        for pixel in pixel_data.iter_mut() {
+        for pixel in &mut pixel_data {
             *pixel = (1.0, 1.0, 1.0);
         }
 
@@ -63,14 +63,14 @@ fn incremental_io() {
         let (width, height) = exr_file.header().data_dimensions();
 
         // Make sure the image properties are the same.
-        assert!(width == 256);
-        assert!(height == 256);
-        for channel_name in ["R", "G", "B"].iter() {
+        assert_eq!(width, 256);
+        assert_eq!(height, 256);
+        for channel_name in &["R", "G", "B"] {
             let channel = exr_file
                 .header()
                 .get_channel(channel_name)
                 .expect(&format!("Didn't find channel {}.", channel_name));
-            assert!(channel.pixel_type == PixelType::FLOAT);
+            assert_eq!(channel.pixel_type, PixelType::FLOAT);
         }
 
         // Read in the pixel data in four chunks, verifying that each has

@@ -1,4 +1,4 @@
-//! FrameBuffers point to and describe image data in memory to be used for
+//! A `FrameBuffer` points to and describes image data in memory to be used for
 //! input and output.
 //!
 //! FrameBuffers do not contain any image buffers themselves, they only point to
@@ -28,7 +28,7 @@
 
 use std::ffi::CString;
 use std::marker::PhantomData;
-use std::mem;
+use std::{mem, ptr};
 use std::ops::Deref;
 
 use half::f16;
