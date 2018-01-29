@@ -111,3 +111,13 @@ pub use frame_buffer::{FrameBuffer, FrameBufferMut};
 pub use header::{Header, Envmap};
 pub use input::InputFile;
 pub use output::ScanlineOutputFile;
+
+/// Set the number of worker threads to use for doing I/O.
+///
+/// If set to 0, multi-threaded I/O is disabled.
+pub fn set_global_thread_count(thread_count: i32) {
+    use openexr_sys::CEXR_set_global_thread_count;
+    unsafe {
+        CEXR_set_global_thread_count(thread_count);
+    }
+}

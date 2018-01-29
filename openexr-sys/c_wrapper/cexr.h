@@ -233,6 +233,7 @@ const CEXR_Header *CEXR_OutputFile_header(CEXR_OutputFile *file);
 int CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffer *framebuffer, const char **err_out);
 int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const char **err_out);
 
+void CEXR_set_global_thread_count(int thread_count);
 
 #ifdef __cplusplus
 }
