@@ -18,6 +18,10 @@ bool RustIStream::read(char c[/*n*/], int n) {
         // Some other kind of error
         throw std::runtime_error("error reading from input");
     }
+
+    // Note: this return value appears to never actually be used by
+    // OpenEXR.  *shrug*
+    return true;
 }
 
 Imath::Int64 RustIStream::tellg() {
