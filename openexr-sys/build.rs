@@ -1,5 +1,5 @@
 extern crate pkg_config;
-extern crate gcc;
+extern crate cc;
 
 use std::env;
 use std::path::PathBuf;
@@ -76,16 +76,16 @@ fn main() {
     }
 
     // Build C wrapper for OpenEXR
-    let mut gcc = gcc::Build::new();
-    gcc.cpp(true).include("c_wrapper");
+    let mut cc = cc::Build::new();
+    cc.cpp(true).include("c_wrapper");
     #[cfg(target_env = "msvc")]
-    gcc.flag("/std:c++14");
+    cc.flag("/std:c++14");
     #[cfg(not(target_env = "msvc"))]
-    gcc.flag("-std=c++0x");
+    cc.flag("-std=c++0x");
     for path in &include_paths {
-        gcc.include(path);
+        cc.include(path);
     }
-    gcc.file("c_wrapper/cexr.cpp")
+    cc.file("c_wrapper/cexr.cpp")
         .file("c_wrapper/rust_istream.cpp")
         .file("c_wrapper/memory_istream.cpp")
         .file("c_wrapper/rust_ostream.cpp")

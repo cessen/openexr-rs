@@ -2,6 +2,9 @@
 
 #include <cstdint>
 #include <cstddef>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #include "ImathVec.h"
 #include "ImathBox.h"
 #include "ImfPixelType.h"
@@ -12,6 +15,7 @@
 #include "ImfInputFile.h"
 #include "Iex.h"
 #include "ImfStandardAttributes.h"
+#pragma GCC diagnostic pop
 
 #include "memory_istream.hpp"
 #include "rust_istream.hpp"

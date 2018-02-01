@@ -28,7 +28,7 @@
 
 use std::ffi::CString;
 use std::marker::PhantomData;
-use std::{mem, ptr};
+use std::mem;
 use std::ops::Deref;
 
 use half::f16;
