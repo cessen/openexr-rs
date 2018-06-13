@@ -6,7 +6,7 @@ build = "build.rs"
 repository = "https://github.com/cessen/openexr-rs"
 license = "MIT"
 description = "FFI bindings for OpenEXR, used by the openexr crate"
-keywords = ["OpenEXR"]
+keywords = ["OpenEXR", "exr"]
 
 [lib]
 name = "openexr_sys"

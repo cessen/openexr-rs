@@ -10,7 +10,7 @@ documentation = "https://docs.rs/crate/openexr/"
 readme = "README.md"
 license = "MIT"
 description = "Rust bindings for OpenEXR"
-keywords = ["OpenEXR"]
+keywords = ["OpenEXR", "exr"]
 
 [dependencies]
 libc = "0.2"
