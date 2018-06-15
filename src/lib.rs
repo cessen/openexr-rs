@@ -5,10 +5,10 @@
 //! in the VFX and 3D animation industries.
 //!
 //! Although this wrapper's API differs a little from the C++ library, it tries
-//! not to differ wildly.  Therefore the [C++ OpenEXR documentation]
-//! (https://github.com/openexr/openexr/tree/develop/OpenEXR/doc) is still
-//! useful as an introduction and rough reference.  Moreover, the file format
-//! itself is also documented there.
+//! not to differ wildly.  Therefore the
+//! [C++ OpenEXR documentation](https://github.com/openexr/openexr/tree/develop/OpenEXR/doc)
+//! is still useful as an introduction and rough reference.  Moreover, the
+//! file format itself is also documented there.
 //!
 //! # Overview
 //!
