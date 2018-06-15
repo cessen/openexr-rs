@@ -46,7 +46,6 @@ including reading from memory.
 - [ ] Wrap deep data input/output.
 - [ ] Wrap multi-part file input/output.
 - [ ] Make simple convenience functions for basic RGB/RGBA input and output.
-      everything.
 - [ ] Make build system more robust to various platforms and configurations.
 
 ## License
