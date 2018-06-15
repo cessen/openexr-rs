@@ -15,7 +15,7 @@ keywords = ["OpenEXR", "exr"]
 [dependencies]
 libc = "0.2"
 half = "1"
-clippy = { version = "*", optional = true }
+clippy = { version = "0.0", optional = true }
 
 [dependencies.openexr-sys]
 path = "openexr-sys"
