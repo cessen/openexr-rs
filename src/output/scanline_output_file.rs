@@ -1,5 +1,5 @@
 use std::ffi::CStr;
-use std::io::{Write, Seek};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::ptr;
 
@@ -7,8 +7,8 @@ use openexr_sys::*;
 
 use error::*;
 use frame_buffer::FrameBuffer;
+use stream_io::{seek_stream, write_stream};
 use Header;
-use stream_io::{write_stream, seek_stream};
 
 /// Writes scanline OpenEXR files.
 ///
@@ -60,7 +60,8 @@ impl<'a> ScanlineOutputFile<'a> {
     ///
     /// Note: this seeks to byte 0 before writing.
     pub fn new<T: 'a>(writer: &'a mut T, header: &Header) -> Result<ScanlineOutputFile<'a>>
-        where T: Write + Seek
+    where
+        T: Write + Seek,
     {
         let ostream_ptr = {
             let write_ptr = write_stream::<T>;
@@ -69,11 +70,13 @@ impl<'a> ScanlineOutputFile<'a> {
             let mut error_out = ptr::null();
             let mut out = ptr::null_mut();
             let error = unsafe {
-                CEXR_OStream_from_writer(writer as *mut T as *mut _,
-                                         Some(write_ptr),
-                                         Some(seekp_ptr),
-                                         &mut out,
-                                         &mut error_out)
+                CEXR_OStream_from_writer(
+                    writer as *mut T as *mut _,
+                    Some(write_ptr),
+                    Some(seekp_ptr),
+                    &mut out,
+                    &mut error_out,
+                )
             };
 
             if error != 0 {
@@ -96,20 +99,20 @@ impl<'a> ScanlineOutputFile<'a> {
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
             Ok(ScanlineOutputFile {
-                   handle: out,
-                   header_ref: Header {
-                       // NOTE: We're casting to *mut here to satisfy the
-                       // field's type, but importantly we only return a
-                       // const & of the Header so it retains const semantics.
-                       handle: unsafe { CEXR_OutputFile_header(out) } as *mut CEXR_Header,
-                       owned: false,
-                       _phantom: PhantomData,
-                   },
-                   ostream: ostream_ptr,
-                   scanlines_written: 0,
-                   _phantom_1: PhantomData,
-                   _phantom_2: PhantomData,
-               })
+                handle: out,
+                header_ref: Header {
+                    // NOTE: We're casting to *mut here to satisfy the
+                    // field's type, but importantly we only return a
+                    // const & of the Header so it retains const semantics.
+                    handle: unsafe { CEXR_OutputFile_header(out) } as *mut CEXR_Header,
+                    owned: false,
+                    _phantom: PhantomData,
+                },
+                ostream: ostream_ptr,
+                scanlines_written: 0,
+                _phantom_1: PhantomData,
+                _phantom_2: PhantomData,
+            })
         }
     }
 
@@ -129,18 +132,22 @@ impl<'a> ScanlineOutputFile<'a> {
     pub fn write_pixels(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
         // Validation
         if self.scanlines_written != 0 {
-            return Err(Error::Generic(format!("{} scanlines have already been \
-                written, cannot do a full image write",
-                                              self.scanlines_written)));
+            return Err(Error::Generic(format!(
+                "{} scanlines have already been \
+                 written, cannot do a full image write",
+                self.scanlines_written
+            )));
         }
 
         if self.header().data_dimensions() != framebuffer.dimensions() {
-            return Err(Error::Generic(format!("framebuffer size {}x{} does not match \
-                                              image dimensions {}x{}",
-                                              framebuffer.dimensions().0,
-                                              framebuffer.dimensions().1,
-                                              self.header().data_dimensions().0,
-                                              self.header().data_dimensions().1)));
+            return Err(Error::Generic(format!(
+                "framebuffer size {}x{} does not match \
+                 image dimensions {}x{}",
+                framebuffer.dimensions().0,
+                framebuffer.dimensions().1,
+                self.header().data_dimensions().0,
+                self.header().data_dimensions().1
+            )));
         }
 
         self.header().validate_framebuffer_for_output(framebuffer)?;
@@ -158,9 +165,11 @@ impl<'a> ScanlineOutputFile<'a> {
 
         // Write out the image data
         let error = unsafe {
-            CEXR_OutputFile_write_pixels(self.handle,
-                                         framebuffer.dimensions().1 as i32,
-                                         &mut error_out)
+            CEXR_OutputFile_write_pixels(
+                self.handle,
+                framebuffer.dimensions().1 as i32,
+                &mut error_out,
+            )
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
@@ -197,25 +206,30 @@ impl<'a> ScanlineOutputFile<'a> {
     pub fn write_pixels_incremental(&mut self, framebuffer: &FrameBuffer) -> Result<()> {
         // Validation
         if self.scanlines_written == self.header().data_dimensions().1 {
-            return Err(Error::Generic("All scanlines have already been \
-                written, cannot do another incremental write"
-                                              .to_string()));
+            return Err(Error::Generic(
+                "All scanlines have already been \
+                 written, cannot do another incremental write"
+                    .to_string(),
+            ));
         }
 
-        if framebuffer.dimensions().1 >
-           (self.header().data_dimensions().1 - self.scanlines_written) {
-            return Err(Error::Generic(format!("framebuffer contains {} \
-                scanlines, but only {} scanlines remain to be written",
-                                              framebuffer.dimensions().1,
-                                              self.header().data_dimensions().1 -
-                                              self.scanlines_written)));
+        if framebuffer.dimensions().1 > (self.header().data_dimensions().1 - self.scanlines_written)
+        {
+            return Err(Error::Generic(format!(
+                "framebuffer contains {} \
+                 scanlines, but only {} scanlines remain to be written",
+                framebuffer.dimensions().1,
+                self.header().data_dimensions().1 - self.scanlines_written
+            )));
         }
 
         if framebuffer.dimensions().0 != self.header().data_dimensions().0 {
-            return Err(Error::Generic(format!("framebuffer width {} does not match\
-                                              image width {}",
-                                              framebuffer.dimensions().0,
-                                              self.header().data_dimensions().0)));
+            return Err(Error::Generic(format!(
+                "framebuffer width {} does not match\
+                 image width {}",
+                framebuffer.dimensions().0,
+                self.header().data_dimensions().0
+            )));
         }
 
         self.header().validate_framebuffer_for_output(framebuffer)?;
@@ -224,8 +238,10 @@ impl<'a> ScanlineOutputFile<'a> {
         let mut error_out = ptr::null();
 
         let error = unsafe {
-            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle(),
-                                                                       self.scanlines_written);
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(
+                framebuffer.handle(),
+                self.scanlines_written,
+            );
             let err = CEXR_OutputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
             CEXR_FrameBuffer_delete(offset_fb);
             err
@@ -237,9 +253,11 @@ impl<'a> ScanlineOutputFile<'a> {
 
         // Write out the image data
         let error = unsafe {
-            CEXR_OutputFile_write_pixels(self.handle,
-                                         framebuffer.dimensions().1 as i32,
-                                         &mut error_out)
+            CEXR_OutputFile_write_pixels(
+                self.handle,
+                framebuffer.dimensions().1 as i32,
+                &mut error_out,
+            )
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };

@@ -2,7 +2,7 @@ extern crate openexr;
 
 use std::io::Cursor;
 
-use openexr::{FrameBuffer, FrameBufferMut, Header, ScanlineOutputFile, InputFile, PixelType};
+use openexr::{FrameBuffer, FrameBufferMut, Header, InputFile, PixelType, ScanlineOutputFile};
 
 #[test]
 fn memory_io() {
@@ -13,13 +13,14 @@ fn memory_io() {
     {
         let pixel_data = vec![(0.82f32, 1.78f32, 0.21f32); 256 * 256];
 
-        let mut exr_file = ScanlineOutputFile::new(&mut in_memory_buffer,
-                                                   Header::new()
-                                                        .set_resolution(256, 256)
-                                                        .add_channel("R", PixelType::FLOAT)
-                                                        .add_channel("G", PixelType::FLOAT)
-                                                        .add_channel("B", PixelType::FLOAT))
-                .unwrap();
+        let mut exr_file = ScanlineOutputFile::new(
+            &mut in_memory_buffer,
+            Header::new()
+                .set_resolution(256, 256)
+                .add_channel("R", PixelType::FLOAT)
+                .add_channel("G", PixelType::FLOAT)
+                .add_channel("B", PixelType::FLOAT),
+        ).unwrap();
 
         let mut fb = FrameBuffer::new(256, 256);
         fb.insert_channels(&["R", "G", "B"], &pixel_data);

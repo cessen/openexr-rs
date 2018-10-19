@@ -8,8 +8,9 @@ use openexr::{FrameBufferMut, InputFile, PixelType};
 
 fn main() {
     // Open the EXR file and get its dimensions.
-    let mut file = File::open(Path::new(&env::args_os().nth(1).expect("argument required")))
-        .unwrap();
+    let mut file = File::open(Path::new(
+        &env::args_os().nth(1).expect("argument required"),
+    )).unwrap();
     let mut exr_file = InputFile::new(&mut file).unwrap();
     let (width, height) = exr_file.header().data_dimensions();
 
@@ -23,7 +24,7 @@ fn main() {
     }
 
     // Create our pixel data buffer and load the data from the file
-    let mut pixel_data: Vec<(f32, f32, f32)> = vec![(0.0, 0.0, 0.0); (width*height) as usize];
+    let mut pixel_data: Vec<(f32, f32, f32)> = vec![(0.0, 0.0, 0.0); (width * height) as usize];
 
     {
         let mut fb = {

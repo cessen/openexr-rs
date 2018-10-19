@@ -1,5 +1,5 @@
-extern crate pkg_config;
 extern crate cc;
+extern crate pkg_config;
 
 use std::env;
 use std::path::PathBuf;
@@ -29,11 +29,12 @@ fn main() {
                 .probe("OpenEXR")
                 .map(|openexr_cfg| openexr_cfg.include_paths.clone())
                 .map_err(|err| {
-                    panic!("couldn't find OpenEXR: environment variable \
-                            OPENEXR_DIR is unset and pkg-config failed: {}",
-                           err)
-                })
-                .unwrap();
+                    panic!(
+                        "couldn't find OpenEXR: environment variable \
+                         OPENEXR_DIR is unset and pkg-config failed: {}",
+                        err
+                    )
+                }).unwrap();
 
             include_paths.extend_from_slice(&paths);
         }
@@ -70,9 +71,11 @@ fn main() {
         println!("cargo:rustc-link-search=native={}/lib", path);
         println!("cargo:rustc-link-lib=static=zlibstatic");
     } else if let Err(err) = pkg_config::probe_library("zlib") {
-        panic!("couldn't find zlib: environment variable ZLIB_DIR is unset \
-            and pkg-config failed: {}",
-               err);
+        panic!(
+            "couldn't find zlib: environment variable ZLIB_DIR is unset \
+             and pkg-config failed: {}",
+            err
+        );
     }
 
     // Build C wrapper for OpenEXR

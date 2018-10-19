@@ -11,8 +11,8 @@ use openexr_sys::*;
 
 use error::*;
 use frame_buffer::FrameBufferMut;
-use Header;
 use stream_io::{read_stream, seek_stream};
+use Header;
 
 /// Reads any kind of OpenEXR file.
 ///
@@ -62,7 +62,8 @@ impl<'a> InputFile<'a> {
     ///
     /// Note: this seeks to byte 0 before reading.
     pub fn new<T: 'a>(reader: &mut T) -> Result<InputFile>
-        where T: Read + Seek
+    where
+        T: Read + Seek,
     {
         let istream_ptr = {
             let read_ptr = read_stream::<T>;
@@ -71,11 +72,13 @@ impl<'a> InputFile<'a> {
             let mut error_out = ptr::null();
             let mut out = ptr::null_mut();
             let error = unsafe {
-                CEXR_IStream_from_reader(reader as *mut T as *mut _,
-                                         Some(read_ptr),
-                                         Some(seekp_ptr),
-                                         &mut out,
-                                         &mut error_out)
+                CEXR_IStream_from_reader(
+                    reader as *mut T as *mut _,
+                    Some(read_ptr),
+                    Some(seekp_ptr),
+                    &mut out,
+                    &mut error_out,
+                )
             };
 
             if error != 0 {
@@ -94,19 +97,19 @@ impl<'a> InputFile<'a> {
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
             Ok(InputFile {
-                   handle: out,
-                   header_ref: Header {
-                       // NOTE: We're casting to *mut here to satisfy the
-                       // field's type, but importantly we only return a
-                       // const & of the Header so it retains const semantics.
-                       handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
-                       owned: false,
-                       _phantom: PhantomData,
-                   },
-                   istream: istream_ptr,
-                   _phantom_1: PhantomData,
-                   _phantom_2: PhantomData,
-               })
+                handle: out,
+                header_ref: Header {
+                    // NOTE: We're casting to *mut here to satisfy the
+                    // field's type, but importantly we only return a
+                    // const & of the Header so it retains const semantics.
+                    handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
+                    owned: false,
+                    _phantom: PhantomData,
+                },
+                istream: istream_ptr,
+                _phantom_1: PhantomData,
+                _phantom_2: PhantomData,
+            })
         }
     }
 
@@ -118,9 +121,11 @@ impl<'a> InputFile<'a> {
     /// into intermediate buffers.
     pub fn from_slice(slice: &[u8]) -> Result<InputFile> {
         let istream_ptr = unsafe {
-            CEXR_IStream_from_memory(b"in-memory data\0".as_ptr() as *const c_char,
-                                     slice.as_ptr() as *mut u8 as *mut c_char,
-                                     slice.len())
+            CEXR_IStream_from_memory(
+                b"in-memory data\0".as_ptr() as *const c_char,
+                slice.as_ptr() as *mut u8 as *mut c_char,
+                slice.len(),
+            )
         };
 
         let mut error_out = ptr::null();
@@ -131,22 +136,21 @@ impl<'a> InputFile<'a> {
             Err(Error::Generic(msg.to_string_lossy().into_owned()))
         } else {
             Ok(InputFile {
-                   handle: out,
-                   header_ref: Header {
-                       // NOTE: We're casting to *mut here to satisfy the
-                       // field's type, but importantly we only return a
-                       // const & of the Header so it retains const semantics.
-                       handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
-                       owned: false,
-                       _phantom: PhantomData,
-                   },
-                   istream: istream_ptr,
-                   _phantom_1: PhantomData,
-                   _phantom_2: PhantomData,
-               })
+                handle: out,
+                header_ref: Header {
+                    // NOTE: We're casting to *mut here to satisfy the
+                    // field's type, but importantly we only return a
+                    // const & of the Header so it retains const semantics.
+                    handle: unsafe { CEXR_InputFile_header(out) } as *mut CEXR_Header,
+                    owned: false,
+                    _phantom: PhantomData,
+                },
+                istream: istream_ptr,
+                _phantom_1: PhantomData,
+                _phantom_2: PhantomData,
+            })
         }
     }
-
 
     /// Reads the entire image into `framebuffer` at once.
     ///
@@ -169,12 +173,14 @@ impl<'a> InputFile<'a> {
 
         // Validation
         if self.header().data_dimensions() != framebuffer.dimensions() {
-            return Err(Error::Generic(format!("framebuffer size {}x{} does not match \
-                                              image dimensions {}x{}",
-                                              framebuffer.dimensions().0,
-                                              framebuffer.dimensions().1,
-                                              self.header().data_dimensions().0,
-                                              self.header().data_dimensions().1)));
+            return Err(Error::Generic(format!(
+                "framebuffer size {}x{} does not match \
+                 image dimensions {}x{}",
+                framebuffer.dimensions().0,
+                framebuffer.dimensions().1,
+                self.header().data_dimensions().0,
+                self.header().data_dimensions().1
+            )));
         }
 
         self.header().validate_framebuffer_for_input(framebuffer)?;
@@ -192,10 +198,12 @@ impl<'a> InputFile<'a> {
 
         // Read the image data
         let error = unsafe {
-            CEXR_InputFile_read_pixels(self.handle,
-                                       self.header().data_window().min.y,
-                                       self.header().data_window().max.y,
-                                       &mut error_out)
+            CEXR_InputFile_read_pixels(
+                self.handle,
+                self.header().data_window().min.y,
+                self.header().data_window().max.y,
+                &mut error_out,
+            )
         };
         if error != 0 {
             let msg = unsafe { CStr::from_ptr(error_out) };
@@ -231,10 +239,11 @@ impl<'a> InputFile<'a> {
     ///   `framebuffer`.
     ///   from `starting_scanline`.
     /// * There is an I/O error.
-    pub fn read_pixels_partial(&mut self,
-                               starting_scanline: u32,
-                               framebuffer: &mut FrameBufferMut)
-                               -> Result<()> {
+    pub fn read_pixels_partial(
+        &mut self,
+        starting_scanline: u32,
+        framebuffer: &mut FrameBufferMut,
+    ) -> Result<()> {
         // ^^^ NOTE: it's not obvious, but this does indeed need to take self as
         // &mut to be safe.  Even though it is not conceptually modifying the
         // thing (typically a file) that it's reading from, it still has a
@@ -242,38 +251,45 @@ impl<'a> InputFile<'a> {
         // to be unique to avoid unsafe aliasing.
 
         // Validation
-        assert!(starting_scanline < self.header().data_dimensions().1,
-                "Cannot start reading past last scanline.");
+        assert!(
+            starting_scanline < self.header().data_dimensions().1,
+            "Cannot start reading past last scanline."
+        );
 
         if framebuffer.dimensions().1 > (self.header().data_dimensions().1 - starting_scanline) {
-            return Err(Error::Generic(format!("framebuffer contains {} \
-                scanlines, but only {} scanlines are available to read from \
-                the given starting scanline",
-                                              framebuffer.dimensions().1,
-                                              self.header().data_dimensions().1 -
-                                              starting_scanline)));
+            return Err(Error::Generic(format!(
+                "framebuffer contains {} \
+                 scanlines, but only {} scanlines are available to read from \
+                 the given starting scanline",
+                framebuffer.dimensions().1,
+                self.header().data_dimensions().1 - starting_scanline
+            )));
         }
 
         if self.header().data_dimensions().0 != framebuffer.dimensions().0 {
-            return Err(Error::Generic(format!("framebuffer width {} does not match\
-                                              image width {}",
-                                              framebuffer.dimensions().0,
-                                              self.header().data_dimensions().0)));
+            return Err(Error::Generic(format!(
+                "framebuffer width {} does not match\
+                 image width {}",
+                framebuffer.dimensions().0,
+                self.header().data_dimensions().0
+            )));
         }
 
         self.header().validate_framebuffer_for_input(framebuffer)?;
 
         // Set up the framebuffer with the image
         let start_scanline = self.header().data_window().min.y + starting_scanline as i32;
-        let end_scanline = self.header().data_window().min.y +
-                           (starting_scanline + framebuffer.dimensions().1) as i32 -
-                           1;
+        let end_scanline = self.header().data_window().min.y
+            + (starting_scanline + framebuffer.dimensions().1) as i32
+            - 1;
 
         let mut error_out = ptr::null();
 
         let error = unsafe {
-            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(framebuffer.handle_mut(),
-                                                                       starting_scanline);
+            let offset_fb = CEXR_FrameBuffer_copy_and_offset_scanlines(
+                framebuffer.handle_mut(),
+                starting_scanline,
+            );
             let err = CEXR_InputFile_set_framebuffer(self.handle, offset_fb, &mut error_out);
             CEXR_FrameBuffer_delete(offset_fb);
             err

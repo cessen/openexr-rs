@@ -2,7 +2,7 @@ extern crate openexr;
 
 use std::io::Cursor;
 
-use openexr::{FrameBuffer, FrameBufferMut, Header, ScanlineOutputFile, InputFile, PixelType};
+use openexr::{FrameBuffer, FrameBufferMut, Header, InputFile, PixelType, ScanlineOutputFile};
 
 #[test]
 fn incremental_io() {
@@ -11,54 +11,54 @@ fn incremental_io() {
 
     // Write file to memory
     {
-        let mut exr_file = ScanlineOutputFile::new(&mut in_memory_buffer,
-                                                   &Header::new()
-                                                        .set_resolution(256, 256)
-                                                        .add_channel("R", PixelType::FLOAT)
-                                                        .add_channel("G", PixelType::FLOAT)
-                                                        .add_channel("B", PixelType::FLOAT))
-                .unwrap();
+        let mut exr_file = ScanlineOutputFile::new(
+            &mut in_memory_buffer,
+            &Header::new()
+                .set_resolution(256, 256)
+                .add_channel("R", PixelType::FLOAT)
+                .add_channel("G", PixelType::FLOAT)
+                .add_channel("B", PixelType::FLOAT),
+        ).unwrap();
 
         // Write incrementally with four calls, using different colors
         // for each call.
         let mut pixel_data = vec![(1.0f32, 0.0f32, 0.0f32); 256 * 64];
 
         exr_file
-            .write_pixels_incremental(FrameBuffer::new(256, 64)
-                                          .insert_channels(&["R", "G", "B"], &pixel_data))
-            .unwrap();
+            .write_pixels_incremental(
+                FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
+            ).unwrap();
 
         for pixel in &mut pixel_data {
             *pixel = (0.0, 1.0, 0.0);
         }
 
         exr_file
-            .write_pixels_incremental(FrameBuffer::new(256, 64)
-                                          .insert_channels(&["R", "G", "B"], &pixel_data))
-            .unwrap();
+            .write_pixels_incremental(
+                FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
+            ).unwrap();
 
         for pixel in &mut pixel_data {
             *pixel = (0.0, 0.0, 1.0);
         }
 
         exr_file
-            .write_pixels_incremental(FrameBuffer::new(256, 64)
-                                          .insert_channels(&["R", "G", "B"], &pixel_data))
-            .unwrap();
+            .write_pixels_incremental(
+                FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
+            ).unwrap();
 
         for pixel in &mut pixel_data {
             *pixel = (1.0, 1.0, 1.0);
         }
 
         exr_file
-            .write_pixels_incremental(FrameBuffer::new(256, 64)
-                                          .insert_channels(&["R", "G", "B"], &pixel_data))
-            .unwrap();
+            .write_pixels_incremental(
+                FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
+            ).unwrap();
     }
 
     // Read file from memory, and verify its contents
     {
-
         let mut exr_file = InputFile::from_slice(in_memory_buffer.get_ref()).unwrap();
         let (width, height) = exr_file.header().data_dimensions();
 
@@ -77,41 +77,41 @@ fn incremental_io() {
         // the data we expect.
         let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); 256 * 64];
         exr_file
-            .read_pixels_partial(0,
-                                 FrameBufferMut::new(256, 64)
-                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
-                                                      &mut pixel_data))
-            .unwrap();
+            .read_pixels_partial(
+                0,
+                FrameBufferMut::new(256, 64)
+                    .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
+            ).unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (1.0, 0.0, 0.0));
         }
 
         exr_file
-            .read_pixels_partial(64,
-                                 FrameBufferMut::new(256, 64)
-                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
-                                                      &mut pixel_data))
-            .unwrap();
+            .read_pixels_partial(
+                64,
+                FrameBufferMut::new(256, 64)
+                    .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
+            ).unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (0.0, 1.0, 0.0));
         }
 
         exr_file
-            .read_pixels_partial(128,
-                                 FrameBufferMut::new(256, 64)
-                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
-                                                      &mut pixel_data))
-            .unwrap();
+            .read_pixels_partial(
+                128,
+                FrameBufferMut::new(256, 64)
+                    .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
+            ).unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (0.0, 0.0, 1.0));
         }
 
         exr_file
-            .read_pixels_partial(192,
-                                 FrameBufferMut::new(256, 64)
-                                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)],
-                                                      &mut pixel_data))
-            .unwrap();
+            .read_pixels_partial(
+                192,
+                FrameBufferMut::new(256, 64)
+                    .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
+            ).unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (1.0, 1.0, 1.0));
         }

@@ -87,7 +87,6 @@
 //! }
 //! ```
 
-
 #![warn(missing_docs)]
 #![cfg_attr(feature = "unstable", feature(plugin))]
 #![cfg_attr(feature = "unstable", plugin(clippy))]
@@ -105,9 +104,9 @@ pub mod header;
 pub mod input;
 pub mod output;
 
-pub use cexr_type_aliases::{PixelType, Box2i};
-pub use error::{Result, Error};
+pub use cexr_type_aliases::{Box2i, PixelType};
+pub use error::{Error, Result};
 pub use frame_buffer::{FrameBuffer, FrameBufferMut};
-pub use header::{Header, Envmap};
+pub use header::{Envmap, Header};
 pub use input::InputFile;
 pub use output::ScanlineOutputFile;

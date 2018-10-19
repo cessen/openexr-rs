@@ -38,7 +38,6 @@ use openexr_sys::*;
 
 use cexr_type_aliases::*;
 
-
 /// Points to and describes in-memory image data for reading.
 pub struct FrameBuffer<'a> {
     handle: *mut CEXR_FrameBuffer,
@@ -50,9 +49,11 @@ pub struct FrameBuffer<'a> {
 impl<'a> FrameBuffer<'a> {
     /// Creates an empty frame buffer with the given dimensions in pixels.
     pub fn new(width: u32, height: u32) -> Self {
-        assert!(width > 0 && height > 0,
-                "FrameBuffers must be non-zero size in \
-            both dimensions.");
+        assert!(
+            width > 0 && height > 0,
+            "FrameBuffers must be non-zero size in \
+             both dimensions."
+        );
         FrameBuffer {
             handle: unsafe { CEXR_FrameBuffer_new() },
             dimensions: (width, height),
@@ -75,20 +76,24 @@ impl<'a> FrameBuffer<'a> {
     /// of the `FrameBuffer`.
     pub fn insert_channel<T: PixelData>(&mut self, name: &str, data: &'a [T]) -> &mut Self {
         if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
-            panic!("data size of {} elements cannot back {}x{} framebuffer",
-                   data.len(),
-                   self.dimensions.0,
-                   self.dimensions.1);
+            panic!(
+                "data size of {} elements cannot back {}x{} framebuffer",
+                data.len(),
+                self.dimensions.0,
+                self.dimensions.1
+            );
         }
         let width = self.dimensions.0;
         unsafe {
-            self.insert_raw(name,
-                            T::pixel_type(),
-                            data.as_ptr() as *const c_char,
-                            (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
-                            (1, 1),
-                            0.0,
-                            (false, false))
+            self.insert_raw(
+                name,
+                T::pixel_type(),
+                data.as_ptr() as *const c_char,
+                (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
+                (1, 1),
+                0.0,
+                (false, false),
+            )
         };
         self
     }
@@ -104,21 +109,25 @@ impl<'a> FrameBuffer<'a> {
     /// of the `FrameBuffer`.
     pub fn insert_channels<T: PixelStruct>(&mut self, names: &[&str], data: &'a [T]) -> &mut Self {
         if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
-            panic!("data size of {} elements cannot back {}x{} framebuffer",
-                   data.len(),
-                   self.dimensions.0,
-                   self.dimensions.1);
+            panic!(
+                "data size of {} elements cannot back {}x{} framebuffer",
+                data.len(),
+                self.dimensions.0,
+                self.dimensions.1
+            );
         }
         let width = self.dimensions.0;
         for (name, (ty, offset)) in names.iter().zip(T::channels()) {
             unsafe {
-                self.insert_raw(name,
-                                ty,
-                                (data.as_ptr() as *const c_char).offset(offset as isize),
-                                (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
-                                (1, 1),
-                                0.0,
-                                (false, false))
+                self.insert_raw(
+                    name,
+                    ty,
+                    (data.as_ptr() as *const c_char).offset(offset as isize),
+                    (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
+                    (1, 1),
+                    0.0,
+                    (false, false),
+                )
             };
         }
         self
@@ -132,27 +141,30 @@ impl<'a> FrameBuffer<'a> {
     /// This method corresponds directly to constructing and then inserting a
     /// "Slice" in the C++ OpenEXR library.  Please see its documentation for
     /// details.
-    pub unsafe fn insert_raw(&mut self,
-                             name: &str,
-                             type_: PixelType,
-                             base: *const c_char,
-                             stride: (usize, usize),
-                             sampling: (c_int, c_int),
-                             fill_value: f64,
-                             tile_coords: (bool, bool))
-                             -> &mut Self {
+    pub unsafe fn insert_raw(
+        &mut self,
+        name: &str,
+        type_: PixelType,
+        base: *const c_char,
+        stride: (usize, usize),
+        sampling: (c_int, c_int),
+        fill_value: f64,
+        tile_coords: (bool, bool),
+    ) -> &mut Self {
         let c_name = CString::new(name).unwrap();
-        CEXR_FrameBuffer_insert(self.handle,
-                                c_name.as_ptr(),
-                                type_,
-                                base as *mut _,
-                                stride.0,
-                                stride.1,
-                                sampling.0,
-                                sampling.1,
-                                fill_value,
-                                tile_coords.0 as c_int,
-                                tile_coords.1 as c_int);
+        CEXR_FrameBuffer_insert(
+            self.handle,
+            c_name.as_ptr(),
+            type_,
+            base as *mut _,
+            stride.0,
+            stride.1,
+            sampling.0,
+            sampling.1,
+            fill_value,
+            tile_coords.0 as c_int,
+            tile_coords.1 as c_int,
+        );
         self
     }
 
@@ -166,8 +178,8 @@ impl<'a> FrameBuffer<'a> {
     pub(crate) fn _get_channel(&self, name: &str) -> Option<Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
         let mut channel = unsafe { mem::uninitialized() };
-        if unsafe { CEXR_FrameBuffer_get_channel(self.handle, c_name.as_ptr(), &mut channel) } ==
-           0 {
+        if unsafe { CEXR_FrameBuffer_get_channel(self.handle, c_name.as_ptr(), &mut channel) } == 0
+        {
             Some(channel)
         } else {
             None
@@ -191,7 +203,9 @@ pub struct FrameBufferMut<'a> {
 impl<'a> FrameBufferMut<'a> {
     /// Creates an empty frame buffer with the given dimensions in pixels.
     pub fn new(width: u32, height: u32) -> Self {
-        FrameBufferMut { frame_buffer: FrameBuffer::new(width, height) }
+        FrameBufferMut {
+            frame_buffer: FrameBuffer::new(width, height),
+        }
     }
 
     /// Insert a single channel.
@@ -203,26 +217,31 @@ impl<'a> FrameBufferMut<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_channel<T: PixelData>(&mut self,
-                                        name: &str,
-                                        fill: f64,
-                                        data: &'a mut [T])
-                                        -> &mut Self {
+    pub fn insert_channel<T: PixelData>(
+        &mut self,
+        name: &str,
+        fill: f64,
+        data: &'a mut [T],
+    ) -> &mut Self {
         if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
-            panic!("data size of {} elements cannot back {}x{} framebuffer",
-                   data.len(),
-                   self.dimensions.0,
-                   self.dimensions.1);
+            panic!(
+                "data size of {} elements cannot back {}x{} framebuffer",
+                data.len(),
+                self.dimensions.0,
+                self.dimensions.1
+            );
         }
         let width = self.dimensions.0;
         unsafe {
-            self.insert_raw(name,
-                            T::pixel_type(),
-                            data.as_mut_ptr() as *mut c_char,
-                            (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
-                            (1, 1),
-                            fill,
-                            (false, false))
+            self.insert_raw(
+                name,
+                T::pixel_type(),
+                data.as_mut_ptr() as *mut c_char,
+                (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
+                (1, 1),
+                fill,
+                (false, false),
+            )
         };
         self
     }
@@ -238,26 +257,31 @@ impl<'a> FrameBufferMut<'a> {
     /// `data` is the memory for the channel and should contain precisely
     /// width * height elements, where width and height are the dimensions
     /// of the `FrameBuffer`.
-    pub fn insert_channels<T: PixelStruct>(&mut self,
-                                           names_and_fills: &[(&str, f64)],
-                                           data: &'a mut [T])
-                                           -> &mut Self {
+    pub fn insert_channels<T: PixelStruct>(
+        &mut self,
+        names_and_fills: &[(&str, f64)],
+        data: &'a mut [T],
+    ) -> &mut Self {
         if data.len() != self.dimensions.0 as usize * self.dimensions.1 as usize {
-            panic!("data size of {} elements cannot back {}x{} framebuffer",
-                   data.len(),
-                   self.dimensions.0,
-                   self.dimensions.1);
+            panic!(
+                "data size of {} elements cannot back {}x{} framebuffer",
+                data.len(),
+                self.dimensions.0,
+                self.dimensions.1
+            );
         }
         let width = self.dimensions.0;
         for (&(name, fill), (ty, offset)) in names_and_fills.iter().zip(T::channels()) {
             unsafe {
-                self.insert_raw(name,
-                                ty,
-                                (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
-                                (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
-                                (1, 1),
-                                fill,
-                                (false, false))
+                self.insert_raw(
+                    name,
+                    ty,
+                    (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
+                    (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
+                    (1, 1),
+                    fill,
+                    (false, false),
+                )
             };
         }
         self
@@ -271,27 +295,30 @@ impl<'a> FrameBufferMut<'a> {
     /// This method corresponds directly to constructing and then inserting a
     /// "Slice" in the C++ OpenEXR library.  Please see its documentation for
     /// details.
-    pub unsafe fn insert_raw(&mut self,
-                             name: &str,
-                             type_: PixelType,
-                             base: *mut c_char,
-                             stride: (usize, usize),
-                             sampling: (c_int, c_int),
-                             fill_value: f64,
-                             tile_coords: (bool, bool))
-                             -> &mut Self {
+    pub unsafe fn insert_raw(
+        &mut self,
+        name: &str,
+        type_: PixelType,
+        base: *mut c_char,
+        stride: (usize, usize),
+        sampling: (c_int, c_int),
+        fill_value: f64,
+        tile_coords: (bool, bool),
+    ) -> &mut Self {
         let c_name = CString::new(name).unwrap();
-        CEXR_FrameBuffer_insert(self.handle,
-                                c_name.as_ptr(),
-                                type_,
-                                base,
-                                stride.0,
-                                stride.1,
-                                sampling.0,
-                                sampling.1,
-                                fill_value,
-                                tile_coords.0 as c_int,
-                                tile_coords.1 as c_int);
+        CEXR_FrameBuffer_insert(
+            self.handle,
+            c_name.as_ptr(),
+            type_,
+            base,
+            stride.0,
+            stride.1,
+            sampling.0,
+            sampling.1,
+            fill_value,
+            tile_coords.0 as c_int,
+            tile_coords.1 as c_int,
+        );
         self
     }
 
@@ -389,8 +416,8 @@ pub unsafe trait PixelStruct {
 }
 
 /// An iterator over the types and offsets of the channels in a `PixelStruct`.
-pub type PixelStructChannelIter = ::std::iter::Map<::std::ops::Range<usize>,
-                                                   fn(usize) -> (PixelType, usize)>;
+pub type PixelStructChannelIter =
+    ::std::iter::Map<::std::ops::Range<usize>, fn(usize) -> (PixelType, usize)>;
 
 unsafe impl<T: PixelData> PixelStruct for T {
     fn channel_count() -> usize {
@@ -404,7 +431,7 @@ unsafe impl<T: PixelData> PixelStruct for T {
 macro_rules! offset_of {
     ($ty:ty, $field:tt) => {
         unsafe { &(*(0 as *const $ty)).$field as *const _ as usize }
-    }
+    };
 }
 
 unsafe impl<A: PixelData> PixelStruct for (A,) {
@@ -417,49 +444,56 @@ unsafe impl<A: PixelData> PixelStruct for (A,) {
 }
 
 unsafe impl<A, B> PixelStruct for (A, B)
-    where A: PixelData,
-          B: PixelData
+where
+    A: PixelData,
+    B: PixelData,
 {
     fn channel_count() -> usize {
         2
     }
     fn channel(i: usize) -> (PixelType, usize) {
-        [(A::pixel_type(), offset_of!(Self, 0)),
-         (B::pixel_type(), offset_of!(Self, 1))][i]
+        [
+            (A::pixel_type(), offset_of!(Self, 0)),
+            (B::pixel_type(), offset_of!(Self, 1)),
+        ][i]
     }
 }
 
 unsafe impl<A, B, C> PixelStruct for (A, B, C)
-    where A: PixelData,
-          B: PixelData,
-          C: PixelData
+where
+    A: PixelData,
+    B: PixelData,
+    C: PixelData,
 {
     fn channel_count() -> usize {
         3
     }
     fn channel(i: usize) -> (PixelType, usize) {
-        [(A::pixel_type(), offset_of!(Self, 0)),
-         (B::pixel_type(), offset_of!(Self, 1)),
-         (C::pixel_type(), offset_of!(Self, 2))]
-            [i]
+        [
+            (A::pixel_type(), offset_of!(Self, 0)),
+            (B::pixel_type(), offset_of!(Self, 1)),
+            (C::pixel_type(), offset_of!(Self, 2)),
+        ][i]
     }
 }
 
 unsafe impl<A, B, C, D> PixelStruct for (A, B, C, D)
-    where A: PixelData,
-          B: PixelData,
-          C: PixelData,
-          D: PixelData
+where
+    A: PixelData,
+    B: PixelData,
+    C: PixelData,
+    D: PixelData,
 {
     fn channel_count() -> usize {
         4
     }
     fn channel(i: usize) -> (PixelType, usize) {
-        [(A::pixel_type(), offset_of!(Self, 0)),
-         (B::pixel_type(), offset_of!(Self, 1)),
-         (C::pixel_type(), offset_of!(Self, 2)),
-         (D::pixel_type(), offset_of!(Self, 3))]
-            [i]
+        [
+            (A::pixel_type(), offset_of!(Self, 0)),
+            (B::pixel_type(), offset_of!(Self, 1)),
+            (C::pixel_type(), offset_of!(Self, 2)),
+            (D::pixel_type(), offset_of!(Self, 3)),
+        ][i]
     }
 }
 

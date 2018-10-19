@@ -7,12 +7,11 @@ use std::marker::PhantomData;
 use openexr_sys::*;
 
 use cexr_type_aliases::*;
-use error::{Result, Error};
+use error::{Error, Result};
 use frame_buffer::{FrameBuffer, FrameBufferMut};
 use libc::c_int;
 
 pub use cexr_type_aliases::{Channel, Compression, LineOrder};
-
 
 /// Represents an OpenEXR file header.
 ///
@@ -56,13 +55,15 @@ impl Header {
             let line_order = LineOrder::INCREASING_Y;
             let compression = Compression::PIZ_COMPRESSION;
             unsafe {
-                CEXR_Header_new(&display_window,
-                                &data_window,
-                                pixel_aspect_ratio,
-                                &screen_window_center,
-                                screen_window_width,
-                                line_order,
-                                compression)
+                CEXR_Header_new(
+                    &display_window,
+                    &data_window,
+                    pixel_aspect_ratio,
+                    &screen_window_center,
+                    screen_window_width,
+                    line_order,
+                    compression,
+                )
             }
         };
 
@@ -129,11 +130,13 @@ impl Header {
     /// Sets the screen window center.
     pub fn set_screen_window_center(&mut self, center: (f32, f32)) -> &mut Self {
         unsafe {
-            CEXR_Header_set_screen_window_center(self.handle,
-                                                 CEXR_V2f {
-                                                     x: center.0,
-                                                     y: center.1,
-                                                 });
+            CEXR_Header_set_screen_window_center(
+                self.handle,
+                CEXR_V2f {
+                    x: center.0,
+                    y: center.1,
+                },
+            );
         }
         self
     }
@@ -168,13 +171,15 @@ impl Header {
     /// defaults for the details.  Specifically: sampling is set to (1, 1)
     /// and p_linear is set to true.
     pub fn add_channel(&mut self, name: &str, pixel_type: PixelType) -> &mut Self {
-        self.add_channel_detailed(name,
-                                  Channel {
-                                      pixel_type: pixel_type,
-                                      x_sampling: 1,
-                                      y_sampling: 1,
-                                      p_linear: true,
-                                  })
+        self.add_channel_detailed(
+            name,
+            Channel {
+                pixel_type: pixel_type,
+                x_sampling: 1,
+                y_sampling: 1,
+                p_linear: true,
+            },
+        )
     }
 
     /// Adds a channel, specifying full details.
@@ -187,7 +192,10 @@ impl Header {
     /// Convenience method for the dimensions of the data window.
     pub fn data_dimensions(&self) -> (u32, u32) {
         let window = self.data_window();
-        ((window.max.x - window.min.x + 1) as u32, (window.max.y - window.min.y + 1) as u32)
+        (
+            (window.max.x - window.min.x + 1) as u32,
+            (window.max.y - window.min.y + 1) as u32,
+        )
     }
 
     /// Access to the data window.
@@ -249,17 +257,20 @@ impl Header {
             if let Some(fb_channel) = framebuffer._get_channel(name) {
                 Header::validate_channel(name, &h_channel, &fb_channel)?;
             } else {
-                return Err(Error::Generic(format!("FrameBuffer is missing \
-                    channel '{}' expected by Header",
-                                                  name)));
+                return Err(Error::Generic(format!(
+                    "FrameBuffer is missing \
+                     channel '{}' expected by Header",
+                    name
+                )));
             }
         }
         Ok(())
     }
 
-    pub(crate) fn validate_framebuffer_for_input(&self,
-                                                 framebuffer: &FrameBufferMut)
-                                                 -> Result<()> {
+    pub(crate) fn validate_framebuffer_for_input(
+        &self,
+        framebuffer: &FrameBufferMut,
+    ) -> Result<()> {
         for chan in self.channels() {
             let (name, h_channel) = chan?;
             if let Some(fb_channel) = framebuffer._get_channel(name) {
@@ -272,22 +283,20 @@ impl Header {
     // Factored out shared code from the validate_framebuffer_* methods above.
     fn validate_channel(name: &str, h_chan: &Channel, fb_chan: &Channel) -> Result<()> {
         if fb_chan.pixel_type != h_chan.pixel_type {
-            return Err(Error::Generic(format!("Header and FrameBuffer channel \
-                types don't match: '{}' is {:?} in Header and {:?} in \
-                FrameBuffer",
-                                              name,
-                                              h_chan.pixel_type,
-                                              fb_chan.pixel_type)));
+            return Err(Error::Generic(format!(
+                "Header and FrameBuffer channel \
+                 types don't match: '{}' is {:?} in Header and {:?} in \
+                 FrameBuffer",
+                name, h_chan.pixel_type, fb_chan.pixel_type
+            )));
         }
         if fb_chan.x_sampling != h_chan.x_sampling || fb_chan.y_sampling != h_chan.y_sampling {
-            return Err(Error::Generic(format!("Header and FrameBuffer channel \
-                subsampling don't match: channel '{}' is {}x{} in Header and \
-                {}x{} in FrameBuffer",
-                                              name,
-                                              h_chan.x_sampling,
-                                              h_chan.y_sampling,
-                                              fb_chan.x_sampling,
-                                              fb_chan.y_sampling)));
+            return Err(Error::Generic(format!(
+                "Header and FrameBuffer channel \
+                 subsampling don't match: channel '{}' is {}x{} in Header and \
+                 {}x{} in FrameBuffer",
+                name, h_chan.x_sampling, h_chan.y_sampling, fb_chan.x_sampling, fb_chan.y_sampling
+            )));
         }
 
         Ok(())
@@ -307,7 +316,6 @@ impl Drop for Header {
         }
     }
 }
-
 
 /// An iterator over the channels in a `Header`.
 ///
@@ -337,7 +345,10 @@ impl<'a> Iterator for ChannelIter<'a> {
             if let Ok(n) = str_name {
                 Some(Ok((n, channel)))
             } else {
-                Some(Err(Error::Generic(format!("Invalid channel name: {:?}", cname))))
+                Some(Err(Error::Generic(format!(
+                    "Invalid channel name: {:?}",
+                    cname
+                ))))
             }
         } else {
             None
