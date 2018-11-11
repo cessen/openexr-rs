@@ -141,12 +141,21 @@ impl<'a> ScanlineOutputFile<'a> {
 
         if self.header().data_dimensions() != framebuffer.dimensions() {
             return Err(Error::Generic(format!(
-                "framebuffer size {}x{} does not match \
-                 image dimensions {}x{}",
+                "framebuffer size {}x{} does not match image dimensions {}x{}",
                 framebuffer.dimensions().0,
                 framebuffer.dimensions().1,
                 self.header().data_dimensions().0,
                 self.header().data_dimensions().1
+            )));
+        }
+
+        if self.header().data_origin() != framebuffer.origin() {
+            return Err(Error::Generic(format!(
+                "framebuffer origin {}x{} does not match image origin {}x{}",
+                framebuffer.origin().0,
+                framebuffer.origin().1,
+                self.header().data_origin().0,
+                self.header().data_origin().1
             )));
         }
 

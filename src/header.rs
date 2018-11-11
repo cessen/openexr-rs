@@ -286,6 +286,17 @@ impl Header {
         Ok(())
     }
 
+    /// Utility function to create a Box2i specifying its origin (bottom left) and size
+    pub fn box2i(x: i32, y: i32, width: u32, height: u32) -> Box2i {
+        Box2i {
+            min: CEXR_V2i { x, y },
+            max: CEXR_V2i {
+                x: x + width as i32 - 1,
+                y: y + height as i32 - 1,
+            },
+        }
+    }
+
     // Factored out shared code from the validate_framebuffer_* methods above.
     fn validate_channel(name: &str, h_chan: &Channel, fb_chan: &Channel) -> Result<()> {
         if fb_chan.pixel_type != h_chan.pixel_type {
@@ -370,3 +381,4 @@ pub enum Envmap {
     /// Cubemap
     Cube = 1,
 }
+
