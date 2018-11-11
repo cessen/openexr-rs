@@ -38,12 +38,16 @@ fn negative_window_read_multiple_channels() {
     }
 
     // and then the real thing
-    {
+    let origin_offset = {
         let mut fb = FrameBufferMut::new_with_origin(x, y, width, height);
         println!("Loading buffer as {}x{}", width, height);
         fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
         exr_file.read_pixels(&mut fb).unwrap();
-    }
+        exr_file.read_pixels(&mut fb).unwrap();
+        fb.origin_offset() as usize
+    };
+    // check the pixel value at (0,0). "==" is
+    assert!(f32::abs(pixel_data[origin_offset].0.to_f32() - 0.5f32) < 0.0001f32);
 
     // we write the file back out with a different offset
     {
@@ -55,7 +59,7 @@ fn negative_window_read_multiple_channels() {
             &mut file,
             &Header::new()
                 .set_data_window(Header::box2i(-8, -8, width, height))
-                .set_display_window(Header::box2i(0, 0, width -16, height - 16))
+                .set_display_window(Header::box2i(0, 0, width - 16, height - 16))
                 .add_channel("R", openexr::PixelType::HALF)
                 .add_channel("G", openexr::PixelType::HALF)
                 .add_channel("B", openexr::PixelType::HALF),

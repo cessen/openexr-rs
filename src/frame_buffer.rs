@@ -79,11 +79,16 @@ impl<'a> FrameBuffer<'a> {
     	self.origin
     }
 
-    /// Return the offset of the data pixel at 0,0 with reference to the data pixel at window.min.x, window.min.y
-    pub fn origin_offset<T: Sized>(&self) -> isize {
+    /// Return the offset index of the data pixel at 0,0 with reference to the data pixel at window.min.x, window.min.y
+    pub fn origin_offset(&self) -> isize {
         let width = self.dimensions.0;
         let (x, y) = self.origin;
-        -((x as isize + y as isize * width as isize) * mem::size_of::<T>() as isize)
+        -(x as isize + y as isize * width as isize)
+    }
+
+    /// Return the offset byte of the data pixel at 0,0 with reference to the data pixel at window.min.x, window.min.y
+    fn origin_offset_byte<T: Sized>(&self) -> isize {
+        self.origin_offset() * mem::size_of::<T>() as isize
     }
 
     /// Insert a single channel into the FrameBuffer.
@@ -103,7 +108,7 @@ impl<'a> FrameBuffer<'a> {
             );
         }
         let width = self.dimensions.0;
-        let origin_offset = self.origin_offset::<T>();
+        let origin_offset = self.origin_offset_byte::<T>();
         unsafe {
             self.insert_raw(
                 name,
@@ -137,7 +142,7 @@ impl<'a> FrameBuffer<'a> {
             );
         }
         let width = self.dimensions.0;
-        let origin_offset = self.origin_offset::<T>();
+        let origin_offset = self.origin_offset_byte::<T>();
         for (name, (ty, offset)) in names.iter().zip(T::channels()) {
             unsafe {
                 self.insert_raw(
@@ -260,7 +265,7 @@ impl<'a> FrameBufferMut<'a> {
             );
         }
         let width = self.dimensions.0;
-        let origin_offset = self.origin_offset::<T>();
+        let origin_offset = self.origin_offset_byte::<T>();
         unsafe {
             self.insert_raw(
                 name,
@@ -300,7 +305,7 @@ impl<'a> FrameBufferMut<'a> {
             );
         }
         let width = self.dimensions.0;
-        let origin_offset = self.origin_offset::<T>();
+        let origin_offset = self.origin_offset_byte::<T>();
         for (&(name, fill), (ty, offset)) in names_and_fills.iter().zip(T::channels()) {
             unsafe {
                 self.insert_raw(
