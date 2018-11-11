@@ -79,7 +79,7 @@ impl<'a> FrameBuffer<'a> {
     	self.origin
     }
 
-    /// Return the offset of the first display window pixel with reference to the data pixel at 0,0
+    /// Return the offset of the data pixel at 0,0 with reference to the data pixel at window.min.x, window.min.y
     pub fn origin_offset<T: Sized>(&self) -> isize {
         let width = self.dimensions.0;
         let (x, y) = self.origin;
