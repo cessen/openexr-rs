@@ -1,8 +1,10 @@
 extern crate half;
 extern crate openexr;
+extern crate openexr_sys;
 
 use half::f16;
-use openexr::{FrameBufferMut, InputFile};
+use openexr::{FrameBuffer, FrameBufferMut, Header, InputFile, ScanlineOutputFile};
+use std::fs::File;
 
 // OpenEXR file data.
 const DATA: &[u8] = include_bytes!("data/negative_window.exr");
@@ -12,10 +14,8 @@ fn negative_window_read_multiple_channels() {
     let mut exr_file = InputFile::from_slice(DATA).unwrap();
 
     let (width, height) = exr_file.header().data_dimensions();
-    let openexr::Box2i {
-        min: openexr_sys::CEXR_V2i { x, y },
-        ..
-    } = *exr_file.header().data_window();
+    let (x, y) = exr_file.header().data_origin();
+
     let zero = f16::from_f32(0.0f32);
 
     println!("Reading pixels from {},{},{}", "R", "G", "B");
@@ -44,6 +44,27 @@ fn negative_window_read_multiple_channels() {
         fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
         exr_file.read_pixels(&mut fb).unwrap();
     }
+
+    // we write the file back out with a different offset
+    {
+        let mut fb = FrameBuffer::new_with_origin(-8, -8, width, height);
+        println!("Loading buffer as {}x{}", width, height);
+        let mut file = File::create("target/negative_window_with_offset.exr")
+            .expect("Could not create output file");
+        let mut exr_file = ScanlineOutputFile::new(
+            &mut file,
+            &Header::new()
+                .set_data_window(Header::box2i(-8, -8, width, height))
+                .set_display_window(Header::box2i(0, 0, width -16, height - 16))
+                .add_channel("R", openexr::PixelType::HALF)
+                .add_channel("G", openexr::PixelType::HALF)
+                .add_channel("B", openexr::PixelType::HALF),
+        )
+        .unwrap();
+
+        fb.insert_channels(&["R", "G", "B"], &pixel_data);
+        exr_file.write_pixels(&fb).unwrap();
+    }
 }
 
 // with one channel only as well
@@ -52,10 +73,8 @@ fn negative_window_read_single_channel() {
     let mut exr_file = InputFile::from_slice(DATA).unwrap();
 
     let (width, height) = exr_file.header().data_dimensions();
-    let openexr::Box2i {
-        min: openexr_sys::CEXR_V2i { x, y },
-        ..
-    } = *exr_file.header().data_window();
+    let (x, y) = exr_file.header().data_origin();
+
     let zero = f16::from_f32(0.0f32);
 
     println!("Reading pixels from {},{},{}", "R", "G", "B");
