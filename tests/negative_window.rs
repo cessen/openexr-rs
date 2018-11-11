@@ -46,7 +46,7 @@ fn negative_window_read_multiple_channels() {
         exr_file.read_pixels(&mut fb).unwrap();
         fb.origin_offset() as usize
     };
-    // check the pixel value at (0,0). "==" is
+    // check the pixel value at coordinates (0,0) of the data window
     assert!(f32::abs(pixel_data[origin_offset].0.to_f32() - 0.5f32) < 0.0001f32);
 
     // we write the file back out with a different offset
