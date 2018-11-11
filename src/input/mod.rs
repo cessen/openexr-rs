@@ -183,6 +183,17 @@ impl<'a> InputFile<'a> {
             )));
         }
 
+        // Validation
+        if self.header().data_origin() != framebuffer.origin() {
+            return Err(Error::Generic(format!(
+                "framebuffer origin {},{} does not match image origin {},{}",
+                framebuffer.origin().0,
+                framebuffer.origin().1,
+                self.header().data_origin().0,
+                self.header().data_origin().1
+            )));
+        }
+
         self.header().validate_framebuffer_for_input(framebuffer)?;
 
         // Set up the framebuffer with the image

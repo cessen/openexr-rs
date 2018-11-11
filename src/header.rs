@@ -190,6 +190,12 @@ impl Header {
     }
 
     /// Convenience method for the dimensions of the data window.
+    pub fn data_origin(&self) -> (i32, i32) {
+        let window = self.data_window();
+        (window.min.x, window.min.y)
+    }
+
+    /// Convenience method for the dimensions of the data window.
     pub fn data_dimensions(&self) -> (u32, u32) {
         let window = self.data_window();
         (

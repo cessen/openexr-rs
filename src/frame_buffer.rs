@@ -41,14 +41,20 @@ use cexr_type_aliases::*;
 /// Points to and describes in-memory image data for reading.
 pub struct FrameBuffer<'a> {
     handle: *mut CEXR_FrameBuffer,
+    origin: (i32, i32),
     dimensions: (u32, u32),
     _phantom_1: PhantomData<CEXR_FrameBuffer>,
     _phantom_2: PhantomData<&'a mut [u8]>,
 }
 
 impl<'a> FrameBuffer<'a> {
-    /// Creates an empty frame buffer with the given dimensions in pixels.
+    /// Creates an empty frame buffer with the given dimensions and zero offset in pixels.
     pub fn new(width: u32, height: u32) -> Self {
+    	Self::new_with_origin(0, 0, width, height)
+    }
+
+    /// Creates an empty frame buffer with the given dimensions in pixels.
+    pub fn new_with_origin(x: i32, y: i32, width: u32, height: u32) -> Self {
         assert!(
             width > 0 && height > 0,
             "FrameBuffers must be non-zero size in \
@@ -56,6 +62,7 @@ impl<'a> FrameBuffer<'a> {
         );
         FrameBuffer {
             handle: unsafe { CEXR_FrameBuffer_new() },
+            origin: (x, y),
             dimensions: (width, height),
             _phantom_1: PhantomData,
             _phantom_2: PhantomData,
@@ -65,6 +72,18 @@ impl<'a> FrameBuffer<'a> {
     /// Return the dimensions of the frame buffer.
     pub fn dimensions(&self) -> (u32, u32) {
         self.dimensions
+    }
+
+    /// Return the origin of the frame buffer.
+    pub fn origin(&self) -> (i32, i32) {
+    	self.origin
+    }
+
+    /// Return the offset of the first display window pixel with reference to the first data window pixel
+    pub fn origin_offset<T: Sized>(&self) -> isize {
+        let width = self.dimensions.0;
+        let (x, y) = self.origin;
+        -((x as isize + y as isize * width as isize) * mem::size_of::<T>() as isize)
     }
 
     /// Insert a single channel into the FrameBuffer.
@@ -84,11 +103,12 @@ impl<'a> FrameBuffer<'a> {
             );
         }
         let width = self.dimensions.0;
+        let origin_offset = self.origin_offset::<T>();
         unsafe {
             self.insert_raw(
                 name,
                 T::pixel_type(),
-                data.as_ptr() as *const c_char,
+                (data.as_ptr() as *const c_char).offset(origin_offset),
                 (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                 (1, 1),
                 0.0,
@@ -117,12 +137,13 @@ impl<'a> FrameBuffer<'a> {
             );
         }
         let width = self.dimensions.0;
+        let origin_offset = self.origin_offset::<T>();
         for (name, (ty, offset)) in names.iter().zip(T::channels()) {
             unsafe {
                 self.insert_raw(
                     name,
                     ty,
-                    (data.as_ptr() as *const c_char).offset(offset as isize),
+                    (data.as_ptr() as *const c_char).offset(origin_offset + offset as isize),
                     (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                     (1, 1),
                     0.0,
@@ -201,6 +222,13 @@ pub struct FrameBufferMut<'a> {
 }
 
 impl<'a> FrameBufferMut<'a> {
+    /// Creates an empty frame buffer with the given dimensions and zero offset in pixels.
+    pub fn new_with_origin(x: i32, y: i32, width: u32, height: u32) -> Self {
+        FrameBufferMut {
+            frame_buffer: FrameBuffer::new_with_origin(x, y, width, height),
+        }
+    }
+
     /// Creates an empty frame buffer with the given dimensions in pixels.
     pub fn new(width: u32, height: u32) -> Self {
         FrameBufferMut {
@@ -232,11 +260,12 @@ impl<'a> FrameBufferMut<'a> {
             );
         }
         let width = self.dimensions.0;
+        let origin_offset = self.origin_offset::<T>();
         unsafe {
             self.insert_raw(
                 name,
                 T::pixel_type(),
-                data.as_mut_ptr() as *mut c_char,
+                (data.as_mut_ptr() as *mut c_char).offset(origin_offset),
                 (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                 (1, 1),
                 fill,
@@ -271,12 +300,13 @@ impl<'a> FrameBufferMut<'a> {
             );
         }
         let width = self.dimensions.0;
+        let origin_offset = self.origin_offset::<T>();
         for (&(name, fill), (ty, offset)) in names_and_fills.iter().zip(T::channels()) {
             unsafe {
                 self.insert_raw(
                     name,
                     ty,
-                    (data.as_mut_ptr() as *mut c_char).offset(offset as isize),
+                    (data.as_mut_ptr() as *mut c_char).offset(origin_offset + offset as isize),
                     (mem::size_of::<T>(), width as usize * mem::size_of::<T>()),
                     (1, 1),
                     fill,
