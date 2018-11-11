@@ -381,4 +381,3 @@ pub enum Envmap {
     /// Cubemap
     Cube = 1,
 }
-
