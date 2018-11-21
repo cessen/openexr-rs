@@ -189,7 +189,8 @@ impl Header {
         self
     }
 
-    /// Convenience method for the dimensions of the data window.
+    /// Convenience method for the origin (min coordinate) of the
+    /// data window.
     pub fn data_origin(&self) -> (i32, i32) {
         let window = self.data_window();
         (window.min.x, window.min.y)

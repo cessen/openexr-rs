@@ -48,13 +48,20 @@ pub struct FrameBuffer<'a> {
 }
 
 impl<'a> FrameBuffer<'a> {
-    /// Creates an empty frame buffer with the given dimensions and zero offset in pixels.
+    /// Creates an empty frame buffer with the given dimensions in pixels.
     pub fn new(width: u32, height: u32) -> Self {
-    	Self::new_with_origin(0, 0, width, height)
+        Self::new_with_origin(0, 0, width, height)
     }
 
-    /// Creates an empty frame buffer with the given dimensions in pixels.
-    pub fn new_with_origin(x: i32, y: i32, width: u32, height: u32) -> Self {
+    /// Creates an empty frame buffer with the given dimensions and
+    /// the given origin coordinate.
+    ///
+    /// This is necessary if you want to write an OpenEXR file with
+    /// a data window that has in min coordinate other than (0, 0).
+    /// For example, if the data window of the EXR is (-2, -3) to
+    /// (90, 56), then you pass (-2, -3) as the origin parameter
+    /// here.
+    pub fn new_with_origin(origin_x: i32, origin_y: i32, width: u32, height: u32) -> Self {
         assert!(
             width > 0 && height > 0,
             "FrameBuffers must be non-zero size in \
@@ -62,7 +69,7 @@ impl<'a> FrameBuffer<'a> {
         );
         FrameBuffer {
             handle: unsafe { CEXR_FrameBuffer_new() },
-            origin: (x, y),
+            origin: (origin_x, origin_y),
             dimensions: (width, height),
             _phantom_1: PhantomData,
             _phantom_2: PhantomData,
@@ -76,19 +83,7 @@ impl<'a> FrameBuffer<'a> {
 
     /// Return the origin of the frame buffer.
     pub fn origin(&self) -> (i32, i32) {
-    	self.origin
-    }
-
-    /// Return the offset index of the data pixel at 0,0 with reference to the data pixel at window.min.x, window.min.y
-    pub fn origin_offset(&self) -> isize {
-        let width = self.dimensions.0;
-        let (x, y) = self.origin;
-        -(x as isize + y as isize * width as isize)
-    }
-
-    /// Return the offset byte of the data pixel at 0,0 with reference to the data pixel at window.min.x, window.min.y
-    fn origin_offset_byte<T: Sized>(&self) -> isize {
-        self.origin_offset() * mem::size_of::<T>() as isize
+        self.origin
     }
 
     /// Insert a single channel into the FrameBuffer.
@@ -194,6 +189,20 @@ impl<'a> FrameBuffer<'a> {
         self
     }
 
+    /// Return the offset index of the data pixel at 0,0 with
+    /// reference to the data pixel at window.min.x, window.min.y
+    fn origin_offset(&self) -> isize {
+        let width = self.dimensions.0;
+        let (x, y) = self.origin;
+        -(x as isize + y as isize * width as isize)
+    }
+
+    /// Return the offset byte of the data pixel at 0,0 with reference
+    /// to the data pixel at window.min.x, window.min.y
+    fn origin_offset_byte<T: Sized>(&self) -> isize {
+        self.origin_offset() * mem::size_of::<T>() as isize
+    }
+
     #[doc(hidden)]
     pub(crate) fn handle(&self) -> *const CEXR_FrameBuffer {
         self.handle
@@ -227,17 +236,27 @@ pub struct FrameBufferMut<'a> {
 }
 
 impl<'a> FrameBufferMut<'a> {
-    /// Creates an empty frame buffer with the given dimensions and zero offset in pixels.
-    pub fn new_with_origin(x: i32, y: i32, width: u32, height: u32) -> Self {
-        FrameBufferMut {
-            frame_buffer: FrameBuffer::new_with_origin(x, y, width, height),
-        }
-    }
-
     /// Creates an empty frame buffer with the given dimensions in pixels.
     pub fn new(width: u32, height: u32) -> Self {
         FrameBufferMut {
             frame_buffer: FrameBuffer::new(width, height),
+        }
+    }
+
+    /// Creates an empty frame buffer with the given dimensions and
+    /// the given origin coordinate.
+    ///
+    /// This is necessary because some OpenEXR files have data windows
+    /// where the first pixel isn't at (0, 0), and the framebuffer needs
+    /// to match that.  For example, if the data window of the EXR is
+    /// (-2, -3) to (90, 56), then you pass (-2, -3) as the origin
+    /// parameter here.
+    ///
+    /// More simply, when reading an EXR file, simply pass the output
+    /// of header's `data_origin()` method to this.
+    pub fn new_with_origin(origin_x: i32, origin_y: i32, width: u32, height: u32) -> Self {
+        FrameBufferMut {
+            frame_buffer: FrameBuffer::new_with_origin(origin_x, origin_y, width, height),
         }
     }
 

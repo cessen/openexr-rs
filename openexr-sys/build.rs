@@ -54,11 +54,12 @@ fn main() {
                 .probe("IlmBase")
                 .map(|ilmbase_cfg| ilmbase_cfg.include_paths.clone())
                 .map_err(|err| {
-                    panic!("couldn't find IlmBase: environment variable \
-                            ILMBASE_DIR is unset and pkg-config failed: {}",
-                           err)
-                })
-                .unwrap();
+                    panic!(
+                        "couldn't find IlmBase: environment variable \
+                         ILMBASE_DIR is unset and pkg-config failed: {}",
+                        err
+                    )
+                }).unwrap();
             include_paths.extend_from_slice(&paths);
         }
 

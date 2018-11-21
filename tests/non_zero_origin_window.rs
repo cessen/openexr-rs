@@ -10,6 +10,13 @@ use std::fs::File;
 const NEGATIVE_OFFSET: &[u8] = include_bytes!("data/negative_window.exr");
 const POSITIVE_OFFSET: &[u8] = include_bytes!("data/positive_window.exr");
 
+/// Return the offset index of the data pixel at 0,0 with
+/// reference to the data pixel at origin.
+fn calc_origin_offset(image_width: u32, origin: (i32, i32)) -> isize {
+    let (x, y) = origin;
+    -(x as isize + y as isize * image_width as isize)
+}
+
 fn load_and_test_with_offset_window_read_multiple_channels(data: &[u8]) {
     let mut exr_file = InputFile::from_slice(data).unwrap();
 
@@ -25,21 +32,28 @@ fn load_and_test_with_offset_window_read_multiple_channels(data: &[u8]) {
         println!("Loading from buffer as {},{} {}x{}", ox, oy, width, height);
         fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], pixel_data);
         println!("Reading pixels from {},{},{}", "R", "G", "B");
-        (exr_file.read_pixels(&mut fb), fb.origin_offset())
+        (
+            exr_file.read_pixels(&mut fb),
+            calc_origin_offset(width, (ox, oy)),
+        )
     };
 
     // let's try a few mismatched origins
-    assert!(read_with_offset(&mut exr_file, &mut pixel_data, 0, 0)
-        .0
-        .is_err());
+    assert!(
+        read_with_offset(&mut exr_file, &mut pixel_data, 0, 0)
+            .0
+            .is_err()
+    );
     assert!(
         read_with_offset(&mut exr_file, &mut pixel_data, x - 1, y - 1)
             .0
             .is_err()
     );
-    assert!(read_with_offset(&mut exr_file, &mut pixel_data, -x, -y)
-        .0
-        .is_err());
+    assert!(
+        read_with_offset(&mut exr_file, &mut pixel_data, -x, -y)
+            .0
+            .is_err()
+    );
     // and then the real thing
     let (read_result, origin_offset) = read_with_offset(&mut exr_file, &mut pixel_data, x, y);
     assert!(read_result.is_ok());
@@ -62,8 +76,7 @@ fn load_and_test_with_offset_window_read_multiple_channels(data: &[u8]) {
                 .add_channel("R", openexr::PixelType::HALF)
                 .add_channel("G", openexr::PixelType::HALF)
                 .add_channel("B", openexr::PixelType::HALF),
-        )
-        .unwrap();
+        ).unwrap();
 
         fb.insert_channels(&["R", "G", "B"], &pixel_data);
         exr_file.write_pixels(&fb).unwrap();
