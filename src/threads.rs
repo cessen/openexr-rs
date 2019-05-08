@@ -1,3 +1,5 @@
+//! I/O compression/decompression threading control
+//! 
 //! Function set_global_thread_count creates a global pool of worker threads
 //! inside the IlmImf library.  Ifan application program has multiple threads,
 //! and those threads read or write several OpenEXR files at thesame time, then
@@ -5,7 +7,7 @@
 //! each file willattempt to use the entire worker thread pool for itself.
 //! If two files are read or written simultaneously by two application threads,
 //! then it is possible that all worker threads perform I/O on behalf of one of
-//! the files, whileI/O for the other file is stalled.29
+//! the files, whileI/O for the other file is stalled.
 //!
 //! see https://www.openexr.com/documentation/ReadingAndWritingImageFiles.pdf
 
