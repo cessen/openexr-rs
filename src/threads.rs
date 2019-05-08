@@ -17,8 +17,8 @@ pub use error::{Error, Result};
 /// compression,decompression while loading or writing a file. Note that the file I/O itself is
 /// always performed on the calling thread. If this value is set to 0, multi-threaded is disabled
 /// globally.
-pub fn set_global_thread_count(thread_count: u32) -> Result<()> {
-    if thread_count <= ::std::os::raw::c_int::max_value() as u32 {
+pub fn set_global_thread_count(thread_count: usize) -> Result<()> {
+    if thread_count > ::std::os::raw::c_int::max_value() as usize {
         return Err(Error::Generic(String::from(
             "The number of threads is too high",
         )));
