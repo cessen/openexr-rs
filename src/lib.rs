@@ -103,6 +103,7 @@ pub mod frame_buffer;
 pub mod header;
 pub mod input;
 pub mod output;
+pub mod threads;
 
 pub use cexr_type_aliases::{Box2i, PixelType};
 pub use error::{Error, Result};
@@ -111,25 +112,3 @@ pub use header::{Envmap, Header};
 pub use input::InputFile;
 pub use output::ScanlineOutputFile;
 
-/// Set the number of worker threads to use for compression/decompression.
-///
-/// This controls the maximum number of work threads that can be used to perform
-/// compression,decompression while loading or writing a file. Note that the file I/O itself is
-/// always performed on the calling thread. If this value is set to 0, multi-threaded is disabled
-/// globally.
-pub fn set_global_thread_count(thread_count: u32) -> Result<()> {
-    if thread_count <= ::std::os::raw::c_int::max_value() as u32 {
-        return Err(Error::Generic(String::from("The number of threads is too high")))
-    }
-
-    let error = unsafe {
-        openexr_sys::CEXR_set_global_thread_count(thread_count as ::std::os::raw::c_int)
-    };
-
-	if error == 0 {
-		Ok(())
-	}
-	else {
-		Err(Error::Generic(String::from("Unable to set global thread count")))
-	}
-}
