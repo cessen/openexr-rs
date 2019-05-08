@@ -111,4 +111,3 @@ pub use frame_buffer::{FrameBuffer, FrameBufferMut};
 pub use header::{Envmap, Header};
 pub use input::InputFile;
 pub use output::ScanlineOutputFile;
-

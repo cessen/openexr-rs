@@ -3,10 +3,10 @@
 //! and those threads read or write several OpenEXR files at thesame time, then
 //! the worker threads must be shared among the application threads.  By default
 //! each file willattempt to use the entire worker thread pool for itself.
-//! If two files are read or written simultaneously by two application threads, 
+//! If two files are read or written simultaneously by two application threads,
 //! then it is possible that all worker threads perform I/O on behalf of one of
 //! the files, whileI/O for the other file is stalled.29
-//! 
+//!
 //! see https://www.openexr.com/documentation/ReadingAndWritingImageFiles.pdf
 
 pub use error::{Error, Result};
@@ -19,17 +19,19 @@ pub use error::{Error, Result};
 /// globally.
 pub fn set_global_thread_count(thread_count: u32) -> Result<()> {
     if thread_count <= ::std::os::raw::c_int::max_value() as u32 {
-        return Err(Error::Generic(String::from("The number of threads is too high")))
+        return Err(Error::Generic(String::from(
+            "The number of threads is too high",
+        )));
     }
 
-    let error = unsafe {
-        openexr_sys::CEXR_set_global_thread_count(thread_count as ::std::os::raw::c_int)
-    };
+    let error =
+        unsafe { openexr_sys::CEXR_set_global_thread_count(thread_count as ::std::os::raw::c_int) };
 
-	if error == 0 {
-		Ok(())
-	}
-	else {
-		Err(Error::Generic(String::from("Unable to set global thread count")))
-	}
+    if error == 0 {
+        Ok(())
+    } else {
+        Err(Error::Generic(String::from(
+            "Unable to set global thread count",
+        )))
+    }
 }
