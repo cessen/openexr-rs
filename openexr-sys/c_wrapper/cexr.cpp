@@ -15,6 +15,7 @@
 #include "ImfInputFile.h"
 #include "Iex.h"
 #include "ImfStandardAttributes.h"
+#include "ImfThreading.h"
 #pragma GCC diagnostic pop
 
 #include "memory_istream.hpp"
@@ -365,4 +366,9 @@ int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const
         return 1;
     }
     return 0;
+}
+
+
+void CEXR_set_global_thread_count(int thread_count) {
+    setGlobalThreadCount(thread_count);
 }

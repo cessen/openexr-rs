@@ -553,3 +553,7 @@ extern "C" {
         err_out: *mut *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
 }
+extern "C" {
+    pub fn CEXR_set_global_thread_count(thread_count: ::std::os::raw::c_int)
+	-> ::std::os::raw::c_int;
+}
