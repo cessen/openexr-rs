@@ -1,6 +1,5 @@
 //! Input file types.
 
-use std::ffi::CStr;
 use std::io::{Read, Seek};
 use std::marker::PhantomData;
 use std::ptr;
@@ -82,8 +81,7 @@ impl<'a> InputFile<'a> {
             };
 
             if error != 0 {
-                let msg = unsafe { CStr::from_ptr(error_out) };
-                return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+                return Err(Error::take(error_out));
             } else {
                 out
             }
@@ -93,8 +91,7 @@ impl<'a> InputFile<'a> {
         let mut out = ptr::null_mut();
         let error = unsafe { CEXR_InputFile_from_stream(istream_ptr, 1, &mut out, &mut error_out) };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+            Err(Error::take(error_out))
         } else {
             Ok(InputFile {
                 handle: out,
@@ -132,8 +129,7 @@ impl<'a> InputFile<'a> {
         let mut out = ptr::null_mut();
         let error = unsafe { CEXR_InputFile_from_stream(istream_ptr, 1, &mut out, &mut error_out) };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+            Err(Error::take(error_out))
         } else {
             Ok(InputFile {
                 handle: out,
@@ -203,8 +199,7 @@ impl<'a> InputFile<'a> {
             CEXR_InputFile_set_framebuffer(self.handle, framebuffer.handle_mut(), &mut error_out)
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+            return Err(Error::take(error_out));
         }
 
         // Read the image data
@@ -217,8 +212,7 @@ impl<'a> InputFile<'a> {
             )
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+            Err(Error::take(error_out))
         } else {
             Ok(())
         }
@@ -306,8 +300,7 @@ impl<'a> InputFile<'a> {
             err
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+            return Err(Error::take(error_out));
         }
 
         // Read the image data
@@ -315,8 +308,7 @@ impl<'a> InputFile<'a> {
             CEXR_InputFile_read_pixels(self.handle, start_scanline, end_scanline, &mut error_out)
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+            Err(Error::take(error_out))
         } else {
             Ok(())
         }

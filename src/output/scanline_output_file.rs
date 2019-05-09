@@ -1,4 +1,3 @@
-use std::ffi::CStr;
 use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::ptr;
@@ -80,8 +79,7 @@ impl<'a> ScanlineOutputFile<'a> {
             };
 
             if error != 0 {
-                let msg = unsafe { CStr::from_ptr(error_out) };
-                return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+                return Err(Error::take(error_out));
             } else {
                 out
             }
@@ -95,8 +93,7 @@ impl<'a> ScanlineOutputFile<'a> {
             CEXR_OutputFile_from_stream(ostream_ptr, header.handle, 1, &mut out, &mut error_out)
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+            Err(Error::take(error_out))
         } else {
             Ok(ScanlineOutputFile {
                 handle: out,
@@ -168,8 +165,7 @@ impl<'a> ScanlineOutputFile<'a> {
             CEXR_OutputFile_set_framebuffer(self.handle, framebuffer.handle(), &mut error_out)
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+            return Err(Error::take(error_out));
         }
 
         // Write out the image data
@@ -181,8 +177,7 @@ impl<'a> ScanlineOutputFile<'a> {
             )
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+            Err(Error::take(error_out))
         } else {
             self.scanlines_written = self.header().data_dimensions().1;
             Ok(())
@@ -256,8 +251,7 @@ impl<'a> ScanlineOutputFile<'a> {
             err
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            return Err(Error::Generic(msg.to_string_lossy().into_owned()));
+            return Err(Error::take(error_out));
         }
 
         // Write out the image data
@@ -269,8 +263,7 @@ impl<'a> ScanlineOutputFile<'a> {
             )
         };
         if error != 0 {
-            let msg = unsafe { CStr::from_ptr(error_out) };
-            Err(Error::Generic(msg.to_string_lossy().into_owned()))
+            Err(Error::take(error_out))
         } else {
             self.scanlines_written += framebuffer.dimensions().1;
             Ok(())
