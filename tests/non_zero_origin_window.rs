@@ -59,7 +59,7 @@ fn load_and_test_with_offset_window_read_multiple_channels(data: &[u8]) {
     assert!(read_result.is_ok());
     // check the pixel value at coordinates (0,0) of the data window if 0,0 is within the frame buffer
     if origin_offset >= 0 {
-        assert!(f32::abs(pixel_data[origin_offset as usize].0.to_f32() - 0.5f32) < 0.0001f32);
+        assert!(f32::abs(f32::from(pixel_data[origin_offset as usize].0) - 0.5f32) < 0.0001f32);
     }
 
     // we write the file back out with a different offset
