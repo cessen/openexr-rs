@@ -27,6 +27,13 @@ using namespace Imf;
 static_assert(sizeof(CEXR_V2i) == sizeof(V2i), "V2i size is correct");
 static_assert(sizeof(CEXR_Box2i) == sizeof(Box2i), "Box2i size is correct");
 
+static char *copy_err(const char *err) {
+    size_t len = strlen(err)+1;
+    char *result = reinterpret_cast<char*>(malloc(len));
+    memcpy(result, err, len);
+    return result;
+}
+
 int CEXR_IStream_from_reader(
     void *reader,
     int (*read_ptr)(void *, char *, int, int *err_out),
@@ -37,7 +44,7 @@ int CEXR_IStream_from_reader(
     try {
         *out = reinterpret_cast<CEXR_IStream *>(new RustIStream(reader, read_ptr, seekp_ptr));
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
 
@@ -62,7 +69,7 @@ int CEXR_OStream_from_writer(
     try {
         *out = reinterpret_cast<CEXR_OStream *>(new RustOStream(writer, write_ptr, seekp_ptr));
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
 
@@ -269,7 +276,7 @@ int CEXR_InputFile_from_file_path(const char *path, int threads, CEXR_InputFile 
     try {
         *out = reinterpret_cast<CEXR_InputFile *>(new InputFile(path, threads));
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
 
@@ -280,7 +287,7 @@ int CEXR_InputFile_from_stream(CEXR_IStream *stream, int threads, CEXR_InputFile
     try {
         *out = reinterpret_cast<CEXR_InputFile *>(new InputFile(*reinterpret_cast<IStream *>(stream), threads));
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
 
@@ -299,7 +306,7 @@ int CEXR_InputFile_set_framebuffer(CEXR_InputFile *file, CEXR_FrameBuffer *fb, c
     try {
         reinterpret_cast<InputFile *>(file)->setFrameBuffer(*reinterpret_cast<FrameBuffer *>(fb));
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
 
@@ -310,7 +317,7 @@ int CEXR_InputFile_read_pixels(CEXR_InputFile *file, int scanline_1, int scanlin
     try {
         reinterpret_cast<InputFile *>(file)->readPixels(scanline_1, scanline_2);
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
     return 0;
@@ -324,7 +331,7 @@ int CEXR_OutputFile_from_stream(CEXR_OStream *stream, const CEXR_Header *header,
     try {
         *out = reinterpret_cast<CEXR_OutputFile *>(new OutputFile(*reinterpret_cast<OStream *>(stream), *reinterpret_cast<const Header *>(header), threads));
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
 
@@ -343,7 +350,7 @@ int CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffe
     try {
         reinterpret_cast<OutputFile *>(file)->setFrameBuffer(*reinterpret_cast<const FrameBuffer *>(fb));
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
 
@@ -354,7 +361,7 @@ int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const
     try {
         reinterpret_cast<OutputFile *>(file)->writePixels(num_scanlines);
     } catch(const std::exception &e) {
-        *err_out = e.what();
+        *err_out = copy_err(e.what());
         return 1;
     }
     return 0;
