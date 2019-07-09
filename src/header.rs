@@ -1,6 +1,6 @@
 //! Header and related types.
 
-use std;
+use std::{self, slice, ptr};
 use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 
@@ -254,6 +254,34 @@ impl Header {
             unsafe { CEXR_Header_set_envmap(self.handle, x as c_int) }
         } else {
             unsafe { CEXR_Header_erase_attribute(self.handle, b"envmap\0".as_ptr() as *const _) }
+        }
+        self
+    }
+
+    /// Access the list of view names, if any
+    pub fn multiview(&self) -> Option<impl Iterator<Item=&str>> {
+        if !unsafe { CEXR_Header_has_multiview(self.handle) } {
+            return None;
+        }
+        let n = unsafe { CEXR_Header_multiview(self.handle, ptr::null_mut()) };
+        let mut v = vec![CEXR_Slice { ptr: ptr::null_mut(), len: 0 }; n];
+        unsafe { CEXR_Header_multiview(self.handle, v.as_mut_ptr()) };
+        // We ignore non-UTF-8 view names because we assume all channel names are UTF-8
+        let v = v.into_iter()
+            .filter_map(|slice| {
+                let bytes = unsafe { slice::from_raw_parts(slice.ptr as *const u8, slice.len) };
+                std::str::from_utf8(&bytes).ok()
+            });
+        Some(v)
+    }
+
+    /// Set the list of view names
+    pub fn set_multiview(&mut self, views: Option<&[&str]>) -> &mut Self {
+        if let Some(x) = views {
+            let slices = x.iter().map(|n| CEXR_Slice { ptr: n.as_ptr() as _, len: n.len() }).collect::<Vec<_>>();
+            unsafe { CEXR_Header_set_multiview(self.handle, slices.as_ptr(), slices.len()) };
+        } else {
+            unsafe { CEXR_Header_erase_attribute(self.handle, b"multiView\0".as_ptr() as *const _) }
         }
         self
     }

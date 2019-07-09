@@ -314,6 +314,45 @@ pub struct CEXR_OStream {
 pub struct CEXR_ChannelListIter {
     _unused: [u8; 0],
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct CEXR_Slice {
+    pub ptr: *mut ::std::os::raw::c_void,
+    pub len: usize,
+}
+#[test]
+fn bindgen_test_layout_CEXR_Slice() {
+    assert_eq!(
+        ::std::mem::size_of::<CEXR_Slice>(),
+        16usize,
+        concat!("Size of: ", stringify!(CEXR_Slice))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<CEXR_Slice>(),
+        8usize,
+        concat!("Alignment of ", stringify!(CEXR_Slice))
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CEXR_Slice>())).ptr as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CEXR_Slice),
+            "::",
+            stringify!(ptr)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CEXR_Slice>())).len as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CEXR_Slice),
+            "::",
+            stringify!(len)
+        )
+    );
+}
 extern "C" {
     pub fn CEXR_IStream_from_reader(
         reader: *mut ::std::os::raw::c_void,
@@ -446,6 +485,19 @@ extern "C" {
 }
 extern "C" {
     pub fn CEXR_Header_set_envmap(header: *mut CEXR_Header, envmap: ::std::os::raw::c_int);
+}
+extern "C" {
+    pub fn CEXR_Header_has_multiview(header: *const CEXR_Header) -> bool;
+}
+extern "C" {
+    pub fn CEXR_Header_multiview(header: *const CEXR_Header, out: *mut CEXR_Slice) -> usize;
+}
+extern "C" {
+    pub fn CEXR_Header_set_multiview(
+        header: *mut CEXR_Header,
+        views: *const CEXR_Slice,
+        view_count: usize,
+    );
 }
 extern "C" {
     pub fn CEXR_Header_erase_attribute(

@@ -155,6 +155,11 @@ typedef struct CEXR_IStream CEXR_IStream;
 typedef struct CEXR_OStream CEXR_OStream;
 typedef struct CEXR_ChannelListIter CEXR_ChannelListIter;
 
+// Helper type
+typedef struct CEXR_Slice {
+    void *ptr;
+    size_t len;
+} CEXR_Slice;
 
 int CEXR_IStream_from_reader(
     void *reader,
@@ -201,6 +206,9 @@ void CEXR_Header_set_compression(CEXR_Header *header, CEXR_Compression compressi
 bool CEXR_Header_has_envmap(const CEXR_Header *header);
 int CEXR_Header_envmap(const CEXR_Header *header);
 void CEXR_Header_set_envmap(CEXR_Header *header, int envmap);
+bool CEXR_Header_has_multiview(const CEXR_Header *header);
+size_t CEXR_Header_multiview(const CEXR_Header *header, CEXR_Slice *out);
+void CEXR_Header_set_multiview(CEXR_Header *header, const CEXR_Slice* views, size_t view_count);
 void CEXR_Header_erase_attribute(CEXR_Header *header, const char *attribute);
 
 
