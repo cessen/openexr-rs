@@ -195,6 +195,29 @@ void CEXR_Header_set_envmap(CEXR_Header *header, int envmap) {
     addEnvmap(*reinterpret_cast<Header *>(header), static_cast<Imf::Envmap>(envmap));
 }
 
+bool CEXR_Header_has_multiview(const CEXR_Header *header) {
+    return hasMultiView(*reinterpret_cast<const Header *>(header));
+}
+
+size_t CEXR_Header_multiview(const CEXR_Header *header, CEXR_Slice *out) {
+    auto &v = multiView(*reinterpret_cast<const Header *>(header));
+    if (out != nullptr) {
+        for (size_t i = 0; i < v.size(); ++i) {
+            out[i] = CEXR_Slice{const_cast<void*>(static_cast<const void*>(v[0].data())), v[0].size()};
+        }
+    }
+    return v.size();
+}
+
+void CEXR_Header_set_multiview(CEXR_Header *header, const CEXR_Slice* views, size_t view_count) {
+    StringVector v;
+    v.reserve(view_count);
+    for (size_t i = 0; i < view_count; ++i) {
+        v.emplace_back(reinterpret_cast<const char*>(views[i].ptr), views[i].len);
+    }
+    addMultiView(*reinterpret_cast<Header *>(header), v);
+}
+
 void CEXR_Header_erase_attribute(CEXR_Header *header, const char *attribute) {
     reinterpret_cast<Header *>(header)->erase(attribute);
 }
