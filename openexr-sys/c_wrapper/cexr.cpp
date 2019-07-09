@@ -127,7 +127,12 @@ CEXR_Header* CEXR_Header_new(const CEXR_Box2i *displayWindow,
 
 void CEXR_Header_insert_channel(CEXR_Header *header, const char name[], const CEXR_Channel channel) {
     auto h = reinterpret_cast<Header*>(header);
-    h->channels().insert(name, *reinterpret_cast<const Channel *>(&channel));
+    Channel ch;
+    ch.type = static_cast<PixelType>(channel.pixel_type);
+    ch.xSampling = channel.x_sampling;
+    ch.ySampling = channel.y_sampling;
+    ch.pLinear = channel.p_linear;
+    h->channels().insert(name, ch);
 }
 
 const CEXR_Channel *CEXR_Header_get_channel(const CEXR_Header *header, const char name[]) {
@@ -254,7 +259,7 @@ int CEXR_FrameBuffer_get_channel(const CEXR_FrameBuffer *frame_buffer, const cha
 
     if (slice_ptr != 0) {
         *out = CEXR_Channel {
-            *reinterpret_cast<const CEXR_PixelType *>(&(slice_ptr->type)),
+            static_cast<CEXR_PixelType>(slice_ptr->type),
             slice_ptr->xSampling,
             slice_ptr->ySampling,
             false // Bogus value, but this function is only used internally anyway
