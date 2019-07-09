@@ -369,10 +369,14 @@ int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const
 }
 
 
-int CEXR_set_global_thread_count(int thread_count) {
+//----------------------------------------------------
+// ThreadCount
+
+int CEXR_set_global_thread_count(int thread_count, const char **err_out) {
     try {
     	setGlobalThreadCount(thread_count);
     } catch(const std::exception &e) {
+        *err_out = copy_err(e.what());
         return 1;
     }
     return 0;

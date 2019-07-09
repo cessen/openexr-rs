@@ -1,5 +1,5 @@
 //! I/O compression/decompression threading control
-//! 
+//!
 //! Function set_global_thread_count creates a global pool of worker threads
 //! inside the IlmImf library.  Ifan application program has multiple threads,
 //! and those threads read or write several OpenEXR files at thesame time, then
@@ -26,14 +26,23 @@ pub fn set_global_thread_count(thread_count: usize) -> Result<()> {
         )));
     }
 
-    let error =
-        unsafe { openexr_sys::CEXR_set_global_thread_count(thread_count as ::std::os::raw::c_int) };
+    let mut error_out = ::std::ptr::null();
 
-    if error == 0 {
-        Ok(())
+    let error = unsafe {
+        openexr_sys::CEXR_set_global_thread_count(
+            thread_count as ::std::os::raw::c_int,
+            &mut error_out,
+        )
+    };
+    if error != 0 {
+        Err(Error::take(error_out))
     } else {
-        Err(Error::Generic(String::from(
-            "Unable to set global thread count",
-        )))
+        Ok(())
     }
+}
+
+#[test]
+fn test_set_global_thread_count() {
+    assert!(set_global_thread_count(4).is_ok());
+    assert!(set_global_thread_count(::std::os::raw::c_int::max_value() as usize + 1).is_err());
 }
