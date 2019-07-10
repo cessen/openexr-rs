@@ -18,7 +18,7 @@
 //!   types.  These are used for reading and writing OpenEXR files.  They
 //!   utilize the Header and FrameBuffer(Mut) types, listed below.
 //!
-//! * [`Header`](struct.Header.html): this is used for querying and specifying
+//! * [`Header`](header/struct.Header.html): this is used for querying and specifying
 //!   the properties of an OpenEXR file (such as resolution, channels, etc.), for
 //!   reading and writing respectively.
 //!
