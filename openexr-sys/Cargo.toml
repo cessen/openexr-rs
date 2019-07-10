@@ -1,6 +1,6 @@
 [package]
 name = "openexr-sys"
-version = "0.7.0"
+version = "0.6.0"
 authors = ["Nathan Vegdahl <cessen@cessen.com>", "Benjamin Saunders <ben.e.saunders@gmail.com>"]
 build = "build.rs"
 repository = "https://github.com/cessen/openexr-rs"
