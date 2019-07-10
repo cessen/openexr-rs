@@ -103,6 +103,7 @@ pub mod frame_buffer;
 pub mod header;
 pub mod input;
 pub mod output;
+pub mod threads;
 
 pub use cexr_type_aliases::{Box2i, PixelType};
 pub use error::{Error, Result};

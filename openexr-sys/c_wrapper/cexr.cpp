@@ -15,6 +15,7 @@
 #include "ImfInputFile.h"
 #include "Iex.h"
 #include "ImfStandardAttributes.h"
+#include "ImfThreading.h"
 #pragma GCC diagnostic pop
 
 #include "memory_istream.hpp"
@@ -360,6 +361,20 @@ int CEXR_OutputFile_set_framebuffer(CEXR_OutputFile *file, const CEXR_FrameBuffe
 int CEXR_OutputFile_write_pixels(CEXR_OutputFile *file, int num_scanlines, const char **err_out) {
     try {
         reinterpret_cast<OutputFile *>(file)->writePixels(num_scanlines);
+    } catch(const std::exception &e) {
+        *err_out = copy_err(e.what());
+        return 1;
+    }
+    return 0;
+}
+
+
+//----------------------------------------------------
+// ThreadCount
+
+int CEXR_set_global_thread_count(int thread_count, const char **err_out) {
+    try {
+    	setGlobalThreadCount(thread_count);
     } catch(const std::exception &e) {
         *err_out = copy_err(e.what());
         return 1;
