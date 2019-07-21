@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["InputFile","Reads any kind of OpenEXR file."]]});

@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `openexr` crate."><meta name="keywords" content="rust, rustlang, rust-lang, openexr"><title>openexr - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="shortcut icon" href="../favicon.ico"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../openexr/index.html'><div class='logo-container'><img src='../rust-logo.png' alt='logo'></div></a><p class='location'>Crate openexr</p><div class="sidebar-elems"><a id='all-types' href='all.html'><p>See all openexr's items</p></a><div class="block items"><ul><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'openexr', ty: 'mod', relpath: '../'};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/openexr/lib.rs.html#1-122' title='goto source code'>[src]</a></span><span class='in-band'>Crate <a class="mod" href=''>openexr</a></span></h1><div class='docblock'><p>Rust bindings for the <a href="http://openexr.com">OpenEXR</a> C++ library.</p>
+<p>OpenEXR is a bitmap image file format that can store high dynamic range
+(HDR) images along with other arbitrary per-pixel data. It is used heavily
+in the VFX and 3D animation industries.</p>
+<p>Although this wrapper's API differs a little from the C++ library, it tries
+not to differ wildly.  Therefore the
+<a href="https://github.com/openexr/openexr/tree/develop/OpenEXR/doc">C++ OpenEXR documentation</a>
+is still useful as an introduction and rough reference.  Moreover, the
+file format itself is also documented there.</p>
+<h1 id="overview" class="section-header"><a href="#overview">Overview</a></h1>
+<p>There are three primary parts to this crate:</p>
+<ul>
+<li>
+<p>The various <a href="input/index.html">input</a> and <a href="output/index.html">output</a>
+types.  These are used for reading and writing OpenEXR files.  They
+utilize the Header and FrameBuffer(Mut) types, listed below.</p>
+</li>
+<li>
+<p><a href="header/struct.Header.html"><code>Header</code></a>: this is used for querying and specifying
+the properties of an OpenEXR file (such as resolution, channels, etc.), for
+reading and writing respectively.</p>
+</li>
+<li>
+<p><a href="frame_buffer/struct.FrameBuffer.html"><code>FrameBuffer</code></a> and
+<a href="frame_buffer/struct.FrameBufferMut.html"><code>FrameBufferMut</code></a>:
+these are intermediaries that tell the OpenEXR APIs how to interpret
+your in-memory image data.  Rather than passing your image data to the
+APIs directly, you construct a <code>FrameBuffer</code> that points at and
+describes it, and then you pass that FrameBuffer.</p>
+</li>
+</ul>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
+<p>Writing a scanline floating point RGB file.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="comment">// Pixel data for a 256x256 floating point RGB image.</span>
+<span class="kw">let</span> <span class="ident">pixel_data</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[(<span class="number">0.82f32</span>, <span class="number">1.78f32</span>, <span class="number">0.21f32</span>); <span class="number">256</span> <span class="op">*</span> <span class="number">256</span>];
+
+<span class="comment">// Create a file to write to.  The `Header` determines the properties of the</span>
+<span class="comment">// file, like resolution and what channels it has.</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>::<span class="ident">create</span>(<span class="string">&quot;output_file.exr&quot;</span>).<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output_file</span> <span class="op">=</span> <span class="ident">ScanlineOutputFile</span>::<span class="ident">new</span>(
+    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">file</span>,
+    <span class="ident">Header</span>::<span class="ident">new</span>()
+        .<span class="ident">set_resolution</span>(<span class="number">256</span>, <span class="number">256</span>)
+        .<span class="ident">add_channel</span>(<span class="string">&quot;R&quot;</span>, <span class="ident">PixelType</span>::<span class="ident">FLOAT</span>)
+        .<span class="ident">add_channel</span>(<span class="string">&quot;G&quot;</span>, <span class="ident">PixelType</span>::<span class="ident">FLOAT</span>)
+        .<span class="ident">add_channel</span>(<span class="string">&quot;B&quot;</span>, <span class="ident">PixelType</span>::<span class="ident">FLOAT</span>)).<span class="ident">unwrap</span>();
+
+<span class="comment">// Create a `FrameBuffer` that points at our pixel data and describes it as</span>
+<span class="comment">// RGB data.</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fb</span> <span class="op">=</span> <span class="ident">FrameBuffer</span>::<span class="ident">new</span>(<span class="number">256</span>, <span class="number">256</span>);
+<span class="ident">fb</span>.<span class="ident">insert_channels</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;R&quot;</span>, <span class="string">&quot;G&quot;</span>, <span class="string">&quot;B&quot;</span>], <span class="kw-2">&amp;</span><span class="ident">pixel_data</span>);
+
+<span class="comment">// Write pixel data to the file.</span>
+<span class="ident">output_file</span>.<span class="ident">write_pixels</span>(<span class="kw-2">&amp;</span><span class="ident">fb</span>).<span class="ident">unwrap</span>();</pre></div>
+<p>Reading a floating point RGB file.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+
+<span class="comment">// Open the EXR file.</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>::<span class="ident">open</span>(<span class="string">&quot;input_file.exr&quot;</span>).<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input_file</span> <span class="op">=</span> <span class="ident">InputFile</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">file</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// Get the image dimensions, so we know how large of a buffer to make.</span>
+<span class="kw">let</span> (<span class="ident">width</span>, <span class="ident">height</span>) <span class="op">=</span> <span class="ident">input_file</span>.<span class="ident">header</span>().<span class="ident">data_dimensions</span>();
+
+<span class="comment">// Buffer to read pixel data into.</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pixel_data</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[(<span class="number">0.0f32</span>, <span class="number">0.0f32</span>, <span class="number">0.0f32</span>); (<span class="ident">width</span><span class="kw-2">*</span><span class="ident">height</span>) <span class="kw">as</span> <span class="ident">usize</span>];
+
+<span class="comment">// New scope because `FrameBufferMut` mutably borrows `pixel_data`, so we</span>
+<span class="comment">// need it to go out of scope before we can access our `pixel_data` again.</span>
+{
+    <span class="comment">// Get the input file data origin, which we need to properly construct</span>
+    <span class="comment">// the `FrameBufferMut`.</span>
+    <span class="kw">let</span> (<span class="ident">origin_x</span>, <span class="ident">origin_y</span>) <span class="op">=</span> <span class="ident">input_file</span>.<span class="ident">header</span>().<span class="ident">data_origin</span>();
+
+    <span class="comment">// Create a `FrameBufferMut` that points at our pixel data and describes</span>
+    <span class="comment">// it as RGB data.</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fb</span> <span class="op">=</span> <span class="ident">FrameBufferMut</span>::<span class="ident">new_with_origin</span>(
+        <span class="ident">origin_x</span>,
+        <span class="ident">origin_y</span>,
+        <span class="ident">width</span>,
+        <span class="ident">height</span>,
+    );
+    <span class="ident">fb</span>.<span class="ident">insert_channels</span>(<span class="kw-2">&amp;</span>[(<span class="string">&quot;R&quot;</span>, <span class="number">0.0</span>), (<span class="string">&quot;G&quot;</span>, <span class="number">0.0</span>), (<span class="string">&quot;B&quot;</span>, <span class="number">0.0</span>)], <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pixel_data</span>);
+
+    <span class="comment">// Read pixel data from the file.</span>
+    <span class="ident">input_file</span>.<span class="ident">read_pixels</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fb</span>).<span class="ident">unwrap</span>();
+}</pre></div>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Re-exports</a></h2>
+<table><tr><td><code>pub use error::<a class="enum" href="../openexr/error/enum.Error.html" title="enum openexr::error::Error">Error</a>;</code></td></tr><tr><td><code>pub use error::<a class="type" href="../openexr/error/type.Result.html" title="type openexr::error::Result">Result</a>;</code></td></tr><tr><td><code>pub use frame_buffer::<a class="struct" href="../openexr/frame_buffer/struct.FrameBuffer.html" title="struct openexr::frame_buffer::FrameBuffer">FrameBuffer</a>;</code></td></tr><tr><td><code>pub use frame_buffer::<a class="struct" href="../openexr/frame_buffer/struct.FrameBufferMut.html" title="struct openexr::frame_buffer::FrameBufferMut">FrameBufferMut</a>;</code></td></tr><tr><td><code>pub use header::<a class="enum" href="../openexr/header/enum.Envmap.html" title="enum openexr::header::Envmap">Envmap</a>;</code></td></tr><tr><td><code>pub use header::<a class="struct" href="../openexr/header/struct.Header.html" title="struct openexr::header::Header">Header</a>;</code></td></tr><tr><td><code>pub use input::<a class="struct" href="../openexr/input/struct.InputFile.html" title="struct openexr::input::InputFile">InputFile</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr class='module-item'><td><a class="mod" href="error/index.html" title='openexr::error mod'>error</a></td><td class='docblock-short'><p>Result and Error types.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="frame_buffer/index.html" title='openexr::frame_buffer mod'>frame_buffer</a></td><td class='docblock-short'><p>A <code>FrameBuffer</code> points to and describes image data in memory to be used for
+input and output.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="header/index.html" title='openexr::header mod'>header</a></td><td class='docblock-short'><p>Header and related types.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="input/index.html" title='openexr::input mod'>input</a></td><td class='docblock-short'><p>Input file types.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="output/index.html" title='openexr::output mod'>output</a></td><td class='docblock-short'><p>Output file types.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="threads/index.html" title='openexr::threads mod'>threads</a></td><td class='docblock-short'><p>I/O compression/decompression threading control.</p>
+</td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table><tr class='module-item'><td><a class="struct" href="struct.Box2i.html" title='openexr::Box2i struct'>Box2i</a></td><td class='docblock-short'><p>A 2d integer bounding box.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.ScanlineOutputFile.html" title='openexr::ScanlineOutputFile struct'>ScanlineOutputFile</a></td><td class='docblock-short'><p>Writes scanline OpenEXR files.</p>
+</td></tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table><tr class='module-item'><td><a class="enum" href="enum.PixelType.html" title='openexr::PixelType enum'>PixelType</a></td><td class='docblock-short'><p>Describes the datatype of an image channel.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g., <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g., <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g., <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../";window.currentCrate = "openexr";</script><script src="../aliases.js"></script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

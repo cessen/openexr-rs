@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Compression","Compression mode of an OpenEXR file."],["Envmap","Types of environment maps"],["LineOrder","Defines the line order of a scanline image."]],"struct":[["Channel","Describes an image channel."],["ChannelIter","An iterator over the channels in a `Header`."],["Header","Represents an OpenEXR file header."]]});

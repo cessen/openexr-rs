@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["consts","Useful `f16` constants."],["slice","Contains utility functions to convert between slices of `u16` bits and `f16` numbers."]],"struct":[["f16","The 16-bit floating point type."]]});

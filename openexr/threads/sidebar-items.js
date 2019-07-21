@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["set_global_thread_count","Sets the number of worker threads to use for compression/decompression."]]});

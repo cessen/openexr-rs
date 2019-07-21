@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Error","Error type for this crate."]],"type":[["Result","Result type for this crate."]]});
