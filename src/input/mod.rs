@@ -50,9 +50,9 @@ pub struct InputFile<'a> {
     _phantom_1: PhantomData<CEXR_InputFile>,
     _phantom_2: PhantomData<&'a mut ()>, // Represents the borrowed reader
 
-    // NOTE: Because we don't know what type the reader might be, it's important
-    // that this struct remains neither Sync nor Send.  Please don't implement
-    // them!
+                                         // NOTE: Because we don't know what type the reader might be, it's important
+                                         // that this struct remains neither Sync nor Send.  Please don't implement
+                                         // them!
 }
 
 impl<'a> InputFile<'a> {

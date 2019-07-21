@@ -48,9 +48,9 @@ pub struct ScanlineOutputFile<'a> {
     _phantom_1: PhantomData<CEXR_OutputFile>,
     _phantom_2: PhantomData<&'a mut ()>, // Represents the borrowed writer
 
-    // NOTE: Because we don't know what type the writer might be, it's important
-    // that this struct remains neither Sync nor Send.  Please don't implement
-    // them!
+                                         // NOTE: Because we don't know what type the writer might be, it's important
+                                         // that this struct remains neither Sync nor Send.  Please don't implement
+                                         // them!
 }
 
 impl<'a> ScanlineOutputFile<'a> {

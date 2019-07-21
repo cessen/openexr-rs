@@ -18,7 +18,8 @@ fn incremental_io() {
                 .add_channel("R", PixelType::FLOAT)
                 .add_channel("G", PixelType::FLOAT)
                 .add_channel("B", PixelType::FLOAT),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Write incrementally with four calls, using different colors
         // for each call.
@@ -27,7 +28,8 @@ fn incremental_io() {
         exr_file
             .write_pixels_incremental(
                 FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
 
         for pixel in &mut pixel_data {
             *pixel = (0.0, 1.0, 0.0);
@@ -36,7 +38,8 @@ fn incremental_io() {
         exr_file
             .write_pixels_incremental(
                 FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
 
         for pixel in &mut pixel_data {
             *pixel = (0.0, 0.0, 1.0);
@@ -45,7 +48,8 @@ fn incremental_io() {
         exr_file
             .write_pixels_incremental(
                 FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
 
         for pixel in &mut pixel_data {
             *pixel = (1.0, 1.0, 1.0);
@@ -54,7 +58,8 @@ fn incremental_io() {
         exr_file
             .write_pixels_incremental(
                 FrameBuffer::new(256, 64).insert_channels(&["R", "G", "B"], &pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
     }
 
     // Read file from memory, and verify its contents
@@ -81,7 +86,8 @@ fn incremental_io() {
                 0,
                 FrameBufferMut::new(256, 64)
                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (1.0, 0.0, 0.0));
         }
@@ -91,7 +97,8 @@ fn incremental_io() {
                 64,
                 FrameBufferMut::new(256, 64)
                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (0.0, 1.0, 0.0));
         }
@@ -101,7 +108,8 @@ fn incremental_io() {
                 128,
                 FrameBufferMut::new(256, 64)
                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (0.0, 0.0, 1.0));
         }
@@ -111,7 +119,8 @@ fn incremental_io() {
                 192,
                 FrameBufferMut::new(256, 64)
                     .insert_channels(&[("R", 0.1), ("G", 0.1), ("B", 0.1)], &mut pixel_data),
-            ).unwrap();
+            )
+            .unwrap();
         for pixel in &pixel_data {
             assert_eq!(*pixel, (1.0, 1.0, 1.0));
         }

@@ -11,7 +11,8 @@ fn main() {
 
     let mut file = File::create(Path::new(
         &env::args_os().nth(1).expect("argument required"),
-    )).unwrap();
+    ))
+    .unwrap();
 
     let mut exr_file = ScanlineOutputFile::new(
         &mut file,
@@ -20,7 +21,8 @@ fn main() {
             .add_channel("R", PixelType::FLOAT)
             .add_channel("G", PixelType::FLOAT)
             .add_channel("B", PixelType::FLOAT),
-    ).unwrap();
+    )
+    .unwrap();
 
     let fb = {
         // Create the frame buffer

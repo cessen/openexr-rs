@@ -10,7 +10,8 @@ fn main() {
     // Open the EXR file and get its dimensions.
     let mut file = File::open(Path::new(
         &env::args_os().nth(1).expect("argument required"),
-    )).unwrap();
+    ))
+    .unwrap();
     let mut exr_file = InputFile::new(&mut file).unwrap();
     let (width, height) = exr_file.header().data_dimensions();
 

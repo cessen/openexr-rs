@@ -20,7 +20,8 @@ fn memory_io() {
                 .add_channel("R", PixelType::FLOAT)
                 .add_channel("G", PixelType::FLOAT)
                 .add_channel("B", PixelType::FLOAT),
-        ).unwrap();
+        )
+        .unwrap();
 
         let mut fb = FrameBuffer::new(256, 256);
         fb.insert_channels(&["R", "G", "B"], &pixel_data);

@@ -34,7 +34,8 @@ fn main() {
                          OPENEXR_DIR is unset and pkg-config failed: {}",
                         err
                     )
-                }).unwrap();
+                })
+                .unwrap();
 
             include_paths.extend_from_slice(&paths);
         }
@@ -59,7 +60,8 @@ fn main() {
                          ILMBASE_DIR is unset and pkg-config failed: {}",
                         err
                     )
-                }).unwrap();
+                })
+                .unwrap();
             include_paths.extend_from_slice(&paths);
         }
 

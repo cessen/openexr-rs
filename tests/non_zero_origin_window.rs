@@ -39,21 +39,17 @@ fn load_and_test_with_offset_window_read_multiple_channels(data: &[u8]) {
     };
 
     // let's try a few mismatched origins
-    assert!(
-        read_with_offset(&mut exr_file, &mut pixel_data, 0, 0)
-            .0
-            .is_err()
-    );
+    assert!(read_with_offset(&mut exr_file, &mut pixel_data, 0, 0)
+        .0
+        .is_err());
     assert!(
         read_with_offset(&mut exr_file, &mut pixel_data, x - 1, y - 1)
             .0
             .is_err()
     );
-    assert!(
-        read_with_offset(&mut exr_file, &mut pixel_data, -x, -y)
-            .0
-            .is_err()
-    );
+    assert!(read_with_offset(&mut exr_file, &mut pixel_data, -x, -y)
+        .0
+        .is_err());
     // and then the real thing
     let (read_result, origin_offset) = read_with_offset(&mut exr_file, &mut pixel_data, x, y);
     assert!(read_result.is_ok());
@@ -76,7 +72,8 @@ fn load_and_test_with_offset_window_read_multiple_channels(data: &[u8]) {
                 .add_channel("R", openexr::PixelType::HALF)
                 .add_channel("G", openexr::PixelType::HALF)
                 .add_channel("B", openexr::PixelType::HALF),
-        ).unwrap();
+        )
+        .unwrap();
 
         fb.insert_channels(&["R", "G", "B"], &pixel_data);
         exr_file.write_pixels(&fb).unwrap();
