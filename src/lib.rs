@@ -26,7 +26,7 @@
 //!   [`FrameBufferMut`](frame_buffer/struct.FrameBufferMut.html):
 //!   these are intermediaries that tell the OpenEXR APIs how to interpret
 //!   your in-memory image data.  Rather than passing your image data to the
-//!   APIs directly, you construct a `FrameBuffer` that that points at and
+//!   APIs directly, you construct a `FrameBuffer` that points at and
 //!   describes it, and then you pass that FrameBuffer.
 //!
 //! # Examples
@@ -74,12 +74,21 @@
 //! // Buffer to read pixel data into.
 //! let mut pixel_data = vec![(0.0f32, 0.0f32, 0.0f32); (width*height) as usize];
 //!
-//! // New scope because `FrameBuffer` mutably borrows `pixel_data`, so we need
-//! // it to go out of scope before we can access our `pixel_data` again.
+//! // New scope because `FrameBufferMut` mutably borrows `pixel_data`, so we
+//! // need it to go out of scope before we can access our `pixel_data` again.
 //! {
-//!     // Create `FrameBufferMut` that points at our pixel data and describes
+//!     // Get the input file data origin, which we need to properly construct
+//!     // the `FrameBufferMut`.
+//!     let (origin_x, origin_y) = input_file.header().data_origin();
+//!
+//!     // Create a `FrameBufferMut` that points at our pixel data and describes
 //!     // it as RGB data.
-//!     let mut fb = FrameBufferMut::new(width, height);
+//!     let mut fb = FrameBufferMut::new_with_origin(
+//!         origin_x,
+//!         origin_y,
+//!         width,
+//!         height,
+//!     );
 //!     fb.insert_channels(&[("R", 0.0), ("G", 0.0), ("B", 0.0)], &mut pixel_data);
 //!
 //!     // Read pixel data from the file.
