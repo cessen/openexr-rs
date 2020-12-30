@@ -392,15 +392,15 @@ impl<'a> Drop for ChannelIter<'a> {
 impl<'a> Iterator for ChannelIter<'a> {
     type Item = Result<(&'a str, Channel)>;
     fn next(&mut self) -> Option<Result<(&'a str, Channel)>> {
-        let mut name = unsafe { std::mem::uninitialized() };
-        let mut channel = unsafe { std::mem::uninitialized() };
-        if unsafe { CEXR_ChannelListIter_next(self.iterator, &mut name, &mut channel) } {
+        let mut name = std::mem::MaybeUninit::uninit();
+        let mut channel = std::mem::MaybeUninit::uninit();
+        if unsafe { CEXR_ChannelListIter_next(self.iterator, name.as_mut_ptr(), channel.as_mut_ptr()) } {
             // TODO: use CStr::from_bytes_with_nul() instead to avoid memory unsafety
             // if the string is not nul terminated.
-            let cname = unsafe { CStr::from_ptr(name) };
+            let cname = unsafe { CStr::from_ptr(name.assume_init()) };
             let str_name = cname.to_str();
             if let Ok(n) = str_name {
-                Some(Ok((n, channel)))
+                Some(Ok((n, unsafe { channel.assume_init() })))
             } else {
                 Some(Err(Error::Generic(format!(
                     "Invalid channel name: {:?}",

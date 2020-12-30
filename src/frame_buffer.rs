@@ -212,10 +212,10 @@ impl<'a> FrameBuffer<'a> {
     // about a FrameBuffer Slice.  For internal use only.
     pub(crate) fn _get_channel(&self, name: &str) -> Option<Channel> {
         let c_name = CString::new(name.as_bytes()).unwrap();
-        let mut channel = unsafe { mem::uninitialized() };
-        if unsafe { CEXR_FrameBuffer_get_channel(self.handle, c_name.as_ptr(), &mut channel) } == 0
+        let mut channel = mem::MaybeUninit::uninit();
+        if unsafe { CEXR_FrameBuffer_get_channel(self.handle, c_name.as_ptr(), channel.as_mut_ptr()) } == 0
         {
-            Some(channel)
+            Some(unsafe { channel.assume_init() })
         } else {
             None
         }
