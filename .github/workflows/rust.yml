@@ -18,40 +18,38 @@ jobs:
     name: Build and test, Rust-stable
     runs-on: ubuntu-latest
     steps:
+      # Make sure OpenEXR is installed.
       - run: sudo apt-get update
       - run: sudo apt-get -y install libopenexr-dev
+
+      # Get a checkout and rust toolchain.
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+
+      # Build and test
+      - run: cargo +stable build
+      - run: cargo +stable test
 
   build-and-test-beta:
     name: Build and test, Rust-beta
     runs-on: ubuntu-latest
     steps:
+      # Make sure OpenEXR is installed.
       - run: sudo apt-get update
       - run: sudo apt-get -y install libopenexr-dev
-      - uses: ryankurte/action-apt@v0.2.0
-        with:
-          # Install OpenEXR
-          packages: libopenexr24 libopenexr-dev libilmbase24 libilmbase-dev
+
+      # Get a checkout and rust toolchain.
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: beta
           override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+
+      # Build and test
+      - run: cargo +beta build
+      - run: cargo +beta test
