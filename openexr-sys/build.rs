@@ -23,21 +23,10 @@ fn main() {
             include_paths.push(PathBuf::from(&format!("{}/include/OpenEXR", path)));
         } else {
             // There's no enviroment variable, so use pkgconfig to find
-            // the libs
-            // Note that if OpenEXR's version < 2.5.2, then the name of 
-            // pkgconfig file should be "IlmBase.pc", otherwise it will 
-            // be "OpenEXR.pc"
-            let mut openexr_pkg_config = pkg_config::Config::new()
-                .atleast_version("2.5.2")
-                .probe("OpenEXR");
-
-            if (!openexr_pkg_config.is_ok()) {
-                openexr_pkg_config = pkg_config::Config::new()
-                    .atleast_version("2.0.0")
-                    .probe("IlmBase");
-            } 
-
-            let openexr_library_paths = openexr_pkg_config
+            // the libs.
+            let paths = pkg_config::Config::new()
+                .atleast_version("2.0.0")
+                .probe("OpenEXR")
                 .map(|openexr_cfg| openexr_cfg.include_paths.clone())
                 .map_err(|err| {
                     panic!(
@@ -48,7 +37,7 @@ fn main() {
                 })
                 .unwrap();
 
-            include_paths.extend_from_slice(&openexr_library_paths);
+            include_paths.extend_from_slice(&paths);
         }
 
         if let Ok(path) = env::var("ILMBASE_DIR") {
@@ -60,6 +49,8 @@ fn main() {
             println!("cargo:rustc-link-lib=static=Half");
             include_paths.push(PathBuf::from(&format!("{}/include/OpenEXR", path)));
         } else {
+            // There's no enviroment variable, so use pkgconfig to find
+            // the libs.
             let paths = pkg_config::Config::new()
                 .atleast_version("2.0.0")
                 .cargo_metadata(false) // OpenEXR already pulls in all the flags we need
