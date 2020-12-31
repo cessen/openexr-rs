@@ -18,7 +18,8 @@ jobs:
     name: Build and test, Rust-stable
     runs-on: ubuntu-latest
     steps:
-      - run: sudo apt-get install libopenexr24 libopenexr-dev libilmbase24 libilmbase-dev
+      - run: sudo apt-get update
+      - run: sudo apt-get -y install libopenexr-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -36,7 +37,8 @@ jobs:
     name: Build and test, Rust-beta
     runs-on: ubuntu-latest
     steps:
-      - run: sudo apt-get install libopenexr24 libopenexr-dev libilmbase24 libilmbase-dev
+      - run: sudo apt-get update
+      - run: sudo apt-get -y install libopenexr-dev
       - uses: ryankurte/action-apt@v0.2.0
         with:
           # Install OpenEXR
