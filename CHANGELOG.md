@@ -1,3 +1,8 @@
+# 0.7.1 (2020-12-31)
+
+* Fixed undefined behavior due to incorrect use of `uninitialized()`.  Thanks
+  to [norru](https://github.com/norru) for both the bug report and the fix!
+
 # 0.7.0 (2019-07-21)
 
 * Exposed controls for OpenEXR's worker thread pool.
