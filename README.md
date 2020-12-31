@@ -1,4 +1,8 @@
-# OpenEXR-rs [![Build Status][github-ci-img]][github-ci] [![crates.io badge][crates-io-badge]][crates-io-url]
+# OpenEXR-rs
+
+[![CI Build Status][github-ci-img]][github-ci]
+[![Latest Release][crates-io-badge]][crates-io-url]
+[![Documentation][docs-rs-img]][docs-rs-url]
 
 Rust bindings for [OpenEXR](http://www.openexr.com).
 
@@ -12,12 +16,6 @@ The goal of this library is to wrap and support all features of OpenEXR 2.x.
 Convenient and safe API's will be provided for most functionality.  However,
 to provide the full flexibility of the underlying C++ library, there may be
 a few unsafe API's as well that expose more nitty-gritty.
-
-## Documentation
-
-The documentation for the latest release on crates.io will eventually be [here](https://docs.rs/crate/openexr/), but due to missing dependencies is not currently building.  This will hopefully be resolved in the near future.
-
-The documentation for the latest master can be found [here](https://cessen.github.io/openexr-rs).
 
 ## Building
 
@@ -60,3 +58,5 @@ http://zlib.net/zlib_license.html for details).
 [crates-io-url]: https://crates.io/crates/openexr
 [github-ci-img]: https://github.com/cessen/openexr-rs/workflows/ci/badge.svg
 [github-ci]: https://github.com/cessen/openexr-rs/actions?query=workflow%3Aci
+[docs-rs-img]: https://docs.rs/openexr/badge.svg
+[docs-rs-url]: https://docs.rs/openexr
