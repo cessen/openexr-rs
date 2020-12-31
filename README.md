@@ -1,4 +1,4 @@
-# OpenEXR-rs [![Build Status][trav-ci-img]][trav-ci] [![crates.io badge][crates-io-badge]][crates-io-url]
+# OpenEXR-rs [![Build Status][github-ci-img]][github-ci] [![crates.io badge][crates-io-badge]][crates-io-url]
 
 Rust bindings for [OpenEXR](http://www.openexr.com).
 
@@ -58,5 +58,5 @@ http://zlib.net/zlib_license.html for details).
 
 [crates-io-badge]: https://img.shields.io/crates/v/openexr.svg
 [crates-io-url]: https://crates.io/crates/openexr
-[trav-ci-img]: https://travis-ci.org/cessen/openexr-rs.svg?branch=master
-[trav-ci]: https://travis-ci.org/cessen/openexr-rs
+[github-ci-img]: https://github.com/cessen/openexr-rs/workflows/ci/badge.svg
+[github-ci]: https://github.com/cessen/openexr-rs/actions?query=workflow%3Aci
