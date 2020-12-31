@@ -46,7 +46,7 @@ fn main() {
             println!("cargo:rustc-link-lib=static=Iex{}", suffix);
             println!("cargo:rustc-link-lib=static=Imath{}", suffix);
             println!("cargo:rustc-link-lib=static=IlmThread{}", suffix);
-            println!("cargo:rustc-link-lib=static=Half");
+            println!("cargo:rustc-link-lib=static=Half{}", suffix);
             include_paths.push(PathBuf::from(&format!("{}/include/OpenEXR", path)));
         } else {
             // There's no enviroment variable, so use pkgconfig to find
