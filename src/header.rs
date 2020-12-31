@@ -394,7 +394,9 @@ impl<'a> Iterator for ChannelIter<'a> {
     fn next(&mut self) -> Option<Result<(&'a str, Channel)>> {
         let mut name = std::mem::MaybeUninit::uninit();
         let mut channel = std::mem::MaybeUninit::uninit();
-        if unsafe { CEXR_ChannelListIter_next(self.iterator, name.as_mut_ptr(), channel.as_mut_ptr()) } {
+        if unsafe {
+            CEXR_ChannelListIter_next(self.iterator, name.as_mut_ptr(), channel.as_mut_ptr())
+        } {
             // TODO: use CStr::from_bytes_with_nul() instead to avoid memory unsafety
             // if the string is not nul terminated.
             let cname = unsafe { CStr::from_ptr(name.assume_init()) };
